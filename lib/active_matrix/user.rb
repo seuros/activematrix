@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'active_matrix'
-
 module ActiveMatrix
   # A class for tracking information about a user on Matrix
   class User
