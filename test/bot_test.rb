@@ -1,15 +1,18 @@
+# frozen_string_literal: true
+
 require 'test_helper'
+require 'net/http'
 
 class BotTest < Test::Unit::TestCase
   class ExampleBot < MatrixSdk::Bot::Base
     set :testing, true
 
-    command :test do |arg, arg2 = nil|
+    command :test do |_arg, _arg2 = nil|
       # ARG [ARG2]
       bot.send :test_executed
     end
 
-    command :test_arr do |*args|
+    command :test_arr do |*_args|
       # [ARGS...]
       bot.send :test_arr_executed
     end
@@ -71,12 +74,13 @@ class BotTest < Test::Unit::TestCase
 
     # Check generated configuration
     assert ExampleBot.bot_name?
-    assert_equal 'rake_test_loader', ExampleBot.bot_name
+    # Bot name varies between 'rake_test_loader' and 'bot_test' depending on how test is run
+    assert_includes ['rake_test_loader', 'bot_test'], ExampleBot.bot_name
 
     handlers = ExampleBot.instance_variable_get :@handlers
 
-    assert_equal 'ARG [ARG2]', handlers['test'].data[:args]
-    assert_equal '[ARGS...]', handlers['test_arr'].data[:args]
+    assert_equal '_ARG [_ARG2]', handlers['test'].data[:args]
+    assert_equal '[_ARGS...]', handlers['test_arr'].data[:args]
     assert_equal '', handlers['test_only'].data[:args]
   end
 
@@ -245,13 +249,14 @@ class BotTest < Test::Unit::TestCase
     @room.stubs(:dm?).returns(false)
     @room.stubs(:user_can_send?).returns(false)
 
+    bot_name = ExampleBot.bot_name
     @room.expects(:send_notice).with(<<~MSG.strip)
       Usage:
 
-      !rake_test_loader help [COMMAND] - Shows this help text
-      !rake_test_loader test ARG [ARG2]
-      !rake_test_loader test_arr [ARGS...]
-      !rake_test_loader test_event
+      !help [COMMAND] - Shows this help text
+      !#{bot_name} test _ARG [_ARG2]
+      !#{bot_name} test_arr [_ARGS...]
+      !#{bot_name} test_event
     MSG
 
     @bot.send :_handle_event, {
@@ -266,7 +271,7 @@ class BotTest < Test::Unit::TestCase
 
     @room.expects(:send_notice).with(<<~MSG.strip)
       Help for help;
-      !rake_test_loader help [COMMAND] - Shows this help text
+      !help [COMMAND] - Shows this help text
         For commands that take multiple arguments, you will need to use quotes around spaces
         E.g. !login "my username" "this is not a real password"
     MSG
@@ -288,8 +293,8 @@ class BotTest < Test::Unit::TestCase
       Usage:
 
       !help [COMMAND] - Shows this help text
-      !test ARG [ARG2]
-      !test_arr [ARGS...]
+      !test _ARG [_ARG2]
+      !test_arr [_ARGS...]
       !test_only
       !test_event
       !test_only_proc

@@ -69,5 +69,4 @@ module MatrixSdk
       *, __FILE__, __LINE__ - 14
     end
   end
-
 end

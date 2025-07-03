@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 class ApiTest < Test::Unit::TestCase
@@ -82,7 +84,9 @@ class ApiTest < Test::Unit::TestCase
   end
 
   def test_query_handling
-    Net::HTTP::Get.expects(:new).with('/_matrix/client/r0/sync?filter=%7B%22room%22%3A%7B%22timeline%22%3A%7B%22limit%22%3A20%7D%2C%22state%22%3A%7B%22lazy_load_members%22%3Atrue%7D%7D%7D&full_state=false&timeout=15000').raises(RuntimeError, 'Expectation succeeded')
+    Net::HTTP::Get.expects(:new).with('/_matrix/client/r0/sync?filter=%7B%22room%22%3A%7B%22timeline%22%3A%7B%22limit%22%3A20%7D%2C%22state%22%3A%7B%22lazy_load_members%22%3Atrue%7D%7D%7D&full_state=false&timeout=15000').raises(
+      RuntimeError, 'Expectation succeeded'
+    )
     e = assert_raises(RuntimeError) { @api.sync(filter: '{"room":{"timeline":{"limit":20},"state":{"lazy_load_members":true}}}', full_state: false, timeout: 15) }
     assert_equal 'Expectation succeeded', e.message
   end
@@ -90,8 +94,8 @@ class ApiTest < Test::Unit::TestCase
   def test_content
     room = '!test:example.com'
     type = 'm.room.message'
-    url = 'mxc://example.com/data'
-    msgtype = 'type'
+    url = 'mxc://example.com/data'.dup
+    msgtype = 'type'.dup
     msgbody = 'Name of content'
     content = {
       url: url,

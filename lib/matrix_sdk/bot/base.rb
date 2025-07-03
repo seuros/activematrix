@@ -820,8 +820,17 @@ module MatrixSdk::Bot
         info += "\n  #{handler.data[:notes].split("\n").join("\n  ")}" if !command.nil? && handler.data[:notes]
         info = nil if info.empty?
 
+        prefix = if handler.command == 'help'
+                   # Help command is always accessible without bot name prefix
+                   "#{settings.command_prefix}#{handler.command}"
+                 elsif room.dm?
+                   "#{settings.command_prefix}#{handler.command}"
+                 else
+                   "#{expanded_prefix}#{handler.command}"
+                 end
+
         [
-          room.dm? ? "#{settings.command_prefix}#{handler.command}" : "#{expanded_prefix}#{handler.command}",
+          prefix,
           info
         ].compact
       end

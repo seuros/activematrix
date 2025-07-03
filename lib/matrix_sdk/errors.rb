@@ -30,7 +30,7 @@ module MatrixSdk
       @code = error[:errcode]
       @httpstatus = status
       @message = error[:error]
-      @data = error.reject { |k, _v| %i[errcode error].include? k }
+      @data = error.except(:errcode, :error)
 
       super(error[:error])
     end

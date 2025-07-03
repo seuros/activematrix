@@ -39,7 +39,7 @@ module MatrixSdk
       data.instance_variable_set(:@api, api)
 
       data.select { |_k, v| v.is_a? Hash }
-          .each { |_v, v| Response.new api, v }
+          .each_value { |v| Response.new api, v }
 
       data
     end
