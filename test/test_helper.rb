@@ -7,7 +7,7 @@ SimpleCov.start do
 end
 
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
-require 'matrix_sdk'
+require 'active_matrix'
 
 require 'test/unit'
 require 'mocha/test_unit'
@@ -22,7 +22,7 @@ end
 
 class Test::Unit::TestCase
   def matrixsdk_add_api_stub
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .any_instance
       .stubs(:client_api_latest)
       .returns(:client_r0)

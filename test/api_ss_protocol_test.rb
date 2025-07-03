@@ -7,7 +7,7 @@ class ApiSSTest < Test::Unit::TestCase
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = MatrixSdk::Api.new 'https://example.com', protocols: :SS, threadsafe: false
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :SS, threadsafe: false
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
   end

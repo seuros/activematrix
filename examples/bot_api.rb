@@ -6,7 +6,7 @@
 # This bot will implement a subset of the maubot ping/echo module
 # It showcases required and optional parameters, as well as limitations on commands
 
-require 'matrix_sdk/bot'
+require 'active_matrix/bot'
 
 # Util methods added at end of class, to keep command listing near the top
 module Utils; end
@@ -62,7 +62,7 @@ command :ping, desc: 'Runs a ping with a given ID and returns the request time' 
     msg: message
   }
 
-  from_id = MatrixSdk::MXID.new(sender.id)
+  from_id = ActiveMatrix::MXID.new(sender.id)
 
   eventdata = {
     format: 'org.matrix.custom.html',

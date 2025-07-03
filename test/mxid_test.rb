@@ -4,12 +4,12 @@ require 'test_helper'
 
 class MXIDTest < Test::Unit::TestCase
   def test_creation
-    user = MatrixSdk::MXID.new '@user:example.com'
-    room_id = MatrixSdk::MXID.new '!opaque:example.com'
-    event = MatrixSdk::MXID.new '$opaque:example.com'
-    event3 = MatrixSdk::MXID.new '$0paqu3+strin6+w1th+special/chars'
-    group = MatrixSdk::MXID.new '+group:example.com'
-    room_alias = MatrixSdk::MXID.new '#alias:example.com'
+    user = ActiveMatrix::MXID.new '@user:example.com'
+    room_id = ActiveMatrix::MXID.new '!opaque:example.com'
+    event = ActiveMatrix::MXID.new '$opaque:example.com'
+    event3 = ActiveMatrix::MXID.new '$0paqu3+strin6+w1th+special/chars'
+    group = ActiveMatrix::MXID.new '+group:example.com'
+    room_alias = ActiveMatrix::MXID.new '#alias:example.com'
 
     assert user.valid?
     assert room_id.valid?
@@ -33,7 +33,7 @@ class MXIDTest < Test::Unit::TestCase
   def test_to_s
     input = %w[@user:example.com !opaque:example.com $opaque:example.com $0paqu3+strin6+w1th+special/chars +group:example.com #alias:example.com]
     input.each do |mxid|
-      parsed = MatrixSdk::MXID.new mxid
+      parsed = ActiveMatrix::MXID.new mxid
 
       assert_equal mxid, parsed.to_s
       assert mxid == parsed
@@ -45,14 +45,14 @@ class MXIDTest < Test::Unit::TestCase
     input = %w[@user:example.com !opaque:example.com $opaque:example.com +group:example.com #alias:example.com]
 
     input.each do |mxid|
-      parsed = MatrixSdk::MXID.new mxid
+      parsed = ActiveMatrix::MXID.new mxid
 
       assert_equal 'example.com', parsed.domain
     end
 
-    assert_nil MatrixSdk::MXID.new('$0paqu3+strin6+w1th+special/chars').domain
-    assert_nil MatrixSdk::MXID.new('@user:example.com').port
-    parsed = MatrixSdk::MXID.new '#room:matrix.example.com:8448'
+    assert_nil ActiveMatrix::MXID.new('$0paqu3+strin6+w1th+special/chars').domain
+    assert_nil ActiveMatrix::MXID.new('@user:example.com').port
+    parsed = ActiveMatrix::MXID.new '#room:matrix.example.com:8448'
 
     assert_equal '#', parsed.sigil
     assert_equal 'room', parsed.localpart
@@ -63,11 +63,11 @@ class MXIDTest < Test::Unit::TestCase
   end
 
   def test_parse_failures
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new nil }
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new true }
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new '#asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadsfasdfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf:example.com' }
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new '' }
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new 'user:example.com' }
-    assert_raises(ArgumentError) { MatrixSdk::MXID.new '@user' }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new nil }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new true }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new '#asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadsfasdfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf:example.com' }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new '' }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new 'user:example.com' }
+    assert_raises(ArgumentError) { ActiveMatrix::MXID.new '@user' }
   end
 end

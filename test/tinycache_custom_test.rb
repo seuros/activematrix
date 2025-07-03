@@ -8,7 +8,7 @@ class TinycacheCustomTest < Test::Unit::TestCase
   end
 
   class TestClass
-    extend MatrixSdk::Util::Tinycache
+    extend ActiveMatrix::Util::Tinycache
 
     attr_accessor :client
 
@@ -32,7 +32,7 @@ class TinycacheCustomTest < Test::Unit::TestCase
   end
 
   def test_custom_adapter
-    MatrixSdk::Util::Tinycache.adapter = CustomAdapter
+    ActiveMatrix::Util::Tinycache.adapter = CustomAdapter
     test = TestClass.new
 
     CustomAdapter.any_instance.expects(:fetch).returns('data')

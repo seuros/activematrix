@@ -5,16 +5,16 @@ require 'test_helper'
 class UserTest < Test::Unit::TestCase
   def setup
     # Silence debugging output
-    ::MatrixSdk.logger.level = :error
+    ::ActiveMatrix.logger.level = :error
 
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = MatrixSdk::Api.new 'https://example.com', protocols: :CS
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
 
-    @client = MatrixSdk::Client.new @api
+    @client = ActiveMatrix::Client.new @api
     @client.stubs(:mxid).returns('@alice:example.com')
 
     @id = '@alice:example.com'

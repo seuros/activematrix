@@ -5,16 +5,16 @@ require 'test_helper'
 class RoomTest < Test::Unit::TestCase
   def setup
     # Silence debugging output
-    ::MatrixSdk.logger.level = :error
+    ::ActiveMatrix.logger.level = :error
 
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = MatrixSdk::Api.new 'https://example.com', protocols: :CS
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
 
-    @client = MatrixSdk::Client.new @api
+    @client = ActiveMatrix::Client.new @api
     @client.stubs(:mxid).returns('@alice:example.com')
 
     @id = '!room:example.com'
@@ -25,7 +25,7 @@ class RoomTest < Test::Unit::TestCase
   end
 
   def test_pre_joined_members
-    users = [MatrixSdk::User.new(@client, '@alice:example.com', display_name: 'Alice')]
+    users = [ActiveMatrix::User.new(@client, '@alice:example.com', display_name: 'Alice')]
     users.each do |u|
       @room.send :ensure_member, u
     end
@@ -77,8 +77,8 @@ class RoomTest < Test::Unit::TestCase
   def test_all_members
     assert_equal :all, @room.client.cache
 
-    @client.expects(:get_user).twice.with('@alice:example.com').returns(MatrixSdk::User.new(@client, '@alice:example.com'))
-    @client.expects(:get_user).once.with('@charlie:example.com').returns(MatrixSdk::User.new(@client, '@charlie:example.com'))
+    @client.expects(:get_user).twice.with('@alice:example.com').returns(ActiveMatrix::User.new(@client, '@alice:example.com'))
+    @client.expects(:get_user).once.with('@charlie:example.com').returns(ActiveMatrix::User.new(@client, '@charlie:example.com'))
 
     if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.7.0')
       @api.expects(:get_room_members).once.with('!room:example.com').returns(chunk: [{ state_key: '@alice:example.com' }])
@@ -244,38 +244,38 @@ class RoomTest < Test::Unit::TestCase
 
     assert_equal 'New topic', @room.topic
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(MatrixSdk::Response.new(@api, alias: '#test:example.com'))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(ActiveMatrix::Response.new(@api, alias: '#test:example.com'))
     @api.expects(:get_room_aliases).with(@id).never
     assert @room.aliases.include? '#test:example.com'
 
     @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').never
     assert @room.aliases.include? '#test:example.com'
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(MatrixSdk::Response.new(@api, alias: '#test:example.com', alt_aliases: ['#test:example1.com']))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(ActiveMatrix::Response.new(@api, alias: '#test:example.com', alt_aliases: ['#test:example1.com']))
     @room.reload_aliases!
     assert @room.aliases.include? '#test:example.com'
     assert @room.aliases.include? '#test:example1.com'
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(MatrixSdk::Response.new(@api, alias: '#test:example.com', alt_aliases: ['#test:example1.com']))
-    @api.expects(:get_room_aliases).with(@id).returns(MatrixSdk::Response.new(@api, aliases: ['#test:example2.com']))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').returns(ActiveMatrix::Response.new(@api, alias: '#test:example.com', alt_aliases: ['#test:example1.com']))
+    @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test:example2.com']))
     @room.reload_aliases!
     aliases = @room.aliases(canonical_only: false)
     assert aliases.include? '#test:example.com'
     assert aliases.include? '#test:example1.com'
     assert aliases.include? '#test:example2.com'
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(MatrixSdk::MatrixNotFoundError)
-    @api.expects(:get_room_aliases).with(@id).returns(MatrixSdk::Response.new(@api, aliases: ['#test:example.com']))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError)
+    @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test:example.com']))
     @room.reload_aliases!
     assert @room.aliases(canonical_only: false).include? '#test:example.com'
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(MatrixSdk::MatrixNotFoundError)
-    @api.expects(:get_room_aliases).with(@id).returns(MatrixSdk::Response.new(@api, aliases: ['#test2:example.com']))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError)
+    @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test2:example.com']))
     @room.reload_aliases!
     assert @room.aliases(canonical_only: false).include?('#test2:example.com')
 
-    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(MatrixSdk::MatrixNotFoundError)
-    @api.expects(:get_room_aliases).with(@id).returns(MatrixSdk::Response.new(@api, aliases: ['#test2:example.com']))
+    @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError)
+    @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test2:example.com']))
     @room.reload_aliases!
     assert !@room.aliases(canonical_only: false).include?('#test:example.com')
   end

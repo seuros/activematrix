@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 require 'io/console'
-require 'matrix_sdk'
+require 'active_matrix'
 
 # A filter to only discover joined rooms
 ROOM_DISCOVERY_FILTER = {
@@ -42,7 +42,7 @@ ROOM_STATE_FILTER = {
   }
 }.freeze
 
-class SimpleClient < MatrixSdk::Client
+class SimpleClient < ActiveMatrix::Client
   def initialize(hs_url)
     super(hs_url, sync_filter_limit: 10)
 
@@ -97,7 +97,7 @@ if $PROGRAM_NAME == __FILE__
   begin
     if ARGV.first == '-d'
       Thread.abort_on_exception = true
-      MatrixSdk.debug!
+      ActiveMatrix.debug!
       ARGV.shift
     end
 
