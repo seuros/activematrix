@@ -8,15 +8,15 @@ require 'ostruct'
 
 class ApiTest < Test::Unit::TestCase
   def test_creation
-    api = MatrixSdk::Api.new 'https://matrix.example.com/_matrix/'
+    api = ActiveMatrix::Api.new 'https://matrix.example.com/_matrix/'
     assert_equal URI('https://matrix.example.com'), api.homeserver
 
-    api = MatrixSdk::Api.new 'matrix.com'
+    api = ActiveMatrix::Api.new 'matrix.com'
     assert_equal URI('https://matrix.com'), api.homeserver
   end
 
   def test_creation_with_as_protocol
-    api = MatrixSdk::Api.new 'https://matrix.example.com', protocols: :AS
+    api = ActiveMatrix::Api.new 'https://matrix.example.com', protocols: :AS
 
     assert api.protocol? :AS
     # Ensure CS protocol is also provided
@@ -24,41 +24,41 @@ class ApiTest < Test::Unit::TestCase
   end
 
   def test_creation_with_cs_protocol
-    api = MatrixSdk::Api.new 'https://matrix.example.com'
+    api = ActiveMatrix::Api.new 'https://matrix.example.com'
 
     assert api.respond_to? :join_room
     # assert !api.respond_to?(:identity_status) # No longer true since the definite include
   end
 
   def test_creation_with_is_protocol
-    api = MatrixSdk::Api.new 'https://matrix.example.com', protocols: :IS
+    api = ActiveMatrix::Api.new 'https://matrix.example.com', protocols: :IS
 
     # assert !api.respond_to?(:join_room) # No longer true since the definite include
     assert api.respond_to? :identity_status
   end
 
   def test_fail_creation
-    assert_raises(ArgumentError) { MatrixSdk::Api.new :test }
-    assert_raises(ArgumentError) { MatrixSdk::Api.new URI() }
+    assert_raises(ArgumentError) { ActiveMatrix::Api.new :test }
+    assert_raises(ArgumentError) { ActiveMatrix::Api.new URI() }
   end
 
   # This test is more complicated due to testing protocol extensions and auto-login all in the initializer
   def test_creation_with_login
     matrixsdk_add_api_stub
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .any_instance
       .expects(:request)
       .with(:post, :client_r0, '/login',
             body: {
               type: 'm.login.password',
-              initial_device_display_name: MatrixSdk::Api::USER_AGENT,
+              initial_device_display_name: ActiveMatrix::Api::USER_AGENT,
               user: 'user',
               password: 'pass'
             },
             query: {})
-      .returns(MatrixSdk::Response.new(nil, token: 'token', device_id: 'device id'))
+      .returns(ActiveMatrix::Response.new(nil, token: 'token', device_id: 'device id'))
 
-    api = MatrixSdk::Api.new 'https://user:pass@matrix.example.com/_matrix/'
+    api = ActiveMatrix::Api.new 'https://user:pass@matrix.example.com/_matrix/'
 
     assert_equal URI('https://matrix.example.com'), api.homeserver
   end
@@ -84,11 +84,11 @@ class ApiTest < Test::Unit::TestCase
       .yields(http_mock)
       .returns('{"m.homeserver":{"base_url":"https://matrix.example.com"}}')
 
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .expects(:new)
       .with(URI('https://matrix.example.com'), address: 'matrix.example.com', port: 443)
 
-    MatrixSdk::Api.new_for_domain 'example.com', target: :client
+    ActiveMatrix::Api.new_for_domain 'example.com', target: :client
   end
 
   def test_server_creation_for_domain
@@ -103,11 +103,11 @@ class ApiTest < Test::Unit::TestCase
       .expects(:get)
       .never
 
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .expects(:new)
       .with(URI('https://example.com'), address: 'matrix.example.com', port: 443)
 
-    MatrixSdk::Api.new_for_domain 'example.com', target: :server
+    ActiveMatrix::Api.new_for_domain 'example.com', target: :server
   end
 
   def test_server_creation_for_missing_domain
@@ -131,20 +131,20 @@ class ApiTest < Test::Unit::TestCase
       .with_block_given
       .yields(http_mock)
 
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .expects(:new)
       .with(URI('https://example.com'), address: 'example.com', port: 8448)
 
-    MatrixSdk::Api.new_for_domain 'example.com', target: :server
+    ActiveMatrix::Api.new_for_domain 'example.com', target: :server
   end
 
   def test_server_creation_for_domain_and_port
     matrixsdk_add_api_stub
-    MatrixSdk::Api
+    ActiveMatrix::Api
       .expects(:new)
       .with(URI('https://example.com'), address: 'example.com', port: 8448)
 
-    MatrixSdk::Api.new_for_domain 'example.com:8448', target: :server
+    ActiveMatrix::Api.new_for_domain 'example.com:8448', target: :server
   end
 
   def test_failed_creation_with_domain
@@ -175,12 +175,12 @@ class ApiTest < Test::Unit::TestCase
       .yields(http_mock)
       .twice
 
-    api = MatrixSdk::Api.new_for_domain('example.com', target: :server)
+    api = ActiveMatrix::Api.new_for_domain('example.com', target: :server)
     assert_equal 'https://example.com', api.homeserver.to_s
     assert_equal 'example.com', api.connection_address
     assert_equal 8448, api.connection_port
 
-    api = MatrixSdk::Api.new_for_domain('example.com', target: :client)
+    api = ActiveMatrix::Api.new_for_domain('example.com', target: :client)
     assert_equal 'https://example.com', api.homeserver.to_s
     assert_equal 'example.com', api.connection_address
     assert_equal 8448, api.connection_port
@@ -188,7 +188,7 @@ class ApiTest < Test::Unit::TestCase
 
   def test_http_request_logging
     matrixsdk_add_api_stub
-    api = MatrixSdk::Api.new 'https://example.com'
+    api = ActiveMatrix::Api.new 'https://example.com'
     api.logger.expects(:debug?).returns(true)
 
     api.logger.stubs(:debug).with do |arg|
@@ -206,7 +206,7 @@ class ApiTest < Test::Unit::TestCase
 
   def test_http_response_logging
     matrixsdk_add_api_stub
-    api = MatrixSdk::Api.new 'https://example.com'
+    api = ActiveMatrix::Api.new 'https://example.com'
     api.logger.expects(:debug?).returns(true)
 
     api.logger.stubs(:debug).with do |arg|
@@ -228,7 +228,7 @@ class ApiTest < Test::Unit::TestCase
     response = Net::HTTPSuccess.new(nil, 200, 'GET')
     response.stubs(:body).returns({ user_id: '@alice:example.com' }.to_json)
 
-    api = MatrixSdk::Api.new 'https://example.com', threadsafe: false
+    api = ActiveMatrix::Api.new 'https://example.com', threadsafe: false
     http = api.send(:http)
 
     http.expects(:request).returns(response)
@@ -246,7 +246,7 @@ class ApiTest < Test::Unit::TestCase
     matrixsdk_add_api_stub
     Net::HTTP.any_instance.stubs(:start)
     Net::HTTP.any_instance.expects(:finish).never
-    api = MatrixSdk::Api.new 'https://example.com'
+    api = ActiveMatrix::Api.new 'https://example.com'
 
     api.read_timeout = 5
     assert_equal 5, api.read_timeout
@@ -262,7 +262,7 @@ class ApiTest < Test::Unit::TestCase
     assert_equal 5, http.read_timeout
     assert_equal OpenSSL::SSL::VERIFY_PEER, http.verify_mode
 
-    api = MatrixSdk::Api.new 'https://example.com', threadsafe: false
+    api = ActiveMatrix::Api.new 'https://example.com', threadsafe: false
 
     api.send(:http).expects(:finish).times(4)
 
@@ -287,7 +287,7 @@ class ApiTest < Test::Unit::TestCase
 
   def test_request_paths
     matrixsdk_add_api_stub
-    api = MatrixSdk::Api.new 'https://example.com'
+    api = ActiveMatrix::Api.new 'https://example.com'
 
     Net::HTTP.any_instance.stubs(:start)
     Net::HTTP.any_instance.expects(:request).with { |req| req.path == '/_matrix/client/r0/account/whoami' }.raises(DummyError)

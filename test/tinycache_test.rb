@@ -4,7 +4,7 @@ require 'test_helper'
 
 class TinycacheTest < Test::Unit::TestCase
   class TestClass
-    extend MatrixSdk::Util::Tinycache
+    extend ActiveMatrix::Util::Tinycache
 
     attr_accessor :client
 
@@ -32,7 +32,7 @@ class TinycacheTest < Test::Unit::TestCase
     @client.stubs(:cache).returns(nil)
     @cached = TestClass.new
     @cached.stubs(:client).returns(@client)
-    MatrixSdk::Util::Tinycache.adapter = MatrixSdk::Util::TinycacheAdapter
+    ActiveMatrix::Util::Tinycache.adapter = ActiveMatrix::Util::TinycacheAdapter
 
     assert @cached.tinycache_adapter
     assert @cached.permanent_cached?

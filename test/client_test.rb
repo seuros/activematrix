@@ -8,23 +8,23 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_creation
-    client = MatrixSdk::Client.new 'https://example.com'
+    client = ActiveMatrix::Client.new 'https://example.com'
 
     assert !client.api.nil?
     assert_equal client.api.homeserver, URI('https://example.com')
   end
 
   def test_api_creation
-    api = MatrixSdk::Api.new 'https://example.com'
-    client = MatrixSdk::Client.new api
+    api = ActiveMatrix::Api.new 'https://example.com'
+    client = ActiveMatrix::Client.new api
 
     assert_equal client.api, api
   end
 
   def test_cache
-    cl_all = MatrixSdk::Client.new 'https://example.com', client_cache: :all
-    cl_some = MatrixSdk::Client.new 'https://example.com', client_cache: :some
-    cl_none = MatrixSdk::Client.new 'https://example.com', client_cache: :none
+    cl_all = ActiveMatrix::Client.new 'https://example.com', client_cache: :all
+    cl_some = ActiveMatrix::Client.new 'https://example.com', client_cache: :some
+    cl_none = ActiveMatrix::Client.new 'https://example.com', client_cache: :none
 
     room_id = '!test:example.com'
     event = {
@@ -50,7 +50,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_account_data
-    cl = MatrixSdk::Client.new 'https://example.com', user_id: '@alice:example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com', user_id: '@alice:example.com'
 
     cl.api
       .expects(:get_account_data)
@@ -61,7 +61,7 @@ class ClientTest < Test::Unit::TestCase
     cl.api
       .expects(:get_account_data)
       .with('@alice:example.com', 'example_key_2')
-      .raises(MatrixSdk::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404))
+      .raises(ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404))
       .once
 
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
@@ -87,7 +87,7 @@ class ClientTest < Test::Unit::TestCase
     cl.api
       .expects(:get_account_data)
       .with('@alice:example.com', 'example_key_2')
-      .raises(MatrixSdk::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404))
+      .raises(ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404))
       .once
 
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
@@ -114,23 +114,23 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_sync_retry
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     cl.api.expects(:sync)
-      .times(2).raises(MatrixSdk::MatrixTimeoutError)
+      .times(2).raises(ActiveMatrix::MatrixTimeoutError)
       .then.returns(presence: { events: [] }, rooms: { invite: [], leave: [], join: [] }, next_batch: '0')
 
     cl.sync(allow_sync_retry: 5)
   end
 
   def test_sync_limited_retry
-    cl = MatrixSdk::Client.new 'https://example.com'
-    cl.api.expects(:sync).times(5).raises(MatrixSdk::MatrixTimeoutError)
+    cl = ActiveMatrix::Client.new 'https://example.com'
+    cl.api.expects(:sync).times(5).raises(ActiveMatrix::MatrixTimeoutError)
 
-    assert_raises(MatrixSdk::MatrixTimeoutError) { cl.sync(allow_sync_retry: 5) }
+    assert_raises(ActiveMatrix::MatrixTimeoutError) { cl.sync(allow_sync_retry: 5) }
   end
 
   def test_events
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     room = cl.ensure_room '!726s6s6q:example.com'
 
     event_collector = mock
@@ -161,7 +161,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_sync_results
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     response = JSON.parse(open('test/fixtures/sync_response.json').read, symbolize_names: true)
 
     cl.instance_variable_get(:@on_ephemeral_event)
@@ -195,15 +195,15 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_state_handling
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     assert_equal cl.cache, :all
 
     room = '!roomid:example.com'
     cl.send :ensure_room, room
 
     cl.api.expects(:get_room_joined_members).returns(joined: [])
-    cl.api.expects(:get_room_state).with(room, 'm.room.canonical_alias').raises MatrixSdk::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
-    cl.api.expects(:get_room_state).with(room, 'm.room.name').raises MatrixSdk::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
+    cl.api.expects(:get_room_state).with(room, 'm.room.canonical_alias').raises ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
+    cl.api.expects(:get_room_state).with(room, 'm.room.name').raises ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
 
     assert_equal 'Empty Room', cl.rooms.first.display_name
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'join', displayname: 'Alice' }, state_key: '@alice:example.com')
@@ -241,7 +241,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_login
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     cl.api.expects(:login).with(user: 'alice', password: 'password').returns(user_id: '@alice:example.com', access_token: 'opaque', device_id: 'device', home_server: 'example.com')
     cl.expects(:sync)
 
@@ -258,7 +258,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_token_login
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     cl.api.expects(:login).with(user: 'alice', token: 'token', type: 'm.login.token').returns(user_id: '@alice:example.com', access_token: 'opaque', device_id: 'device',
                                                                                               home_server: 'example.com')
     cl.expects(:sync)
@@ -270,7 +270,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_register
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     cl.api.expects(:register).with(username: 'alice', password: 'password', auth: { type: 'm.login.dummy' }).returns(user_id: '@alice:example.com', access_token: 'opaque',
                                                                                                                      device_id: 'device', home_server: 'example.com')
     cl.expects(:sync)
@@ -282,7 +282,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_get_user
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
 
     user1 = cl.get_user '@alice:example.com'
     refute_nil user1
@@ -300,9 +300,9 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_threading
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
     cl.expects(:sync)
-      .twice.raises(MatrixSdk::MatrixRequestError.new({ errcode: 503, error: '' }, 503))
+      .twice.raises(ActiveMatrix::MatrixRequestError.new({ errcode: 503, error: '' }, 503))
       .then.returns({})
 
     cl.start_listener_thread sync_interval: 0.05, bad_sync_timeout: 0
@@ -311,7 +311,7 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_presence
-    cl = MatrixSdk::Client.new 'https://example.com', user_id: '@alice:example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com', user_id: '@alice:example.com'
     cl.api.expects(:get_presence_status).with('@alice:example.com').returns(
       presence: 'online',
       last_active_ago: 5,
@@ -329,9 +329,9 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_public_rooms
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
 
-    cl.api.expects(:get_public_rooms).with(since: nil).returns MatrixSdk::Response.new(
+    cl.api.expects(:get_public_rooms).with(since: nil).returns ActiveMatrix::Response.new(
       cl.api,
       chunk: [
         { room_id: '!room:example.com', name: 'Example room', topic: 'Example topic' }
@@ -339,7 +339,7 @@ class ClientTest < Test::Unit::TestCase
       next_batch: 'batch'
     )
 
-    cl.api.expects(:get_public_rooms).with(since: 'batch').returns MatrixSdk::Response.new(
+    cl.api.expects(:get_public_rooms).with(since: 'batch').returns ActiveMatrix::Response.new(
       cl.api,
       chunk: []
     )
@@ -352,9 +352,9 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_create_room
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
 
-    cl.api.expects(:create_room).with(room_alias: nil).returns(MatrixSdk::Response.new(cl.api, room_id: '!room:example.com'))
+    cl.api.expects(:create_room).with(room_alias: nil).returns(ActiveMatrix::Response.new(cl.api, room_id: '!room:example.com'))
 
     room = cl.create_room
 
@@ -364,16 +364,16 @@ class ClientTest < Test::Unit::TestCase
   end
 
   def test_join_room
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
 
-    cl.api.expects(:join_room).with('!room:example.com', server_name: []).returns(MatrixSdk::Response.new(cl.api, room_id: '!room:example.com'))
+    cl.api.expects(:join_room).with('!room:example.com', server_name: []).returns(ActiveMatrix::Response.new(cl.api, room_id: '!room:example.com'))
     room = cl.join_room('!room:example.com')
 
     assert_not_nil room
     assert_equal room, cl.rooms.first
     assert_equal room, cl.find_room('!room:example.com')
 
-    cl.api.expects(:join_room).with('!room:example.com', server_name: ['matrix.org']).returns(MatrixSdk::Response.new(cl.api, room_id: '!room:example.com'))
+    cl.api.expects(:join_room).with('!room:example.com', server_name: ['matrix.org']).returns(ActiveMatrix::Response.new(cl.api, room_id: '!room:example.com'))
     room = cl.join_room('!room:example.com', server_name: 'matrix.org')
 
     assert_not_nil room
@@ -384,7 +384,7 @@ class ClientTest < Test::Unit::TestCase
   class TestError < StandardError; end
 
   def test_background_errors
-    cl = MatrixSdk::Client.new 'https://example.com'
+    cl = ActiveMatrix::Client.new 'https://example.com'
 
     thrown = false
     # Any error that's not handled at the moment

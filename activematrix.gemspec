@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/matrix_sdk/version'
+require_relative 'lib/active_matrix/version'
 
 Gem::Specification.new do |spec|
   spec.name             = 'activematrix'
-  spec.version          = MatrixSdk::VERSION
+  spec.version          = ActiveMatrix::VERSION
   spec.authors          = ['Abdelkader Boudih', 'Alexander Olofsson']
   spec.email            = ['terminale@gmail.com', 'ace@haxalot.com']
 

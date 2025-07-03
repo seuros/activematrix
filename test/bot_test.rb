@@ -4,7 +4,7 @@ require 'test_helper'
 require 'net/http'
 
 class BotTest < Test::Unit::TestCase
-  class ExampleBot < MatrixSdk::Bot::Base
+  class ExampleBot < ActiveMatrix::Bot::Base
     set :testing, true
 
     command :test do |_arg, _arg2 = nil|
@@ -40,11 +40,11 @@ class BotTest < Test::Unit::TestCase
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = MatrixSdk::Api.new 'https://example.com', protocols: :CS
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
 
-    @client = MatrixSdk::Client.new @api
+    @client = ActiveMatrix::Client.new @api
     @client.stubs(:mxid).returns('@alice:example.com')
 
     @id = '!room:example.com'

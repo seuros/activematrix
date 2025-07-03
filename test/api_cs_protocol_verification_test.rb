@@ -7,7 +7,7 @@ class ApiCSVerificationTest < Test::Unit::TestCase
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = MatrixSdk::Api.new 'https://example.com', protocols: :CS, autoretry: false, threadsafe: false
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS, autoretry: false, threadsafe: false
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
 
@@ -87,7 +87,7 @@ class ApiCSVerificationTest < Test::Unit::TestCase
         if code.to_s[0] == '2'
           assert(!call_api(data['method'], args).nil?)
         else
-          assert_raises(MatrixSdk::MatrixRequestError.class_by_code(code)) { call_api(data['method'], args) }
+          assert_raises(ActiveMatrix::MatrixRequestError.class_by_code(code)) { call_api(data['method'], args) }
         end
 
         @http.unstub(:request)

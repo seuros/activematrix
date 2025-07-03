@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'matrix_sdk'
+require 'active_matrix'
 
 # A filter to simplify syncs
 BOT_FILTER = {
@@ -88,7 +88,7 @@ class MatrixBot
       msg: msgstr
     }
 
-    from_id = MatrixSdk::MXID.new(sender.id)
+    from_id = ActiveMatrix::MXID.new(sender.id)
 
     eventdata = {
       body: format(plaintext, formatdata),
@@ -128,7 +128,7 @@ class MatrixBot
   private
 
   def client
-    @client ||= MatrixSdk::Client.new @hs_url, access_token: @token, client_cache: :none
+    @client ||= ActiveMatrix::Client.new @hs_url, access_token: @token, client_cache: :none
   end
 
   def deep_copy(hash)
@@ -194,7 +194,7 @@ if $PROGRAM_NAME == __FILE__
 
   if ARGV.first == '-d'
     Thread.abort_on_exception = true
-    MatrixSdk.debug!
+    ActiveMatrix.debug!
     ARGV.shift
   end
 
