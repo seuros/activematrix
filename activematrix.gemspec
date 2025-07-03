@@ -27,5 +27,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activerecord', '~> 8.0'
   spec.add_dependency 'railties', '~> 8.0'
+  spec.add_dependency 'zeitwerk', '~> 2.6'
   spec.metadata['rubygems_mfa_required'] = 'true'
 end

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'active_matrix'
-
 require 'erb'
 require 'net/http'
 require 'openssl'

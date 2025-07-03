@@ -28,7 +28,6 @@ module ActiveMatrix::Bot
   end
   ActiveMatrix.debug! if ENV['MATRIX_DEBUG'] == '1'
 
-  require 'active_matrix/bot/base'
   class Instance < Base
     set :logging, true
     set :log_level, :info

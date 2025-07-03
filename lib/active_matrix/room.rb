@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require 'active_matrix'
-require 'active_matrix/util/events'
-require 'active_matrix/util/tinycache'
-
 module ActiveMatrix
   # A class for tracking the information about a room on Matrix
   class Room
