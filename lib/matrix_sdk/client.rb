@@ -681,7 +681,7 @@ module MatrixSdk
 
       unless cache == :none
         account_data.tinycache_adapter.cleanup if instance_variable_defined?(:@account_data) && @account_data
-        @rooms.each do |_id, room|
+        @rooms.each_value do |room|
           # Clean up old cache data after every sync
           # TODO Run this in a thread?
           room.tinycache_adapter.cleanup

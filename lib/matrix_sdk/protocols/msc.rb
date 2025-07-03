@@ -41,9 +41,7 @@ module MatrixSdk::Protocols::MSC
       unless on_data.is_a?(Proc) && on_data.arity == 2
     raise 'Needs to be logged in' unless access_token # TODO: Better error
 
-    query = params.select do |k, _v|
-      %i[filter full_state set_presence].include? k
-    end
+    query = params.slice(:filter, :full_state, :set_presence)
     query[:user_id] = params.delete(:user_id) if protocol?(:AS) && params.key?(:user_id)
 
     req = Net::HTTP::Get.new(homeserver.dup.tap do |u|

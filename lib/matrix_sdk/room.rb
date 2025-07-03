@@ -34,8 +34,8 @@ module MatrixSdk
     cached :joined_members, cache_level: :all, expires_in: 60 * 60
 
     # Only cache unfiltered requests for aliases and members
-    cached :aliases, unless: proc { |args| args.any? }, cache_level: :all, expires_in: 60 * 60
-    cached :all_members, unless: proc { |args| args.any? }, cache_level: :all, expires_in: 60 * 60
+    cached :aliases, unless: proc { |_, args| args.any? }, cache_level: :all, expires_in: 60 * 60
+    cached :all_members, unless: proc { |_, args| args.any? }, cache_level: :all, expires_in: 60 * 60
 
     alias room_id id
     alias members joined_members

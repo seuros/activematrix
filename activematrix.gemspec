@@ -17,14 +17,15 @@ Gem::Specification.new do |spec|
   spec.files            = Dir['lib/**/*'] + spec.extra_rdoc_files
 
   spec.add_development_dependency 'mocha'
+  spec.add_development_dependency 'ostruct'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'simplecov'
-  spec.add_development_dependency 'test-unit'
   spec.add_development_dependency 'syslog'
-  spec.add_development_dependency 'ostruct'
+  spec.add_development_dependency 'test-unit'
 
   spec.required_ruby_version = '>= 3.4'
 
   spec.add_dependency 'activerecord', '~> 8.0'
   spec.add_dependency 'railties', '~> 8.0'
+  spec.metadata['rubygems_mfa_required'] = 'true'
 end

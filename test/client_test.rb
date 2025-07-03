@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 class ClientTest < Test::Unit::TestCase
@@ -257,7 +259,8 @@ class ClientTest < Test::Unit::TestCase
 
   def test_token_login
     cl = MatrixSdk::Client.new 'https://example.com'
-    cl.api.expects(:login).with(user: 'alice', token: 'token', type: 'm.login.token').returns(user_id: '@alice:example.com', access_token: 'opaque', device_id: 'device', home_server: 'example.com')
+    cl.api.expects(:login).with(user: 'alice', token: 'token', type: 'm.login.token').returns(user_id: '@alice:example.com', access_token: 'opaque', device_id: 'device',
+                                                                                              home_server: 'example.com')
     cl.expects(:sync)
 
     cl.login_with_token('alice', 'token')
@@ -268,7 +271,8 @@ class ClientTest < Test::Unit::TestCase
 
   def test_register
     cl = MatrixSdk::Client.new 'https://example.com'
-    cl.api.expects(:register).with(username: 'alice', password: 'password', auth: { type: 'm.login.dummy' }).returns(user_id: '@alice:example.com', access_token: 'opaque', device_id: 'device', home_server: 'example.com')
+    cl.api.expects(:register).with(username: 'alice', password: 'password', auth: { type: 'm.login.dummy' }).returns(user_id: '@alice:example.com', access_token: 'opaque',
+                                                                                                                     device_id: 'device', home_server: 'example.com')
     cl.expects(:sync)
 
     cl.register_with_password('alice', 'password')

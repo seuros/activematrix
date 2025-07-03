@@ -93,7 +93,7 @@ module MatrixSdk
     end
 
     def to_s
-      "#{event[:type]}: #{event.reject { |k, _v| k == :type }.to_json}"
+      "#{event[:type]}: #{event.except(:type).to_json}"
     end
 
     def method_missing(method, *args)

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'test_helper'
 
 class RoomTest < Test::Unit::TestCase
@@ -165,7 +167,8 @@ class RoomTest < Test::Unit::TestCase
     @room.set_account_data('com.example.Test', data: true)
 
     @api.expects(:get_membership).with(@id, '@alice:example.com').returns(membership: 'join')
-    @api.expects(:set_membership).with(@id, '@alice:example.com', 'join', 'Updating room profile information', membership: 'join', displayname: 'Alice', avatar_url: 'mxc://example.com/avatar')
+    @api.expects(:set_membership).with(@id, '@alice:example.com', 'join', 'Updating room profile information', membership: 'join', displayname: 'Alice',
+                                                                                                               avatar_url: 'mxc://example.com/avatar')
     @room.set_user_profile display_name: 'Alice', avatar_url: 'mxc://example.com/avatar'
 
     @api.expects(:get_user_tags).with('@alice:example.com', @id).returns(tags: { 'example.tag': {} })
