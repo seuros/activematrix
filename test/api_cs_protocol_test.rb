@@ -103,8 +103,8 @@ class ApiTest < Test::Unit::TestCase
     expect_message(@api, :send_message_event, room, type, content)
     @api.send_content(room, url, msgbody, msgtype)
 
-    msgtype.replace 'm.location'
-    url.replace 'geo:12341234'
+    msgtype.replace 'm.location'.dup
+    url.replace 'geo:12341234'.dup
 
     content.delete :url
     content[:geo_uri] = url

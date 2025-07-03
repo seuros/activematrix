@@ -5,6 +5,7 @@ require 'shellwords'
 module MatrixSdk::Bot
   class Base
     extend MatrixSdk::Extensions
+    include MatrixSdk::Logging
 
     RequestHandler = Struct.new('RequestHandler', :command, :type, :proc, :data) do
       def command?
@@ -59,30 +60,23 @@ module MatrixSdk::Bot
     end
 
     def self.logger
-      Logging.logger[self].tap do |l|
-        begin
-          l.level = :debug if MatrixSdk::Bot::PARAMS_CONFIG[:logging]
-        rescue NameError
-          # Not running as instance
-        end
-        l.level = settings.log_level unless settings.logging?
-      end
+      @logger ||= MatrixSdk.logger
     end
 
     # Register a command during runtime
     #
     # @param command [String] The command to register
     # @see Base.command for full parameter information
-    def register_command(command, **params, &block)
-      self.class.command(command, **params, &block)
+    def register_command(command, **params, &)
+      self.class.command(command, **params, &)
     end
 
     # Register an event during runtime
     #
     # @param event [String] The event to register
     # @see Base.event for full parameter information
-    def register_event(event, **params, &block)
-      self.class.event(event, **params, &block)
+    def register_event(event, **params, &)
+      self.class.event(event, **params, &)
     end
 
     # Removes a registered command during runtime
@@ -260,8 +254,8 @@ module MatrixSdk::Bot
       # @param only [Symbol,Proc,Array[Symbol,Proc]] What limitations does this command have?
       #   Can use :DM, :Admin, :Mod
       # @option params
-      def command(command, desc: nil, notes: nil, only: nil, **params, &block)
-        args = params[:args] || convert_to_lambda(&block).parameters.map do |type, name|
+      def command(command, desc: nil, notes: nil, only: nil, **params, &)
+        args = params[:args] || convert_to_lambda(&).parameters.map do |type, name|
           case type
           when :req
             name.to_s.upcase
@@ -281,7 +275,7 @@ module MatrixSdk::Bot
           desc: desc,
           notes: notes,
           only: [only].flatten.compact,
-          &block
+          &
         )
       end
 
@@ -292,14 +286,14 @@ module MatrixSdk::Bot
       # @param event [String] The ID for the event to register
       # @param only [Symbol,Proc,Array[Symbol,Proc]] The limitations to when the event should be handled
       # @option params
-      def event(event, only: nil, **_params, &block)
+      def event(event, only: nil, **_params, &)
         logger.debug "Registering event #{event}"
 
         add_handler(
           event.to_s,
           type: :event,
           only: [only].flatten.compact,
-          &block
+          &
         )
       end
 
@@ -404,7 +398,7 @@ module MatrixSdk::Bot
       # Starts the bot up
       #
       # @param options [Hash] Settings to apply using Base.set
-      def run!(options = {}, &block)
+      def run!(options = {}, &)
         return if running?
 
         set options
@@ -423,7 +417,7 @@ module MatrixSdk::Bot
                               end
 
         begin
-          start_bot(bot_settings, &block)
+          start_bot(bot_settings, &)
         ensure
           quit!
         end
@@ -840,7 +834,7 @@ module MatrixSdk::Bot
           room.send_notice("Help for #{command};\n#{commands}")
         end
       else
-        room.send_notice("#{settings.help_preamble? ? "#{settings.help_preamble}\n\n" : ''}Usage:\n\n#{commands}")
+        room.send_notice("#{"#{settings.help_preamble}\n\n" if settings.help_preamble?}Usage:\n\n#{commands}")
       end
     end
   end

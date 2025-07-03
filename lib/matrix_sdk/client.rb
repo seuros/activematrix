@@ -48,7 +48,7 @@ module MatrixSdk
       return new(api, **params) unless api.well_known&.key?('m.identity_server')
 
       identity_server = MatrixSdk::Api.new(api.well_known['m.identity_server']['base_url'], protocols: %i[IS])
-      new(api, **params.merge(identity_server: identity_server))
+      new(api, **params, identity_server: identity_server)
     end
 
     # @param hs_url [String,URI,Api] The URL to the Matrix homeserver, without the /_matrix/ part, or an existing Api instance
@@ -365,7 +365,7 @@ module MatrixSdk
           end
 
           def inspect
-            "#<MatrixSdk::Response 3pid=#{to_s.inspect} added_at=\"#{added_at}\"#{validated? ? " validated_at=\"#{validated_at}\"" : ''}>"
+            "#<MatrixSdk::Response 3pid=#{to_s.inspect} added_at=\"#{added_at}\"#{" validated_at=\"#{validated_at}\"" if validated?}>"
           end
         end
       end
@@ -382,7 +382,7 @@ module MatrixSdk
     # @return [Room] The resulting room
     # @see Protocols::CS#create_room
     def create_room(room_alias = nil, **params)
-      data = api.create_room(**params.merge(room_alias: room_alias))
+      data = api.create_room(**params, room_alias: room_alias)
       ensure_room(data.room_id)
     end
 
@@ -577,7 +577,7 @@ module MatrixSdk
       orig_bad_sync_timeout = bad_sync_timeout + 0
       while @should_listen
         begin
-          sync(**params.merge(timeout: timeout))
+          sync(**params, timeout: timeout)
           return unless @should_listen
 
           bad_sync_timeout = orig_bad_sync_timeout
@@ -588,7 +588,7 @@ module MatrixSdk
           logger.warn("A #{e.class} occurred during sync")
           if e.httpstatus >= 500
             logger.warn("Serverside error, retrying in #{bad_sync_timeout} seconds...")
-            sleep(bad_sync_timeout) if bad_sync_timeout.positive? # rubocop:disable Metrics/BlockNesting
+            sleep(bad_sync_timeout) if bad_sync_timeout.positive?
             bad_sync_timeout = [bad_sync_timeout * 2, @bad_sync_timeout_limit].min
           end
         end

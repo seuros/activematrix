@@ -44,7 +44,7 @@ ROOM_STATE_FILTER = {
 
 class SimpleClient < MatrixSdk::Client
   def initialize(hs_url)
-    super hs_url, sync_filter_limit: 10
+    super(hs_url, sync_filter_limit: 10)
 
     @pls = {}
     @tracked_rooms = []

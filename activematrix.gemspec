@@ -20,10 +20,11 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'test-unit'
+  spec.add_development_dependency 'syslog'
+  spec.add_development_dependency 'ostruct'
 
   spec.required_ruby_version = '>= 3.4'
 
   spec.add_dependency 'activerecord', '~> 8.0'
   spec.add_dependency 'railties', '~> 8.0'
-  spec.add_dependency 'logging', '~> 2'
 end

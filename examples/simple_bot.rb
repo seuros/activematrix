@@ -151,7 +151,7 @@ class MatrixBot
       duration_ms -= days * MS_PER_DAY
       puts duration_ms
       if days.positive?
-        timestr += "#{days} days#{days > 1 ? 's' : ''} "
+        timestr += "#{days} days#{'s' if days > 1} "
       end
     end
 
@@ -162,7 +162,7 @@ class MatrixBot
       puts duration_ms
       if hours.positive?
         timestr += 'and ' unless timestr.empty?
-        timestr += "#{hours} hour#{hours > 1 ? 's' : ''} "
+        timestr += "#{hours} hour#{'s' if hours > 1} "
       end
     end
 
@@ -173,7 +173,7 @@ class MatrixBot
       puts duration_ms
       if minutes.positive?
         timestr += 'and ' unless timestr.empty?
-        timestr += "#{minutes} minute#{minutes > 1 ? 's' : ''} "
+        timestr += "#{minutes} minute#{'s' if minutes > 1} "
       end
     end
 
@@ -182,7 +182,7 @@ class MatrixBot
     seconds = seconds.round if seconds.round == seconds
     if seconds.positive?
       timestr += 'and ' unless timestr.empty?
-      timestr += "#{seconds} second#{seconds > 1 ? 's' : ''} "
+      timestr += "#{seconds} second#{'s' if seconds > 1} "
     end
 
     timestr.rstrip

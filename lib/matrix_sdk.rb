@@ -6,7 +6,7 @@ require 'matrix_sdk/version'
 
 require 'json'
 
-autoload :Logging, 'logging'
+require_relative 'matrix_sdk/logging'
 
 module MatrixSdk
   autoload :Api, 'matrix_sdk/api'
@@ -53,23 +53,6 @@ module MatrixSdk
     autoload :MSC, 'matrix_sdk/protocols/msc'
   end
 
-  def self.debug!
-    logger.level = :debug
-  end
-
-  def self.logger
-    @logger ||= ::Logging.logger[self].tap do |logger|
-      logger.add_appenders ::Logging.appenders.stdout
-      logger.level = :info
-    end
-  end
-
-  def self.logger=(global_logger)
-    @logger = global_logger
-    @global_logger = !global_logger.nil?
-  end
-
-  def self.global_logger?
-    @global_logger ||= false
-  end
+  # Load Railtie for Rails integration
+  require 'matrix_sdk/railtie' if defined?(Rails::Railtie)
 end

@@ -70,16 +70,4 @@ module MatrixSdk
     end
   end
 
-  module Logging
-    def logger
-      return MatrixSdk.logger if MatrixSdk.global_logger?
-      return @logger if instance_variable_defined?(:@logger) && @logger
-
-      ::Logging.logger[self]
-    end
-
-    def logger=(logger)
-      @logger = logger
-    end
-  end
 end
