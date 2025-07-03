@@ -1,10 +1,10 @@
-# Ruby Matrix SDK
+# ActiveMatrix
 
-A Ruby gem for easing the development of software that communicates with servers implementing the Matrix protocol.
+A Rails gem for integrating Matrix protocol communication into Ruby on Rails applications. This gem is a fork of the [matrix-sdk](https://github.com/ananace/ruby-matrix-sdk) gem, enhanced with Rails-specific features and tight integration with ActiveRecord and the Rails framework.
 
-There is a Matrix room for the discussion about usage and development at [#ruby-matrix-sdk:kittenface.studio](https://matrix.to/#/#ruby-matrix-sdk:kittenface.studio).
+## About
 
-Live YARD documentation can be found at; https://ruby-sdk.ananace.dev
+ActiveMatrix provides a seamless way to add Matrix protocol support to your Rails applications, allowing you to build chat features, real-time messaging, and collaborative tools using the decentralized Matrix network.
 
 ## Example usage
 
