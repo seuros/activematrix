@@ -11,7 +11,12 @@ module MatrixSdk::Util
     }.freeze
 
     def self.adapter
-      @adapter ||= TinycacheAdapter
+      @adapter ||= if defined?(::Rails) && ::Rails.respond_to?(:cache)
+                     require 'matrix_sdk/util/rails_cache_adapter'
+                     RailsCacheAdapter
+                   else
+                     TinycacheAdapter
+                   end
     end
 
     def self.adapter=(adapter)
@@ -26,8 +31,8 @@ module MatrixSdk::Util
       base.include InstanceMethods
     end
 
-    def cached(*methods, **opts)
-      methods.each { |method| build_cache_methods(method, **opts) }
+    def cached(*methods, **)
+      methods.each { |method| build_cache_methods(method, **) }
     end
 
     module InstanceMethods
@@ -52,7 +57,7 @@ module MatrixSdk::Util
     end
 
     def cache_helper_module_name
-      class_name = name&.gsub(/:/, '') || to_s.gsub(/[^a-zA-Z_0-9]/, '')
+      class_name = name&.gsub(':', '') || to_s.gsub(/[^a-zA-Z_0-9]/, '')
       "#{class_name}Tinycache"
     end
 

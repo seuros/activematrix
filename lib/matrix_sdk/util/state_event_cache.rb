@@ -46,11 +46,11 @@ module MatrixSdk::Util
     end
 
     def key?(type, key = nil)
-      keys.key?("#{type}#{key ? "|#{key}" : ''}")
+      keys.key?("#{type}#{"|#{key}" if key}")
     end
 
     def expire(type, key = nil)
-      tinycache_adapter.expire("#{type}#{key ? "|#{key}" : ''}")
+      tinycache_adapter.expire("#{type}#{"|#{key}" if key}")
     end
 
     def each(live: false)
@@ -71,12 +71,12 @@ module MatrixSdk::Util
     def delete(type, key = nil)
       type = type.to_s unless type.is_a? String
       client.api.set_room_state(room.id, type, {}, **{ state_key: key }.compact)
-      tinycache_adapter.delete("#{type}#{key ? "|#{key}" : ''}")
+      tinycache_adapter.delete("#{type}#{"|#{key}" if key}")
     end
 
     def [](type, key = nil)
       type = type.to_s unless type.is_a? String
-      tinycache_adapter.fetch("#{type}#{key ? "|#{key}" : ''}", expires_in: @cache_time) do
+      tinycache_adapter.fetch("#{type}#{"|#{key}" if key}", expires_in: @cache_time) do
         client.api.get_room_state(room.id, type, **{ key: key }.compact)
       rescue MatrixSdk::MatrixNotFoundError
         {}
@@ -86,7 +86,7 @@ module MatrixSdk::Util
     def []=(type, key = nil, value) # rubocop:disable Style/OptionalArguments Not possible to put optional last
       type = type.to_s unless type.is_a? String
       client.api.set_room_state(room.id, type, value, **{ state_key: key }.compact)
-      tinycache_adapter.write("#{type}#{key ? "|#{key}" : ''}", value)
+      tinycache_adapter.write("#{type}#{"|#{key}" if key}", value)
     end
   end
 end

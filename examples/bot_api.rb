@@ -95,22 +95,22 @@ module Utils
     timestr = []
     if duration_ms > MS_PER_DAY * 1.1
       duration_ms -= (days = (duration_ms / MS_PER_DAY).floor) * MS_PER_DAY
-      timestr << "#{days} days#{days > 1 ? 's' : ''}" if days.positive?
+      timestr << "#{days} days#{'s' if days > 1}" if days.positive?
     end
 
     if duration_ms > MS_PER_HOUR * 1.1
       duration_ms -= (hours = (duration_ms / MS_PER_HOUR).floor) * MS_PER_HOUR
-      timestr << "#{hours} hour#{hours > 1 ? 's' : ''}" if hours.positive?
+      timestr << "#{hours} hour#{'s' if hours > 1}" if hours.positive?
     end
 
     if duration_ms > MS_PER_MINUTE * 1.1
       duration_ms -= (minutes = (duration_ms / MS_PER_MINUTE).floor) * MS_PER_MINUTE
-      timestr << "#{minutes} minute#{minutes > 1 ? 's' : ''}" if minutes.positive?
+      timestr << "#{minutes} minute#{'s' if minutes > 1}" if minutes.positive?
     end
 
     seconds = (duration_ms / MS_PER_SECOND).round(timestr.empty? ? 1 : 0)
     seconds = seconds.round if seconds.round == seconds
-    timestr << "#{seconds} second#{seconds > 1 ? 's' : ''}" if seconds.positive?
+    timestr << "#{seconds} second#{'s' if seconds > 1}" if seconds.positive?
 
     if timestr.count > 2
       last = timestr.pop

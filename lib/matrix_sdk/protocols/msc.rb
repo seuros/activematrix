@@ -9,7 +9,7 @@ module MatrixSdk::Protocols::MSC
   # Check if there's support for MSC2108 - Sync over Server Sent Events
   def msc2108?
     @msc ||= {}
-    @msc[2108] ||= \
+    @msc[2108] ||=
       begin
         request(:get, :client_r0, '/sync/sse', skip_auth: true, headers: { accept: 'text/event-stream' })
       rescue MatrixSdk::MatrixNotAuthorizedError # Returns 401 if implemented

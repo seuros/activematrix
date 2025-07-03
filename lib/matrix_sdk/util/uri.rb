@@ -25,8 +25,8 @@ module URI
     class MATRIX < Generic
       attr_reader :authority, :action, :mxid, :mxid2, :via
 
-      def initialize(*args)
-        super(*args)
+      def initialize(*)
+        super
 
         @action = nil
         @authority = nil

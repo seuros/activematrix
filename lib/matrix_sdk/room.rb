@@ -90,7 +90,7 @@ module MatrixSdk
       data.each do |k, v|
         next if %i[client].include? k
 
-        if respond_to?("#{k}_cached?".to_sym) && send("#{k}_cached?".to_sym)
+        if respond_to?(:"#{k}_cached?") && send(:"#{k}_cached?")
           tinycache_adapter.write(k, v)
         elsif instance_variable_defined? "@#{k}"
           instance_variable_set("@#{k}", v)

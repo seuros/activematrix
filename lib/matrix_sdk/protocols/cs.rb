@@ -12,7 +12,7 @@ module MatrixSdk::Protocols::CS
   #   # => 'latest'
   def client_api_versions
     (@client_api_versions ||= request(:get, :client, '/versions')).versions.tap do |vers|
-      vers.instance_eval <<-'CODE', __FILE__, __LINE__ + 1
+      vers.instance_eval <<-CODE, __FILE__, __LINE__ + 1
         if !respond_to? :latest
           def latest
             last
@@ -32,7 +32,7 @@ module MatrixSdk::Protocols::CS
   #   # => true
   def client_api_unstable_features
     (@client_api_versions ||= request(:get, :client, '/versions')).unstable_features.tap do |vers|
-      vers.instance_eval <<-'CODE', __FILE__, __LINE__ + 1
+      vers.instance_eval <<-CODE, __FILE__, __LINE__ + 1
         def has?(feature)
           feature = feature.to_s.to_sym unless feature.is_a? Symbol
           fetch(feature, nil)
@@ -785,7 +785,7 @@ module MatrixSdk::Protocols::CS
     state_type = ERB::Util.url_encode state_type.to_s
     key = ERB::Util.url_encode key.to_s
 
-    request(:get, client_api_latest, "/rooms/#{room_id}/state/#{state_type}#{key.empty? ? nil : "/#{key}"}", query: query)
+    request(:get, client_api_latest, "/rooms/#{room_id}/state/#{state_type}#{"/#{key}" unless key.empty?}", query: query)
   end
 
   # Retrieves all current state objects from a room

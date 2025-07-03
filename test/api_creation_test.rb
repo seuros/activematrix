@@ -2,6 +2,7 @@ require 'test_helper'
 
 require 'net/http'
 require 'resolv'
+require 'ostruct'
 
 class ApiTest < Test::Unit::TestCase
   def test_creation

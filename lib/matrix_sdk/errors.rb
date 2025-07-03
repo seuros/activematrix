@@ -32,7 +32,7 @@ module MatrixSdk
       @message = error[:error]
       @data = error.reject { |k, _v| %i[errcode error].include? k }
 
-      super error[:error]
+      super(error[:error])
     end
 
     def to_s

@@ -26,7 +26,7 @@ module MatrixSdk::Rooms
 
         # Inject available room information
         r.each do |k, v|
-          if room.respond_to?("#{k}_cached?".to_sym) && send("#{k}_cached?".to_sym)
+          if room.respond_to?(:"#{k}_cached?") && send(:"#{k}_cached?")
             room.send(:tinycache_adapter).write(k, v)
           elsif room.instance_variable_defined? "@#{k}"
             room.instance_variable_set("@#{k}", v)

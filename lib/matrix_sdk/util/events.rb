@@ -5,10 +5,10 @@ module MatrixSdk
     include MatrixSdk::Logging
     attr_accessor :reraise_exceptions
 
-    def initialize(*args)
+    def initialize(*)
       @reraise_exceptions = false
 
-      super(*args)
+      super
     end
 
     def add_handler(filter = nil, id = nil, &block)
@@ -57,7 +57,7 @@ module MatrixSdk
 
     def initialize(error, source)
       @error = error
-      super source
+      super(source)
     end
 
     def source
@@ -74,7 +74,7 @@ module MatrixSdk
     def initialize(sender, event = nil, filter = nil)
       @event = event
       @filter = filter || @event[:type]
-      super sender
+      super(sender)
     end
 
     def matches?(filter, filter_override = nil)

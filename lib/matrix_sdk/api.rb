@@ -12,7 +12,7 @@ module MatrixSdk
     extend MatrixSdk::Extensions
     include MatrixSdk::Logging
 
-    USER_AGENT = "Ruby Matrix SDK v#{MatrixSdk::VERSION}"
+    USER_AGENT = "Ruby Matrix SDK v#{MatrixSdk::VERSION}".freeze
     DEFAULT_HEADERS = {
       'accept' => 'application/json',
       'user-agent' => USER_AGENT
@@ -97,10 +97,10 @@ module MatrixSdk
     # @return [API] The API connection
     def self.new_for_domain(domain, target: :client, keep_wellknown: false, ssl: true, **params)
       domain, port = domain.split(':')
-      uri = URI("http#{ssl ? 's' : ''}://#{domain}")
+      uri = URI("http#{'s' if ssl}://#{domain}")
       well_known = nil
       target_uri = nil
-      logger = ::Logging.logger[self]
+      logger = MatrixSdk.logger
       logger.debug "Resolving #{domain}"
 
       if !port.nil? && !port.empty?
@@ -171,10 +171,8 @@ module MatrixSdk
 
       new(
         uri,
-        **params.merge(
-          address: target_uri.host,
-          port: target_uri.port
-        )
+        **params, address: target_uri.host,
+                  port: target_uri.port
       )
     end
 
@@ -394,11 +392,11 @@ module MatrixSdk
       return unless logger.debug?
 
       if http.is_a? Net::HTTPRequest
-        dir = "#{id ? "#{id} : " : nil}>"
+        dir = "#{"#{id} : " if id}>"
         logger.debug "#{dir} Sending a #{http.method} request to `#{http.path}`:"
       else
-        dir = "#{id ? "#{id} : " : nil}<"
-        logger.debug "#{dir} Received a #{http.code} #{http.message} response:#{duration ? " [#{(duration * 1000).to_i}ms]" : nil}"
+        dir = "#{"#{id} : " if id}<"
+        logger.debug "#{dir} Received a #{http.code} #{http.message} response:#{" [#{(duration * 1000).to_i}ms]" if duration}"
       end
       http.to_hash.map { |k, v| "#{k}: #{k == 'authorization' ? '[ REDACTED ]' : v.join(', ')}" }.each do |h|
         logger.debug "#{dir} #{h}"
@@ -424,8 +422,8 @@ module MatrixSdk
     def http
       return @http if @http&.active?
 
-      host = (@connection_address || homeserver.host)
-      port = (@connection_port || homeserver.port)
+      host = @connection_address || homeserver.host
+      port = @connection_port || homeserver.port
 
       connection = @http unless @threadsafe == :multithread
       connection ||= if proxy_uri

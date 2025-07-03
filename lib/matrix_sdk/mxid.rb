@@ -82,7 +82,7 @@ module MatrixSdk
     # Check if the ID is of a room
     # @return [Boolean] if the ID is of the room_id or room_alias types
     def room?
-      type == :room_id || type == :room_alias
+      %i[room_id room_alias].include?(type)
     end
 
     # Check if the ID is of a event
