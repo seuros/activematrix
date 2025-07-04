@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class ApiCSVerificationTest < Test::Unit::TestCase
+class ApiCSVerificationTest < ActiveSupport::TestCase
   def setup
     @http = mock
     @http.stubs(:active?).returns(true)
@@ -17,16 +17,7 @@ class ApiCSVerificationTest < Test::Unit::TestCase
       @fixture = Psych.load_file('test/fixtures/cs_api_methods.yaml')
     end
 
-    Hash.class_eval do
-      def deep_symbolize_keys
-        JSON.parse(JSON[self], symbolize_names: true)
-      end
-    end
-    Array.class_eval do
-      def deep_symbolize_keys
-        JSON.parse(JSON[self], symbolize_names: true)
-      end
-    end
+    # ActiveSupport provides deep_symbolize_keys
   end
 
   def mock_response(code, body)
@@ -56,8 +47,21 @@ class ApiCSVerificationTest < Test::Unit::TestCase
             options ||= {}
             assert_equal request['method'], method if request.key?('method')
             assert_equal request['path'], path if request.key?('path')
-            assert_equal request['query'], options[:query] if request.key?('query')
-            assert_equal request['body'], options[:body] if request.key?('body')
+            if request.key?('query')
+              if request['query'].nil?
+                assert_nil options[:query]
+              else
+                assert_equal request['query'], options[:query]
+              end
+            end
+
+            if request.key?('body')
+              if request['body'].nil?
+                assert_nil options[:body]
+              else
+                assert_equal request['body'], options[:body]
+              end
+            end
 
             if request.key? 'headers'
               request['headers'].each do |header, expected|
@@ -68,7 +72,16 @@ class ApiCSVerificationTest < Test::Unit::TestCase
             true
           end.returns(response)
 
-          assert(call_api(data['method'], request['args'].deep_symbolize_keys))
+          args = request['args']
+          # Handle both Hash and Array args
+          symbolized_args = if args.is_a?(Hash)
+                              args.deep_symbolize_keys
+                            elsif args.is_a?(Array)
+                              args.map { |arg| arg.is_a?(Hash) ? arg.deep_symbolize_keys : arg }
+                            else
+                              args
+                            end
+          assert(call_api(data['method'], symbolized_args))
           @api.unstub(:request)
         end
       end
@@ -78,8 +91,15 @@ class ApiCSVerificationTest < Test::Unit::TestCase
       data['results'].each do |code, body|
         @http.expects(:request).returns(mock_response(code, body))
 
-        args = if data.key? 'requests'
-                 data['requests'].first['args'].deep_symbolize_keys
+        args = if data.key?('requests') && data['requests'].first && data['requests'].first['args']
+                 request_args = data['requests'].first['args']
+                 if request_args.is_a?(Hash)
+                   request_args.deep_symbolize_keys
+                 elsif request_args.is_a?(Array)
+                   request_args.map { |arg| arg.is_a?(Hash) ? arg.deep_symbolize_keys : arg }
+                 else
+                   request_args
+                 end
                else
                  []
                end

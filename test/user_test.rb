@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class UserTest < Test::Unit::TestCase
+class UserTest < ActiveSupport::TestCase
   def setup
     # Silence debugging output
     ::ActiveMatrix.logger.level = :error

@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class MatrixSdkTest < Test::Unit::TestCase
+class MatrixSdkTest < ActiveSupport::TestCase
   def test_that_it_has_a_version_number
     refute_nil ::ActiveMatrix::VERSION
   end

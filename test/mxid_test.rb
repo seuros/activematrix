@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class MXIDTest < Test::Unit::TestCase
+class MXIDTest < ActiveSupport::TestCase
   def test_creation
     user = ActiveMatrix::MXID.new '@user:example.com'
     room_id = ActiveMatrix::MXID.new '!opaque:example.com'

@@ -3,6 +3,7 @@ AllCops:
   Exclude:
     - '*.spec'
     - 'Rakefile'
+    - 'lib/generators/**/*.rb' # ERB templates parsed as Ruby
   NewCops: enable
   SuggestExtensions: false
 
@@ -59,6 +60,34 @@ Style/FormatStringToken:
 
 Naming/AccessorMethodName:
   Enabled: false
+
+# Methods with ! are valid and don't need to end with ?
+Naming/PredicateMethod:
+  Enabled: false
+
+# Our rubocop directive comments are valid
+Lint/CopDirectiveSyntax:
+  Enabled: false
+
+# Private constants are fine
+Lint/UselessConstantScoping:
+  Enabled: false
+
+# Using object_id for hash keys is sometimes necessary
+Lint/HashCompareByIdentity:
+  Enabled: false
+
+# Duplicate branches might be intentional
+Lint/DuplicateBranch:
+  Enabled: false
+
+# Safe navigation chains of 3 are fine
+Style/SafeNavigationChainLength:
+  Max: 3
+
+# Sometimes we need 6 parameters
+Metrics/ParameterLists:
+  Max: 6
 
 Layout/RescueEnsureAlignment:
   Enabled: false

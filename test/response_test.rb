@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class ResponseTest < Test::Unit::TestCase
+class ResponseTest < ActiveSupport::TestCase
   def setup
     @http = mock
     @http.stubs(:active?).returns(true)

@@ -4,6 +4,7 @@ module ActiveMatrix
   # A class for tracking information about a user on Matrix
   class User
     extend ActiveMatrix::Extensions
+    include ActiveMatrix::Util::Cacheable
 
     attr_reader :id, :client
     alias user_id :id
@@ -155,6 +156,15 @@ module ActiveMatrix
       @device_keys ||= client.api.keys_query(device_keys: { id => [] }).yield_self do |resp| # rubocop:disable Style/ObjectThen # Keep Ruby 2.5 support a little longer
         resp.dig(:device_keys, id.to_sym)
       end
+    end
+
+    # Define what attributes to cache
+    def cache_attributes
+      {
+        id: @id,
+        display_name: @display_name,
+        avatar_url: @avatar_url
+      }
     end
 
     private

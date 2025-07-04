@@ -150,7 +150,7 @@ module ActiveMatrix
 
         break if data[:next_batch].nil?
 
-        since = data.next_batch
+        since = data[:next_batch]
       end
 
       rooms
@@ -617,10 +617,9 @@ module ActiveMatrix
 
     def handle_sync_response(data)
       data.dig(:account_data, :events)&.each do |account_data|
-        if cache != :none
-          adapter = self.account_data.tinycache_adapter
-          adapter.write(account_data[:type], account_data[:content], expires_in: self.account_data.cache_time)
-        end
+        # Store the account data in cache
+        self.account_data.write(account_data[:type], account_data[:content]) if account_data[:type]
+
         fire_account_data(MatrixEvent.new(self, account_data))
       end
 
@@ -676,16 +675,7 @@ module ActiveMatrix
         end
       end
 
-      unless cache == :none
-        account_data.tinycache_adapter.cleanup if instance_variable_defined?(:@account_data) && @account_data
-        @rooms.each_value do |room|
-          # Clean up old cache data after every sync
-          # TODO Run this in a thread?
-          room.tinycache_adapter.cleanup
-          room.account_data.tinycache_adapter.cleanup
-          room.room_state.tinycache_adapter.cleanup
-        end
-      end
+      # Rails.cache handles its own cleanup/expiration
 
       nil
     end

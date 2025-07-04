@@ -3,7 +3,7 @@
 require 'test_helper'
 require 'net/http'
 
-class BotTest < Test::Unit::TestCase
+class BotTest < ActiveSupport::TestCase
   class ExampleBot < ActiveMatrix::Bot::Base
     set :testing, true
 

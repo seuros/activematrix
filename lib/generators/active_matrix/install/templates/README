@@ -1,0 +1,30 @@
+===============================================================================
+
+ActiveMatrix Multi-Agent System has been installed!
+
+Next steps:
+
+1. Run migrations:
+   rails db:migrate
+
+2. Create your first bot:
+   rails generate active_matrix:bot MyFirstBot
+
+3. Configure your agents in the Rails console:
+   agent = MatrixAgent.create!(
+     name: 'captain',
+     homeserver: 'https://matrix.org',
+     username: 'captain_bot',
+     password: 'secure_password',
+     bot_class: 'MyFirstBot'
+   )
+
+4. Start the agent system:
+   ActiveMatrix::AgentManager.instance.start_all
+
+Or start individual agents:
+   ActiveMatrix::AgentManager.instance.start_agent(agent)
+
+For more information, visit: https://github.com/seuros/agent_smith
+
+===============================================================================

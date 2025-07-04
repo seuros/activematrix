@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class ApiSSTest < Test::Unit::TestCase
+class ApiSSTest < ActiveSupport::TestCase
   def setup
     @http = mock
     @http.stubs(:active?).returns(true)

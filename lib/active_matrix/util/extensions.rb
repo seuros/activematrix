@@ -8,6 +8,10 @@ unless Object.respond_to? :yield_self
   end
 end
 
+# Time.current is provided by ActiveSupport
+
+# Time duration helpers are provided by ActiveSupport
+
 module ActiveMatrix
   module Extensions
     def events(*symbols)
