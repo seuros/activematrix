@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class URITest < Test::Unit::TestCase
+class URITest < ActiveSupport::TestCase
   def test_creation
     uri = URI('matrix:u/her:example.org')
 

@@ -6,7 +6,7 @@ require 'net/http'
 require 'resolv'
 require 'ostruct'
 
-class ApiTest < Test::Unit::TestCase
+class ApiTest < ActiveSupport::TestCase
   def test_creation
     api = ActiveMatrix::Api.new 'https://matrix.example.com/_matrix/'
     assert_equal URI('https://matrix.example.com'), api.homeserver

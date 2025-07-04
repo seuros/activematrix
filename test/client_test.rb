@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class ClientTest < Test::Unit::TestCase
+class ClientTest < ActiveSupport::TestCase
   def setup
     ::Net::HTTP.any_instance.expects(:request).never
   end
@@ -97,7 +97,7 @@ class ClientTest < Test::Unit::TestCase
     room = cl.ensure_room('!726s6s6q:example.com')
     room.account_data # Prime the account_data cache existence
 
-    response = JSON.parse(open('test/fixtures/sync_response.json').read, symbolize_names: true)
+    response = JSON.parse(File.read('test/fixtures/sync_response.json'), symbolize_names: true)
 
     cl.send :handle_sync_response, response
 
@@ -155,14 +155,14 @@ class ClientTest < Test::Unit::TestCase
     cl.instance_variable_get(:@on_ephemeral_event).expects(:fire).once
     cl.instance_variable_get(:@on_state_event).expects(:fire).twice
 
-    response = JSON.parse(open('test/fixtures/sync_response.json').read, symbolize_names: true)
+    response = JSON.parse(File.read('test/fixtures/sync_response.json'), symbolize_names: true)
 
     cl.send :handle_sync_response, response
   end
 
   def test_sync_results
     cl = ActiveMatrix::Client.new 'https://example.com'
-    response = JSON.parse(open('test/fixtures/sync_response.json').read, symbolize_names: true)
+    response = JSON.parse(File.read('test/fixtures/sync_response.json'), symbolize_names: true)
 
     cl.instance_variable_get(:@on_ephemeral_event)
       .expects(:fire).with do |ev|
@@ -179,6 +179,15 @@ class ClientTest < Test::Unit::TestCase
     assert_equal 2, room.events.count
     assert_equal 'I am a fish', room.events.last[:content][:body]
     assert_equal '@alice:example.com', room.events.last[:sender]
+
+    # Mock the API call that will be made when accessing members
+    cl.api.expects(:get_room_joined_members).with('!726s6s6q:example.com').returns(
+      joined: {
+        '@alice:example.com': {},
+        '@bob:example.com': {}
+      }
+    )
+
     assert_equal 2, room.members.count
     assert_equal '@alice:example.com', room.members.first.id
     assert_equal '@bob:example.com', room.members.last.id
@@ -196,23 +205,47 @@ class ClientTest < Test::Unit::TestCase
 
   def test_state_handling
     cl = ActiveMatrix::Client.new 'https://example.com'
+    # Stub version check requests
+    cl.api.stubs(:request).with(:get, :client, '/versions').returns(ActiveMatrix::Response.new(cl.api, versions: ['r0.1.0', 'r0.2.0']))
     assert_equal cl.cache, :all
 
     room = '!roomid:example.com'
     cl.send :ensure_room, room
 
-    cl.api.expects(:get_room_joined_members).returns(joined: [])
+    cl.api.expects(:get_room_joined_members).returns(joined: {}).at_least_once
     cl.api.expects(:get_room_state).with(room, 'm.room.canonical_alias').raises ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
     cl.api.expects(:get_room_state).with(room, 'm.room.name').raises ActiveMatrix::MatrixNotFoundError.new({ errcode: 404, error: '' }, 404)
 
     assert_equal 'Empty Room', cl.rooms.first.display_name
+
+    # After Alice joins, mock API to return her as a member
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'join', displayname: 'Alice' }, state_key: '@alice:example.com')
+    cl.api.expects(:get_room_joined_members).returns(joined: { '@alice:example.com' => { display_name: 'Alice' } }).at_least_once
     assert_equal 'Alice', cl.rooms.first.display_name
+
+    # After Bob joins, mock API to return both members
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'join', displayname: 'Bob' }, state_key: '@bob:example.com')
+    cl.api.expects(:get_room_joined_members).returns(joined: {
+                                                       '@alice:example.com' => { display_name: 'Alice' },
+                                                       '@bob:example.com' => { display_name: 'Bob' }
+                                                     }).at_least_once
     assert_equal 'Alice and Bob', cl.rooms.first.display_name
+
+    # After Charlie joins
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'join', displayname: 'Charlie' }, state_key: '@charlie:example.com')
+    cl.api.expects(:get_room_joined_members).returns(joined: {
+                                                       '@alice:example.com' => { display_name: 'Alice' },
+                                                       '@bob:example.com' => { display_name: 'Bob' },
+                                                       '@charlie:example.com' => { display_name: 'Charlie' }
+                                                     }).at_least_once
     assert_equal 'Alice and 2 others', cl.rooms.first.display_name
+
+    # After Charlie is kicked
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'kick' }, state_key: '@charlie:example.com')
+    cl.api.expects(:get_room_joined_members).returns(joined: {
+                                                       '@alice:example.com' => { display_name: 'Alice' },
+                                                       '@bob:example.com' => { display_name: 'Bob' }
+                                                     }).at_least_once
     assert_equal 'Alice and Bob', cl.rooms.first.display_name
 
     cl.send(:handle_state, room, type: 'm.room.canonical_alias', content: { alias: '#test:example.com' })
@@ -330,6 +363,8 @@ class ClientTest < Test::Unit::TestCase
 
   def test_public_rooms
     cl = ActiveMatrix::Client.new 'https://example.com'
+    # Stub version check requests
+    cl.api.stubs(:request).with(:get, :client, '/versions').returns(ActiveMatrix::Response.new(cl.api, versions: ['r0.1.0', 'r0.2.0']))
 
     cl.api.expects(:get_public_rooms).with(since: nil).returns ActiveMatrix::Response.new(
       cl.api,
@@ -346,6 +381,13 @@ class ClientTest < Test::Unit::TestCase
 
     room = cl.public_rooms.first
     assert_equal '!room:example.com', room.id
+
+    # The room was created with name and topic, accessing them should not make API calls
+    # But due to cache behavior, stub the requests that might be made
+    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.name', query: {}).returns(ActiveMatrix::Response.new(cl.api, name: 'Example room'))
+    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.topic', query: {}).returns(ActiveMatrix::Response.new(cl.api, topic: 'Example topic'))
+    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.join_rules', query: {}).returns(ActiveMatrix::Response.new(cl.api, join_rule: 'public'))
+
     assert_equal 'Example room', room.name
     assert_equal 'Example topic', room.topic
     assert_equal false, room.invite_only?

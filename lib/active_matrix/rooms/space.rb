@@ -26,11 +26,7 @@ module ActiveMatrix::Rooms
 
         # Inject available room information
         r.each do |k, v|
-          if room.respond_to?(:"#{k}_cached?") && send(:"#{k}_cached?")
-            room.send(:tinycache_adapter).write(k, v)
-          elsif room.instance_variable_defined? "@#{k}"
-            room.instance_variable_set("@#{k}", v)
-          end
+          room.instance_variable_set("@#{k}", v) if room.instance_variable_defined? "@#{k}"
         end
         room
       end

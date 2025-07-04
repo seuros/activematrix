@@ -1,0 +1,111 @@
+# frozen_string_literal: true
+
+class <%= class_name %>Bot < ActiveMatrix::Bot::MultiInstanceBase
+  # Bot configuration
+  set :accept_invites, true
+  set :command_prefix, '!'
+  
+  # Set a custom help preamble
+  set :help_preamble, "I am <%= class_name %>, ready to assist!"
+  
+  <% if commands.any? %>
+  # Generated commands
+  <% commands.each do |command| %>
+  command :<%= command %>,
+          desc: 'TODO: Add description for <%= command %>',
+          args: 'TODO: Add arguments' do |*args|
+    # TODO: Implement <%= command %> command
+    room.send_notice("Command <%= command %> called with args: #{args.inspect}")
+    
+    # Example of using agent memory
+    count = memory.increment("<%= command %>_count")
+    room.send_notice("This command has been used #{count} times")
+    
+    # Example of using conversation context
+    context = conversation_context
+    update_context(last_command: '<%= command %>')
+  end
+  
+  <% end %>
+  <% else %>
+  # Example command
+  command :hello,
+          desc: 'Say hello',
+          args: '[name]' do |name = nil|
+    greeting = name ? "Hello, #{name}!" : "Hello there!"
+    room.send_notice(greeting)
+    
+    # Remember who we greeted in conversation memory
+    if name
+      names_greeted = conversation_memory.remember(:names_greeted) { [] }
+      unless names_greeted.include?(name)
+        names_greeted << name
+        conversation_memory[:names_greeted] = names_greeted
+      end
+    end
+  end
+  
+  # Example command with agent communication
+  command :broadcast,
+          desc: 'Broadcast a message to all agents',
+          args: 'message' do |*message|
+    msg = message.join(' ')
+    
+    # Broadcast to all online agents
+    broadcast_to_agents(:online, {
+      type: 'announcement',
+      message: msg,
+      from_room: room.id
+    })
+    
+    room.send_notice("Broadcast sent: #{msg}")
+  end
+  <% end %>
+  
+  # Example event handler
+  event 'm.room.member' do
+    if event[:content][:membership] == 'join' && event[:state_key] != client.mxid
+      # Someone joined the room
+      user = client.get_user(event[:state_key])
+      room.send_notice("Welcome, #{user.display_name || user.id}!")
+      
+      # Track room members in agent memory
+      members = memory.get(:room_members) || {}
+      members[room.id] ||= []
+      members[room.id] << event[:state_key] unless members[room.id].include?(event[:state_key])
+      memory.set(:room_members, members)
+    end
+  end
+  
+  # Handle inter-agent messages
+  def receive_message(data, from:)
+    case data[:type]
+    when 'ping'
+      # Respond to ping
+      send_to_agent(from.agent_name, { type: 'pong', timestamp: Time.current })
+    else
+      logger.info "Received message from #{from.agent_name}: #{data.inspect}"
+    end
+  end
+  
+  # Handle broadcasts
+  def receive_broadcast(data, from:)
+    case data[:type]
+    when 'announcement'
+      # Could relay announcements to specific rooms
+      logger.info "Received announcement from #{from.agent_name}: #{data[:message]}"
+    end
+  end
+  
+  # Custom helper methods
+  private
+  
+  def greeting_for_time
+    hour = Time.current.hour
+    case hour
+    when 0..11 then "Good morning"
+    when 12..17 then "Good afternoon"
+    when 18..23 then "Good evening"
+    end
+  end
+end

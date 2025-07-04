@@ -19,14 +19,21 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'ostruct'
   spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'syslog'
   spec.add_development_dependency 'test-unit'
+  spec.add_development_dependency 'vcr', '~> 6.2'
+  spec.add_development_dependency 'webmock', '~> 3.19'
 
   spec.required_ruby_version = '>= 3.4'
 
   spec.add_dependency 'activerecord', '~> 8.0'
+  spec.add_dependency 'bcrypt', '~> 3.1'
+  spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'railties', '~> 8.0'
+  spec.add_dependency 'state_machines-activerecord', '~> 0.40.0'
   spec.add_dependency 'zeitwerk', '~> 2.6'
+
   spec.metadata['rubygems_mfa_required'] = 'true'
 end
