@@ -82,6 +82,10 @@ module ActiveMatrix
   # Ignore directories and files that shouldn't be autoloaded
   Loader.ignore("#{__dir__}/generators")
   Loader.ignore("#{__dir__}/activematrix.rb")
+  
+  # Ignore files that don't follow Zeitwerk naming conventions
+  Loader.ignore("#{__dir__}/active_matrix/errors.rb")
+  Loader.ignore("#{__dir__}/active_matrix/events.rb")
 
   # Configure inflections for special cases
   Loader.inflector.inflect(
@@ -97,11 +101,13 @@ module ActiveMatrix
   # Setup Zeitwerk autoloading
   Loader.setup
 
-  # Load core classes that are used in metaprogramming
+  # Load classes that don't follow Zeitwerk naming conventions
   require_relative 'active_matrix/errors'
   require_relative 'active_matrix/events'
-  require_relative 'active_matrix/uri_module'
 
   # Load Railtie for Rails integration
   require 'active_matrix/railtie' if defined?(Rails::Railtie)
+
+  # Eager load all classes
+  Loader.eager_load
 end
