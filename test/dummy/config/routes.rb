@@ -5,14 +5,4 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "articles#index"
-  scope :api, defaults: { format: :json }, format: false do
-    mount App::Core => '/'
-
-    resources :launch_subscribers
-
-    namespace :admin do
-      resources :system_audits
-      resources :search_bot_visits
-    end
-  end
 end
