@@ -23,13 +23,6 @@ module ActiveMatrix
         template 'active_matrix.rb', 'config/initializers/active_matrix.rb'
       end
 
-      def create_models
-        template 'matrix_agent.rb', 'app/models/matrix_agent.rb'
-        template 'agent_memory.rb', 'app/models/agent_memory.rb'
-        template 'conversation_context.rb', 'app/models/conversation_context.rb'
-        template 'global_memory.rb', 'app/models/global_memory.rb'
-      end
-
       def display_post_install
         readme 'README' if behavior == :invoke
       end

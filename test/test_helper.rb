@@ -22,10 +22,8 @@ require 'vcr'
 require 'webmock/minitest'
 require 'uri'
 require_relative 'support/vcr_helper'
+require_relative 'support/active_matrix_test_base'
 
-# Set up timezone for tests
-ActiveSupport.to_time_preserves_timezone = true
-Time.zone = 'UTC' # rubocop:disable Rails/TimeZoneAssignment
 
 # Configure VCR
 VCR.configure do |config|
@@ -71,73 +69,40 @@ module Rails
   end
 end
 
-def expect_message(object, message, *)
-  object.expects(message).with(*)
+# VCR helper methods for backwards compatibility
+def with_vcr_cassette(name = nil, options = {}, &)
+  name ||= "#{self.class.name.gsub('::', '/')}/#{method_name}"
+  VCR.use_cassette(name, options, &)
 end
 
-class ActiveSupport::TestCase
-  # Add Rails test helpers
-  include ActiveSupport::Testing::Assertions
+def vcr_mode
+  ENV.fetch('VCR_MODE', 'once').to_sym
+end
 
-  def setup
-    # More robust cache clearing
-    if defined?(Rails) && Rails.respond_to?(:cache)
-      Rails.cache.clear
-      cache_dir = File.expand_path('../tmp/cache/test', __dir__)
-      # Completely remove and recreate the cache directory
-      FileUtils.rm_rf(cache_dir)
-      FileUtils.mkdir_p(cache_dir)
-      # Force Rails to create a new cache instance
-      Rails.instance_variable_set(:@cache, nil)
-    end
-    super
-  end
+def use_real_matrix_server?
+  ENV['USE_REAL_SERVER'] == 'true' || vcr_mode == :record
+end
 
-  def matrixsdk_add_api_stub
-    ActiveMatrix::Api
-      .any_instance
-      .stubs(:client_api_latest)
-      .returns(:client_r0)
-  end
+def matrix_test_server
+  ENV.fetch('MATRIX_TEST_SERVER', 'https://arena.seuros.net')
+end
 
-  # VCR helper methods
-  def with_vcr_cassette(name = nil, options = {}, &)
-    name ||= "#{self.class.name.gsub('::', '/')}/#{method_name}"
-    VCR.use_cassette(name, options, &)
-  end
+def matrix_test_credentials
+  {
+    server: matrix_test_server,
+    username: ENV.fetch('MATRIX_TEST_USER', 'testuser'),
+    password: ENV.fetch('MATRIX_TEST_PASSWORD', 'testuser12345678')
+  }
+end
 
-  def vcr_mode
-    ENV.fetch('VCR_MODE', 'once').to_sym
-  end
+def matrix_test_user_id
+  "@#{matrix_test_credentials[:username]}:#{URI.parse(matrix_test_server).host}"
+end
 
-  def use_real_matrix_server?
-    ENV['USE_REAL_SERVER'] == 'true' || vcr_mode == :record
-  end
-
-  def matrix_test_server
-    ENV.fetch('MATRIX_TEST_SERVER', 'https://arena.seuros.net')
-  end
-
-  def matrix_test_credentials
-    {
-      server: matrix_test_server,
-      username: ENV.fetch('MATRIX_TEST_USER', 'testuser'),
-      password: ENV.fetch('MATRIX_TEST_PASSWORD', 'testuser12345678')
-    }
-  end
-
-  def matrix_test_user_id
-    "@#{matrix_test_credentials[:username]}:#{URI.parse(matrix_test_server).host}"
-  end
-
-  # Temporarily disable VCR for a block
-  def without_vcr(&)
-    WebMock.allow_net_connect!
-    VCR.turned_off(&)
-  ensure
-    WebMock.disable_net_connect! if VCR.current_cassette
-  end
-
-  # Use transactional fixtures by default
-  self.use_transactional_tests = true if respond_to?(:use_transactional_tests=)
+# Temporarily disable VCR for a block
+def without_vcr(&)
+  WebMock.allow_net_connect!
+  VCR.turned_off(&)
+ensure
+  WebMock.disable_net_connect! if VCR.current_cassette
 end

@@ -107,6 +107,67 @@ module VCRHelper
     end
   end
 
+  # Protocol test specific helpers
+  module ProtocolTests
+    def setup_protocol_api(protocols: :CS)
+      @api = ActiveMatrix::Api.new(matrix_test_server, protocols: protocols, autoretry: false, threadsafe: false)
+      @api
+    end
+
+    def with_protocol_vcr(test_name, &block)
+      cassette_name = "api/#{self.class.name.underscore}/#{test_name}"
+      options = {
+        record: vcr_mode,
+        match_requests_on: %i[method uri_without_param body],
+        allow_playback_repeats: true
+      }
+      
+      with_vcr_cassette(cassette_name, options, &block)
+    end
+
+    def setup_authenticated_api
+      with_protocol_vcr('auth_setup') do
+        api = setup_protocol_api
+        creds = matrix_test_credentials
+        response = api.login(user: creds[:username], password: creds[:password])
+        api.access_token = response[:access_token]
+        api
+      end
+    end
+
+    # Mock a real API response for gradual migration
+    def mock_or_real_response(cassette_name, mock_response = nil)
+      if ENV['USE_VCR_FOR_PROTOCOL_TESTS'] == 'true'
+        with_protocol_vcr(cassette_name) { yield }
+      else
+        mock_response
+      end
+    end
+    
+    # Create a test room for protocol tests
+    def create_test_room(api, name_suffix = nil)
+      room_name = "[TEST] Protocol Test Room #{name_suffix || Time.now.to_i}"
+      
+      with_protocol_vcr("create_room_#{name_suffix || 'default'}") do
+        response = api.create_room(
+          name: room_name,
+          preset: :public_chat,
+          initial_state: []
+        )
+        response[:room_id]
+      end
+    end
+    
+    # Clean up test room after test
+    def cleanup_test_room(api, room_id)
+      return unless ENV['USE_VCR_FOR_PROTOCOL_TESTS'] == 'true' && ENV['CLEANUP_TEST_ROOMS'] == 'true'
+      
+      without_vcr do
+        api.leave_room(room_id) rescue nil
+      end
+    end
+  end
+
   # Custom VCR matchers
   VCR.configure do |c|
     # Match Matrix API requests ignoring access token
@@ -120,10 +181,26 @@ module VCRHelper
 
       path1 == path2 && request1.method == request2.method
     end
-  end
-end
 
-# Include helper in ActiveSupport::TestCase
-class ActiveSupport::TestCase
-  include VCRHelper
+    # Match URI without specific parameters
+    c.register_request_matcher :uri_without_param do |request1, request2|
+      uri1 = URI(request1.uri)
+      uri2 = URI(request2.uri)
+      
+      # Remove access_token and txn_id from comparison
+      params_to_ignore = %w[access_token txn_id]
+      
+      query1 = Rack::Utils.parse_query(uri1.query || '')
+      query2 = Rack::Utils.parse_query(uri2.query || '')
+      
+      params_to_ignore.each do |param|
+        query1.delete(param)
+        query2.delete(param)
+      end
+      
+      uri1.host == uri2.host &&
+        uri1.path == uri2.path &&
+        query1 == query2
+    end
+  end
 end

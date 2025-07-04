@@ -4,6 +4,7 @@ require 'test_helper'
 
 class ClientTest < ActiveSupport::TestCase
   def setup
+    super
     ::Net::HTTP.any_instance.expects(:request).never
   end
 

@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.license          = 'MIT'
 
   spec.extra_rdoc_files = %w[CHANGELOG.md LICENSE.txt README.md]
-  spec.files            = Dir['lib/**/*'] + spec.extra_rdoc_files
+  spec.files            = Dir['lib/**/*', 'app/**/*'] + spec.extra_rdoc_files
 
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'ostruct'

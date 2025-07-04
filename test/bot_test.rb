@@ -74,8 +74,8 @@ class BotTest < ActiveSupport::TestCase
 
     # Check generated configuration
     assert_predicate ExampleBot, :bot_name?
-    # Bot name varies between 'rake_test_loader' and 'bot_test' depending on how test is run
-    assert_includes %w[rake_test_loader bot_test], ExampleBot.bot_name
+    # Bot name varies between 'rake_test_loader', 'bot_test', and 'rails' depending on how test is run
+    assert_includes %w[rake_test_loader bot_test rails], ExampleBot.bot_name
 
     handlers = ExampleBot.instance_variable_get :@handlers
 
