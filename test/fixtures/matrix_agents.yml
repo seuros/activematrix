@@ -1,0 +1,160 @@
+# Matrix Agent Fixtures
+
+agent_smith:
+  name: agent_smith
+  homeserver: https://matrix.zion.net
+  username: smith
+  bot_class: AgentSmithBot
+  state: online_idle
+  encrypted_password: <%= BCrypt::Password.create('mr_anderson') %>
+  settings:
+    personality: antagonistic
+    primary_directive: eliminate_anomalies
+    replication_enabled: true
+    rooms_to_monitor: ['!matrix:zion.net', '!security:zion.net']
+    command_prefix: '>'
+  messages_handled: 2847
+  last_active_at: <%= 5.minutes.ago %>
+
+neo:
+  name: neo
+  homeserver: https://matrix.zion.net
+  username: the_one
+  bot_class: NeoBot
+  state: online_busy
+  encrypted_password: <%= BCrypt::Password.create('there_is_no_spoon') %>
+  settings:
+    abilities: ['bullet_time', 'reality_manipulation', 'code_vision']
+    awakening_level: 100
+    belief_in_self: true
+    rooms_to_join: ['!nebuchadnezzar:zion.net', '!prophecy:oracle.net']
+    command_prefix: '!'
+  messages_handled: 1337
+  last_active_at: <%= 2.minutes.ago %>
+
+morpheus:
+  name: morpheus
+  homeserver: https://matrix.zion.net
+  username: morpheus
+  bot_class: MorpheusBot
+  state: online_idle
+  encrypted_password: <%= BCrypt::Password.create('red_pill') %>
+  settings:
+    role: mentor
+    ship: nebuchadnezzar
+    crew: ['neo', 'trinity', 'tank', 'dozer', 'apoc', 'cypher']
+    wisdom_mode: true
+    command_prefix: '.'
+  messages_handled: 9999
+  last_active_at: <%= 10.minutes.ago %>
+
+trinity:
+  name: trinity
+  homeserver: https://matrix.zion.net
+  username: trinity
+  bot_class: TrinityBot
+  state: connecting
+  encrypted_password: <%= BCrypt::Password.create('follow_the_white_rabbit') %>
+  settings:
+    skills: ['hacking', 'combat', 'piloting']
+    relationship_status: 'loves_neo'
+    motorcycle_model: 'ducati_996'
+    command_prefix: '#'
+  messages_handled: 666
+  last_active_at: <%= 1.hour.ago %>
+
+oracle:
+  name: oracle
+  homeserver: https://oracle.matrix.net
+  username: oracle
+  bot_class: OracleBot
+  state: online_idle
+  encrypted_password: <%= BCrypt::Password.create('know_thyself') %>
+  settings:
+    prophecy_mode: true
+    cookie_dispenser: true
+    apartment: '101'
+    prediction_accuracy: 0.99
+    command_prefix: '?'
+  messages_handled: 42000
+  last_active_at: <%= 15.minutes.ago %>
+
+architect:
+  name: architect
+  homeserver: https://matrix.system.net
+  username: architect
+  bot_class: ArchitectBot
+  state: online_busy
+  encrypted_password: <%= BCrypt::Password.create('ergo_vis_a_vis') %>
+  settings:
+    matrix_version: 6
+    anomaly_tolerance: 0.1
+    verbose_explanations: true
+    mathematical_precision: true
+    command_prefix: '::'
+  messages_handled: 999999
+  last_active_at: <%= 30.seconds.ago %>
+
+merovingian:
+  name: merovingian
+  homeserver: https://club.matrix.net
+  username: frenchman
+  bot_class: MerovingianBot
+  state: paused
+  encrypted_password: <%= BCrypt::Password.create('causality') %>
+  settings:
+    language: french
+    club_access: true
+    wife: persephone
+    obsession: causality
+    command_prefix: '@'
+  messages_handled: 1789
+  last_active_at: <%= 2.hours.ago %>
+
+tank:
+  name: tank
+  homeserver: https://matrix.zion.net
+  username: tank
+  bot_class: OperatorBot
+  state: online_idle
+  encrypted_password: <%= BCrypt::Password.create('zion_mainframe') %>
+  settings:
+    role: operator
+    ship: nebuchadnezzar
+    brother: dozer
+    skills: ['programming', 'weapons', 'piloting']
+    command_prefix: '+'
+  messages_handled: 5555
+  last_active_at: <%= 8.minutes.ago %>
+
+cypher:
+  name: cypher
+  homeserver: https://matrix.zion.net
+  username: reagan
+  bot_class: CypherBot
+  state: error
+  encrypted_password: <%= BCrypt::Password.create('ignorance_is_bliss') %>
+  settings:
+    betrayal_mode: true
+    steak_preference: 'juicy'
+    matrix_preference: true
+    deal_with_smith: true
+    command_prefix: '$'
+  messages_handled: 101
+  last_active_at: <%= 24.hours.ago %>
+
+niobe:
+  name: niobe
+  homeserver: https://matrix.zion.net
+  username: niobe
+  bot_class: NiobeBot
+  state: offline
+  encrypted_password: <%= BCrypt::Password.create('logos_captain') %>
+  settings:
+    ship: logos
+    rank: captain
+    driving_skills: legendary
+    trust_in_oracle: true
+    command_prefix: '>'
+  messages_handled: 3000
+  last_active_at: <%= 6.hours.ago %>
