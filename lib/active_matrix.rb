@@ -86,6 +86,7 @@ module ActiveMatrix
   # Ignore files that don't follow Zeitwerk naming conventions
   Loader.ignore("#{__dir__}/active_matrix/errors.rb")
   Loader.ignore("#{__dir__}/active_matrix/events.rb")
+  Loader.ignore("#{__dir__}/active_matrix/uri_module.rb")
 
   # Configure inflections for special cases
   Loader.inflector.inflect(
@@ -104,6 +105,7 @@ module ActiveMatrix
   # Load classes that don't follow Zeitwerk naming conventions
   require_relative 'active_matrix/errors'
   require_relative 'active_matrix/events'
+  require_relative 'active_matrix/uri_module'
 
   # Load Railtie for Rails integration
   require 'active_matrix/railtie' if defined?(Rails::Railtie)
