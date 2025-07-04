@@ -6,6 +6,10 @@ SimpleCov.start do
   add_filter '/vendor/'
 end
 
+# Configure Rails environment for testing
+ENV['RAILS_ENV'] = 'test'
+require_relative 'dummy/config/environment'
+
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'active_matrix'
 

@@ -82,7 +82,7 @@ module ActiveMatrix
   # Ignore directories and files that shouldn't be autoloaded
   Loader.ignore("#{__dir__}/generators")
   Loader.ignore("#{__dir__}/activematrix.rb")
-  
+
   # Ignore files that don't follow Zeitwerk naming conventions
   Loader.ignore("#{__dir__}/active_matrix/errors.rb")
   Loader.ignore("#{__dir__}/active_matrix/events.rb")

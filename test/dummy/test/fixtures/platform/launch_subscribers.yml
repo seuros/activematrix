@@ -1,0 +1,6 @@
+one:
+  id: 1
+  email: 'subscriber_email@gmail.com'
+two:
+  id: 2
+  email: 'email@email.com'
