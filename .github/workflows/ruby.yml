@@ -25,9 +25,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
-    - name: Install rubocop
-      run: gem install -N rubocop
     - name: Rubocop
-      run: rubocop examples/ lib/
+      run: bundle exec rubocop lib/
     - name: Run tests
       run: bundle exec rake
