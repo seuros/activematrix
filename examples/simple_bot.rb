@@ -53,7 +53,7 @@ class MatrixBot
 
     msgstr = message.content[:body]
 
-    return unless msgstr =~ /^!(ping|echo)\s*/
+    return unless /^!(ping|echo)\s*/.match?(msgstr)
 
     handle_ping(message) if msgstr.start_with? '!ping'
     handle_echo(message) if msgstr.start_with? '!echo'
@@ -71,10 +71,10 @@ class MatrixBot
     room = client.ensure_room message.room_id
     sender = client.get_user message.sender
 
-    origin_ts = Time.at(message[:origin_server_ts] / 1000.0)
-    diff = Time.now - origin_ts
+    origin_ts = Time.zone.at(message[:origin_server_ts] / 1000.0)
+    diff = Time.zone.now - origin_ts
 
-    puts "[#{Time.now.strftime '%H:%M'}] <#{sender.id} in #{room.id} @ #{(diff * 1000).round(2)}ms> \"#{message.content[:body]}\""
+    puts "[#{Time.zone.now.strftime '%H:%M'}] <#{sender.id} in #{room.id} @ #{(diff * 1000).round(2)}ms> \"#{message.content[:body]}\""
 
     plaintext = '%<sender>s: Pong! (ping%<msg>s took %<time>s to arrive)'
     html = '<a href="https://matrix.to/#/%<sender>s">%<sender>s</a>: Pong! (<a href="https://matrix.to/#/%<room>s/%<event>s">ping</a>%<msg>s took %<time>s to arrive)'
@@ -120,7 +120,7 @@ class MatrixBot
     room = client.ensure_room message.room_id
     sender = client.get_user message.sender
 
-    puts "[#{Time.now.strftime '%H:%M'}] <#{sender.id} in #{room.id}> \"#{message.content[:body]}\""
+    puts "[#{Time.zone.now.strftime '%H:%M'}] <#{sender.id} in #{room.id}> \"#{message.content[:body]}\""
 
     room.send_notice(msgstr)
   end

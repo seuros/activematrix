@@ -88,9 +88,7 @@ module ActiveMatrix
       end
     end
 
-    def [](key)
-      event[key]
-    end
+    delegate :[], to: :event
 
     def to_s
       "#{event[:type]}: #{event.except(:type).to_json}"

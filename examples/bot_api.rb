@@ -18,7 +18,7 @@ command :spam, only: :dm, desc: 'Spams a bunch of nonsense' do |message_count = 
   message_count_i = message_count.to_i
   raise ArgumentError, 'Message count must be an integer' if message_count_i.to_s != message_count.to_s
 
-  spam = message_count_i.times.map { rand(10..30).times.map { rand(65..91).chr }.join }
+  spam = Array.new(message_count_i) { Array.new(rand(10..30)) { rand(65..91).chr }.join }
   spam.each do |msg|
     room.send_notice(msg)
   end
@@ -43,10 +43,10 @@ command :echo, desc: 'Echoes the given message back as an m.notice' do |message|
 end
 
 command :ping, desc: 'Runs a ping with a given ID and returns the request time' do |message = nil|
-  origin_ts = Time.at(event[:origin_server_ts] / 1000.0)
-  diff = Time.now - origin_ts
+  origin_ts = Time.zone.at(event[:origin_server_ts] / 1000.0)
+  diff = Time.zone.now - origin_ts
 
-  logger.info "[#{Time.now.strftime '%H:%M'}] <#{sender.id} in #{room.id} @ #{(diff * 1000).round(2)}ms> #{message.inspect}"
+  logger.info "[#{Time.zone.now.strftime '%H:%M'}] <#{sender.id} in #{room.id} @ #{(diff * 1000).round(2)}ms> #{message.inspect}"
 
   plaintext = '%<sender>s: Pong! (ping%<msg>s took %<time>s to arrive)'
   html = '<a href="https://matrix.to/#/%<sender>s">%<sender>s</a>: Pong! (<a href="https://matrix.to/#/%<room>s/%<event>s">ping</a>%<msg>s took %<time>s to arrive)'

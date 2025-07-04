@@ -32,7 +32,7 @@ module ActiveMatrix
 
       # Get multiple keys at once
       def get_multi(*keys)
-        keys.to_h { |key| [key, get(key)] }
+        keys.index_with { |key| get(key) }
       end
 
       # Set multiple keys at once

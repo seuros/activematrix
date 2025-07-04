@@ -46,7 +46,7 @@ module ActiveMatrix
       raise ArgumentError, 'Homeserver URL must be String or URI' unless @homeserver.is_a?(String) || @homeserver.is_a?(URI)
 
       @homeserver = URI.parse("#{'https://' unless @homeserver.start_with? 'http'}#{@homeserver}") unless @homeserver.is_a? URI
-      @homeserver.path.gsub!(/\/?_matrix\/?/, '') if @homeserver.path =~ /_matrix\/?$/
+      @homeserver.path.gsub!(/\/?_matrix\/?/, '') if /_matrix\/?$/.match?(@homeserver.path)
       raise ArgumentError, 'Please use the base URL for your HS (without /_matrix/)' if @homeserver.path.include? '/_matrix/'
 
       @proxy_uri = params.fetch(:proxy_uri, nil)
@@ -101,7 +101,7 @@ module ActiveMatrix
       logger = ActiveMatrix.logger
       logger.debug "Resolving #{domain}"
 
-      if !port.nil? && !port.empty?
+      if port.present?
         # If the domain is fully qualified according to Matrix (FQDN and port) then skip discovery
         target_uri = URI("https://#{domain}:#{port}")
       elsif target == :server
@@ -283,7 +283,7 @@ module ActiveMatrix
       url = homeserver.dup.tap do |u|
         u.path = api_to_path(api) + path
         u.query = [u.query, URI.encode_www_form(options.fetch(:query))].flatten.compact.join('&') if options[:query]
-        u.query = nil if u.query.nil? || u.query.empty?
+        u.query = nil if u.query.blank?
       end
 
       failures = 0
@@ -299,9 +299,9 @@ module ActiveMatrix
         loc_http = http
         perform_request = proc do
           @inflight << loc_http
-          dur_start = Time.now
+          dur_start = Time.zone.now
           response = loc_http.request req_obj
-          dur_end = Time.now
+          dur_end = Time.zone.now
           duration = dur_end - dur_start
         rescue EOFError
           logger.error 'Socket closed unexpectedly'

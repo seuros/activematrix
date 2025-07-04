@@ -233,7 +233,7 @@ module ActiveMatrix
     end
 
     def check_agent_health
-      @registry.all.each do |entry|
+      @registry.find_each do |entry|
         agent = entry[:record]
         thread = entry[:thread]
 
@@ -267,7 +267,7 @@ module ActiveMatrix
       %w[INT TERM].each do |signal|
         Signal.trap(signal) do
           Thread.new { stop_all }.join
-          exit
+          exit # rubocop:disable Rails/Exit
         end
       end
     end

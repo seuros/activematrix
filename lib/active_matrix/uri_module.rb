@@ -2,27 +2,19 @@
 
 require 'uri'
 
-module URI
-  # A mxc:// Matrix content URL
-  class MXC < Generic
-    def full_path
-      select(:host, :port, :path, :query, :fragment)
-        .compact
-        .join
+module ActiveMatrix
+  module Uri
+    # A mxc:// Matrix content URL
+    class MXC < ::URI::Generic
+      def full_path
+        select(:host, :port, :path, :query, :fragment)
+          .compact
+          .join
+      end
     end
-  end
 
-  # TODO: Use +register_scheme+ on Ruby >=3.1 and fall back to old behavior
-  # for older Rubies. May be removed at EOL of Ruby 3.0.
-  if respond_to? :register_scheme
-    register_scheme 'MXC', MXC
-  else
-    @@schemes['MXC'] = MXC
-  end
-
-  unless scheme_list.key? 'MATRIX'
     # A matrix: URI according to MSC2312
-    class MATRIX < Generic
+    class MATRIX < ::URI::Generic
       attr_reader :authority, :action, :mxid, :mxid2, :via
 
       def initialize(*)
@@ -62,7 +54,7 @@ module URI
                 end
 
         component = components.shift
-        raise InvalidComponentError, "component can't be empty" if component.nil? || component.empty?
+        raise InvalidComponentError, "component can't be empty" if component.blank?
 
         @mxid = ActiveMatrix::MXID.new("#{sigil}#{component}")
 
@@ -74,7 +66,7 @@ module URI
                      raise InvalidComponentError, 'invalid component in path'
                    end
           component = components.shift
-          raise InvalidComponentError, "component can't be empty" if component.nil? || component.empty?
+          raise InvalidComponentError, "component can't be empty" if component.blank?
 
           @mxid2 = ActiveMatrix::MXID.new("#{sigil2}#{component}")
         end
@@ -90,12 +82,12 @@ module URI
       end
     end
 
-    # TODO: Use +register_scheme+ on Ruby >=3.1 and fall back to old behavior
-    # for older Rubies. May be removed at EOL of Ruby 3.0.
-    if respond_to? :register_scheme
-      register_scheme 'MATRIX', MATRIX
-    else
-      @@schemes['MATRIX'] = MATRIX
-    end
+    # Register URI schemes using modern Ruby
+    ::URI.register_scheme 'MXC', MXC
+    ::URI.register_scheme 'MATRIX', MATRIX unless ::URI.scheme_list.key?('MATRIX')
+
+    # Make them available in URI namespace for backward compatibility
+    ::URI.const_set(:MXC, MXC) unless ::URI.const_defined?(:MXC)
+    ::URI.const_set(:MATRIX, MATRIX) unless ::URI.const_defined?(:MATRIX)
   end
 end

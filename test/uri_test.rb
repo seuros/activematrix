@@ -38,13 +38,13 @@ class URITest < ActiveSupport::TestCase
     uri = URI('matrix:r/us:example.org/e/lol823y4bcp3qo4')
 
     assert_equal ActiveMatrix::MXID.new('#us:example.org'), uri.mxid
-    assert uri.mxid2?
+    assert_predicate uri, :mxid2?
     assert_equal ActiveMatrix::MXID.new('$lol823y4bcp3qo4'), uri.mxid2
 
     uri = URI('matrix:roomid/rid:example.org/event/lol823y4bcp3qo4?via=example2.org')
 
     assert_equal ActiveMatrix::MXID.new('!rid:example.org'), uri.mxid
-    assert uri.mxid2?
+    assert_predicate uri, :mxid2?
     assert_equal ActiveMatrix::MXID.new('$lol823y4bcp3qo4'), uri.mxid2
     assert_equal ['example2.org'], uri.via
 

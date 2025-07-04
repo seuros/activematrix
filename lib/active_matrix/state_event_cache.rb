@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ActiveMatrix::Util
+module ActiveMatrix
   class StateEventCache
     extend ActiveMatrix::Extensions
     include Enumerable
@@ -18,13 +18,11 @@ module ActiveMatrix::Util
       @cache_time = cache_time
     end
 
-    def client
-      @room.client
-    end
+    delegate :client, to: :@room
 
     def reload!
       # Clear all cache entries for this room's state
-      cache.delete_matched("activematrix:room:#{room.id}:state:*") if cache_available?
+      cache.delete_matched("activematrix:room:#{room.id}:state:*")
     end
 
     def keys
@@ -42,11 +40,11 @@ module ActiveMatrix::Util
     end
 
     def key?(type, key = nil)
-      cache_available? && cache.exist?(cache_key(type, key))
+      cache.exist?(cache_key(type, key))
     end
 
     def expire(type, key = nil)
-      cache.delete(cache_key(type, key)) if cache_available?
+      cache.delete(cache_key(type, key))
     end
 
     def each(live: false)
@@ -57,12 +55,12 @@ module ActiveMatrix::Util
     def delete(type, key = nil)
       type = type.to_s unless type.is_a? String
       client.api.set_room_state(room.id, type, {}, **{ state_key: key }.compact)
-      cache.delete(cache_key(type, key)) if cache_available?
+      cache.delete(cache_key(type, key))
     end
 
     def [](type, key = nil)
       type = type.to_s unless type.is_a? String
-      return fetch_state(type, key) if !cache_available? || client.cache == :none
+      return fetch_state(type, key) if client.cache == :none
 
       begin
         cached_value = cache.fetch(cache_key(type, key), expires_in: @cache_time) do
@@ -109,8 +107,6 @@ module ActiveMatrix::Util
       type = type.to_s unless type.is_a? String
       client.api.set_room_state(room.id, type, value, **{ state_key: key }.compact)
 
-      return unless cache_available?
-
       # Convert to plain hash for caching to avoid serialization issues with Mocha
       cacheable_value = if value.is_a?(Hash)
                           clean_hash = {}
@@ -131,7 +127,6 @@ module ActiveMatrix::Util
     # Alias for writing without API call
     def write(type, value, key = nil)
       type = type.to_s unless type.is_a? String
-      return unless cache_available?
 
       # Convert to plain hash for caching to avoid serialization issues
       cacheable_value = if value.is_a?(Hash)
@@ -154,10 +149,6 @@ module ActiveMatrix::Util
 
     def cache_key(type, key = nil)
       "activematrix:room:#{room.id}:state:#{type}#{"|#{key}" if key}"
-    end
-
-    def cache_available?
-      defined?(::Rails) && ::Rails.respond_to?(:cache) && ::Rails.cache
     end
 
     def cache

@@ -35,6 +35,7 @@ class VCRIntegrationTest < ActiveSupport::TestCase
 
     with_vcr_cassette('integration/whoami') do
       response = client.api.whoami
+
       assert_equal matrix_test_user_id, response[:user_id]
     end
   end
@@ -47,7 +48,7 @@ class VCRIntegrationTest < ActiveSupport::TestCase
       response = api.get_public_rooms
 
       assert response.key?(:chunk)
-      assert response[:chunk].is_a?(Array)
+      assert_kind_of Array, response[:chunk]
     end
   end
 end

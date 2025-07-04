@@ -72,13 +72,13 @@ class RoomTest < ActiveSupport::TestCase
       }
     )
 
-    refute @room.dm?(members_only: true)
+    assert_not @room.dm?(members_only: true)
 
     @api.expects(:get_account_data).with('@alice:example.com', 'm.direct').returns(
       '@bob:example.com' => [@id]
     )
 
-    assert @room.dm?
+    assert_predicate @room, :dm?
   end
 
   def test_all_members
@@ -110,6 +110,7 @@ class RoomTest < ActiveSupport::TestCase
 
     # Filter, should skip cache and return another value
     members = @room.all_members(filter: 'something')
+
     assert_equal 2, members.count
     assert_equal '@alice:example.com', members.first.id
     assert_equal '@charlie:example.com', members.last.id
@@ -234,11 +235,11 @@ class RoomTest < ActiveSupport::TestCase
     assert @room.admin? '@alice:example.com'
     assert @room.moderator? '@alice:example.com'
     assert @room.moderator? '@bob:example.com'
-    refute @room.moderator? '@charlie:example.com'
+    assert_not @room.moderator? '@charlie:example.com'
 
     assert @room.user_can_send? '@alice:example.com', 'm.room.message'
     assert @room.user_can_send? '@alice:example.com', 'm.room.name', state: true
-    refute @room.user_can_send? '@charlie:example.com', 'm.room.topic', state: true
+    assert_not @room.user_can_send? '@charlie:example.com', 'm.room.topic', state: true
 
     @api.expects(:set_room_state).with(@id, 'm.room.power_levels', { users: { '@alice:example.com': 100, '@bob:example.com': 50, '@charlie:example.com': 50 }, users_default: 0 })
     @room.moderator! '@charlie:example.com'
@@ -266,35 +267,40 @@ class RoomTest < ActiveSupport::TestCase
     @api.expects(:get_room_aliases).with(@id).never
 
     aliases = @room.aliases
-    assert aliases.is_a?(Array), "Expected aliases to be an Array, got #{aliases.class}"
-    assert aliases.include?('#test:example.com'), "Expected aliases #{aliases.inspect} to include '#test:example.com'"
+
+    assert_kind_of Array, aliases, "Expected aliases to be an Array, got #{aliases.class}"
+    assert_includes aliases, '#test:example.com', "Expected aliases #{aliases.inspect} to include '#test:example.com'"
 
     # Second call should use cache
-    assert @room.aliases.include? '#test:example.com'
+    assert_includes @room.aliases, '#test:example.com'
 
     # Test reload with alt_aliases
     @api.stubs(:get_room_state).with(@id, 'm.room.canonical_alias').returns(ActiveMatrix::Response.new(@api, alias: '#test:example.com', alt_aliases: ['#test:example1.com']))
     @room.reload_aliases!
-    assert @room.aliases.include? '#test:example.com'
-    assert @room.aliases.include? '#test:example1.com'
+
+    assert_includes @room.aliases, '#test:example.com'
+    assert_includes @room.aliases, '#test:example1.com'
 
     # Test with get_room_aliases
     @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test:example2.com']))
     @room.reload_aliases!
     aliases = @room.aliases(canonical_only: false)
-    assert aliases.include? '#test:example.com'
-    assert aliases.include? '#test:example1.com'
-    assert aliases.include? '#test:example2.com'
+
+    assert_includes aliases, '#test:example.com'
+    assert_includes aliases, '#test:example1.com'
+    assert_includes aliases, '#test:example2.com'
 
     @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError)
     @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test:example.com']))
     @room.reload_aliases!
-    assert @room.aliases(canonical_only: false).include? '#test:example.com'
+
+    assert_includes @room.aliases(canonical_only: false), '#test:example.com'
 
     @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError)
     @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test2:example.com']))
     @room.reload_aliases!
-    assert @room.aliases(canonical_only: false).include?('#test2:example.com')
+
+    assert_includes @room.aliases(canonical_only: false), '#test2:example.com'
 
     # Unstub the previous stub and set new expectation
     @api.unstub(:get_room_state)
@@ -302,7 +308,8 @@ class RoomTest < ActiveSupport::TestCase
     @api.expects(:get_room_state).with(@id, 'm.room.canonical_alias').raises(ActiveMatrix::MatrixNotFoundError).twice
     @api.expects(:get_room_aliases).with(@id).returns(ActiveMatrix::Response.new(@api, aliases: ['#test2:example.com']))
     @room.reload_aliases!
-    assert !@room.aliases(canonical_only: false).include?('#test:example.com')
+
+    assert_not @room.aliases(canonical_only: false).include?('#test:example.com')
   end
 
   def test_modifies

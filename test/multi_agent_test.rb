@@ -29,19 +29,22 @@ class MultiAgentTest < ActiveSupport::TestCase
 
     # Get by ID
     entry = registry.get(agent.id)
+
     assert_not_nil entry
     assert_equal agent, entry[:record]
     assert_equal bot, entry[:instance]
 
     # Get by name
     entry = registry.get_by_name('test_bot')
+
     assert_not_nil entry
     assert_equal agent, entry[:record]
 
     # Unregister
     registry.unregister(agent)
+
     assert_equal 0, registry.count
-    assert !registry.running?(agent)
+    assert_not registry.running?(agent)
   end
 
   def test_memory_system
@@ -95,6 +98,7 @@ class MultiAgentTest < ActiveSupport::TestCase
     if defined?(::GlobalMemory)
       # Set and get
       global.set('global_key', 'global_value')
+
       assert_equal 'global_value', global.get('global_key')
 
       # Test categories
@@ -102,6 +106,7 @@ class MultiAgentTest < ActiveSupport::TestCase
       global.set('cat_key2', 'value2', category: 'test_cat')
 
       values = global.by_category('test_cat')
+
       assert_equal 2, values.size
       assert_equal 'value1', values['cat_key1']
       assert_equal 'value2', values['cat_key2']
@@ -162,7 +167,7 @@ class MultiAgentTest < ActiveSupport::TestCase
     agent.stubs(:state).returns('online')
     agent.stubs(:homeserver).returns('https://example.com')
     agent.stubs(:bot_class).returns('TestBot')
-    agent.stubs(:last_active_at).returns(Time.now)
+    agent.stubs(:last_active_at).returns(Time.zone.now)
     agent.stubs(:settings).returns({}) # Agent settings for configuration
     agent
   end

@@ -165,9 +165,9 @@ module ActiveMatrix
 
     # Retrieve an account data helper
     def account_data
-      return ActiveMatrix::Util::AccountDataCache.new self if cache == :none
+      return ActiveMatrix::AccountDataCache.new self if cache == :none
 
-      @account_data ||= ActiveMatrix::Util::AccountDataCache.new self
+      @account_data ||= ActiveMatrix::AccountDataCache.new self
     end
 
     # Gets a direct message room for the given user if one exists
@@ -252,7 +252,7 @@ module ActiveMatrix
       username = username.to_s unless username.is_a?(String)
       password = password.to_s unless password.is_a?(String)
 
-      raise ArgumentError, "Username can't be nil or empty" if username.nil? || username.empty?
+      raise ArgumentError, "Username can't be nil or empty" if username.blank?
       raise ArgumentError, "Password can't be nil or empty" if password.nil? || username.empty?
 
       data = api.register(auth: { type: 'm.login.dummy' }, username: username, password: password)
@@ -279,8 +279,8 @@ module ActiveMatrix
       username = username.to_s unless username.is_a?(String)
       password = password.to_s unless password.is_a?(String)
 
-      raise ArgumentError, "Username can't be nil or empty" if username.nil? || username.empty?
-      raise ArgumentError, "Password can't be nil or empty" if password.nil? || password.empty?
+      raise ArgumentError, "Username can't be nil or empty" if username.blank?
+      raise ArgumentError, "Password can't be nil or empty" if password.blank?
 
       data = api.login(user: username, password: password)
       post_authentication(data)
@@ -307,8 +307,8 @@ module ActiveMatrix
       username = username.to_s unless username.is_a?(String)
       token = token.to_s unless token.is_a?(String)
 
-      raise ArgumentError, "Username can't be nil or empty" if username.nil? || username.empty?
-      raise ArgumentError, "Token can't be nil or empty" if token.nil? || token.empty?
+      raise ArgumentError, "Username can't be nil or empty" if username.blank?
+      raise ArgumentError, "Token can't be nil or empty" if token.blank?
 
       data = api.login(user: username, token: token, type: 'm.login.token')
       post_authentication(data)
@@ -344,13 +344,13 @@ module ActiveMatrix
       data.threepids.each do |obj|
         obj.instance_eval do
           def added_at
-            Time.at(self[:added_at] / 1000)
+            Time.zone.at(self[:added_at] / 1000)
           end
 
           def validated_at
             return unless validated?
 
-            Time.at(self[:validated_at] / 1000)
+            Time.zone.at(self[:validated_at] / 1000)
           end
 
           def validated?
@@ -639,7 +639,7 @@ module ActiveMatrix
 
       data.dig(:rooms, :join)&.each do |room_id, join|
         room = ensure_room(room_id)
-        room.instance_variable_set '@prev_batch', join.dig(:timeline, :prev_batch)
+        room.instance_variable_set :@prev_batch, join.dig(:timeline, :prev_batch)
         room.instance_variable_set :@members_loaded, true unless sync_filter.fetch(:room, {}).fetch(:state, {}).fetch(:lazy_load_members, false)
 
         join.dig(:account_data, :events)&.each do |account_data|

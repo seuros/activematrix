@@ -29,7 +29,7 @@ class ApiCSVerificationTest < ActiveSupport::TestCase
   end
 
   def test_fixtures
-    @fixture.each do |function, data|
+    @fixture.each do |function, data| # rubocop:disable Metrics/BlockLength
       unless data.key? 'method'
         puts "Skipping test of #{function} due to missing method"
         next
@@ -81,6 +81,7 @@ class ApiCSVerificationTest < ActiveSupport::TestCase
                             else
                               args
                             end
+
           assert(call_api(data['method'], symbolized_args))
           @api.unstub(:request)
         end
@@ -105,7 +106,7 @@ class ApiCSVerificationTest < ActiveSupport::TestCase
                end
 
         if code.to_s[0] == '2'
-          assert(!call_api(data['method'], args).nil?)
+          assert_not(call_api(data['method'], args).nil?)
         else
           assert_raises(ActiveMatrix::MatrixRequestError.class_by_code(code)) { call_api(data['method'], args) }
         end
@@ -116,7 +117,7 @@ class ApiCSVerificationTest < ActiveSupport::TestCase
   end
 
   def call_api(method, args)
-    required_arguments_size = @api.method(method).parameters.select { |type, _| type == :req }.size
+    required_arguments_size = @api.method(method).parameters.count { |type, _| type == :req }
 
     if args.size == required_arguments_size || !args.last.is_a?(Hash)
       @api.send(method, *args)
