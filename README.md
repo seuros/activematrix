@@ -18,7 +18,7 @@ A Rails-native Matrix SDK for building multi-agent bot systems and real-time com
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'activematrix', '~> 0.0.2'
+gem 'activematrix', '~> 0.0.3'
 ```
 
 And then execute:
