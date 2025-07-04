@@ -1,0 +1,44 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/presence/@<TEST_USER>:arena.seuros.net/status"
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer XviOnc0M5HFP8X0EXcG0zqMhaJ1I1s4NwWC0XULz6LM
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:26 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '94'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"currently_active":true,"last_active_ago":123,"presence":"online","status_msg":"Testing
+        VCR"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:26 GMT
+recorded_with: VCR 6.3.1

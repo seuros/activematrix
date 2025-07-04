@@ -13,20 +13,20 @@ class VCRMigrator
   end
 
   def migrate!
-    puts "Starting VCR migration..."
+    puts 'Starting VCR migration...'
     puts "Mode: #{@dry_run ? 'DRY RUN' : 'ACTUAL'}"
-    
+
     # Check environment
     check_environment
-    
+
     # Migrate each test file
     migrate_cs_protocol_test
     migrate_cs_verification_test
     migrate_ss_protocol_test
-    
+
     # Update documentation
     update_documentation
-    
+
     puts "\nMigration complete!"
     puts next_steps
   end
@@ -35,76 +35,76 @@ class VCRMigrator
 
   def check_environment
     puts "\nChecking environment..."
-    
+
     if ENV['MATRIX_TEST_SERVER'].nil?
-      puts "  ⚠️  MATRIX_TEST_SERVER not set (will use default: https://arena.seuros.net)"
+      puts '  ⚠️  MATRIX_TEST_SERVER not set (will use default: https://arena.seuros.net)'
     else
       puts "  ✓ MATRIX_TEST_SERVER: #{ENV['MATRIX_TEST_SERVER']}"
     end
-    
+
     if ENV['MATRIX_TEST_USER'].nil?
-      puts "  ⚠️  MATRIX_TEST_USER not set (will use default: testuser)"
+      puts '  ⚠️  MATRIX_TEST_USER not set (will use default: testuser)'
     else
       puts "  ✓ MATRIX_TEST_USER: #{ENV['MATRIX_TEST_USER']}"
     end
-    
+
     if File.exist?('.env.test')
-      puts "  ✓ .env.test exists"
+      puts '  ✓ .env.test exists'
     else
-      puts "  ⚠️  .env.test not found - copying from .env.test.example"
+      puts '  ⚠️  .env.test not found - copying from .env.test.example'
       FileUtils.cp('.env.test.example', '.env.test') unless @dry_run
     end
   end
 
   def migrate_cs_protocol_test
     puts "\nMigrating api_cs_protocol_test.rb..."
-    
+
     if File.exist?('test/api_cs_protocol_vcr_test.rb')
-      puts "  ✓ VCR version already exists"
+      puts '  ✓ VCR version already exists'
     else
-      puts "  ⚠️  VCR version not found - please create manually"
+      puts '  ⚠️  VCR version not found - please create manually'
     end
-    
+
     # Record initial cassettes
-    if @options[:record]
-      puts "  Recording cassettes..."
-      record_cassettes('api_cs_protocol_vcr_test.rb')
-    end
+    return unless @options[:record]
+
+    puts '  Recording cassettes...'
+    record_cassettes('api_cs_protocol_vcr_test.rb')
   end
 
   def migrate_cs_verification_test
     puts "\nMigrating api_cs_protocol_verification_test.rb..."
-    puts "  ℹ️  This test uses YAML fixtures - consider keeping as-is"
-    puts "  ℹ️  Can add VCR to validate fixtures against real server"
+    puts '  ℹ️  This test uses YAML fixtures - consider keeping as-is'
+    puts '  ℹ️  Can add VCR to validate fixtures against real server'
   end
 
   def migrate_ss_protocol_test
     puts "\nMigrating api_ss_protocol_test.rb..."
-    puts "  ℹ️  Server-server protocol tests need admin access"
-    puts "  ℹ️  Consider mocking these unless you have server admin rights"
+    puts '  ℹ️  Server-server protocol tests need admin access'
+    puts '  ℹ️  Consider mocking these unless you have server admin rights'
   end
 
   def update_documentation
     puts "\nUpdating documentation..."
-    
+
     if File.exist?('docs/vcr-testing.md')
-      puts "  ✓ VCR documentation exists"
+      puts '  ✓ VCR documentation exists'
     else
-      puts "  ⚠️  VCR documentation missing"
+      puts '  ⚠️  VCR documentation missing'
     end
-    
+
     # Update README if needed
     readme = File.read('README.md')
     if readme.include?('VCR')
-      puts "  ✓ README mentions VCR"
+      puts '  ✓ README mentions VCR'
     else
-      puts "  ⚠️  Consider updating README to mention VCR testing"
+      puts '  ⚠️  Consider updating README to mention VCR testing'
     end
   end
 
   def record_cassettes(test_file)
     return if @dry_run
-    
+
     cmd = "USE_VCR_FOR_PROTOCOL_TESTS=true VCR_MODE=new_episodes bundle exec ruby -Itest test/#{test_file}"
     puts "  Running: #{cmd}"
     system(cmd)
@@ -112,16 +112,16 @@ class VCRMigrator
 
   def next_steps
     <<~STEPS
-    
-    Next Steps:
-    1. Review and update .env.test with your Matrix server credentials
-    2. Run tests in VCR mode to record cassettes:
-       USE_VCR_FOR_PROTOCOL_TESTS=true VCR_MODE=new_episodes bundle exec rake test
-    3. Review recorded cassettes in test/fixtures/vcr_cassettes/
-    4. Commit cassettes to version control
-    5. Future test runs will use recorded cassettes (offline testing)
-    
-    For more information, see docs/vcr-testing.md
+
+      Next Steps:
+      1. Review and update .env.test with your Matrix server credentials
+      2. Run tests in VCR mode to record cassettes:
+         USE_VCR_FOR_PROTOCOL_TESTS=true VCR_MODE=new_episodes bundle exec rake test
+      3. Review recorded cassettes in test/fixtures/vcr_cassettes/
+      4. Commit cassettes to version control
+      5. Future test runs will use recorded cassettes (offline testing)
+
+      For more information, see docs/vcr-testing.md
     STEPS
   end
 end
@@ -129,17 +129,17 @@ end
 # Parse command line options
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: bin/migrate_to_vcr [options]"
-  
-  opts.on("-d", "--dry-run", "Show what would be done without making changes") do
+  opts.banner = 'Usage: bin/migrate_to_vcr [options]'
+
+  opts.on('-d', '--dry-run', 'Show what would be done without making changes') do
     options[:dry_run] = true
   end
-  
-  opts.on("-r", "--record", "Record cassettes after migration") do
+
+  opts.on('-r', '--record', 'Record cassettes after migration') do
     options[:record] = true
   end
-  
-  opts.on("-h", "--help", "Show this help message") do
+
+  opts.on('-h', '--help', 'Show this help message') do
     puts opts
     exit
   end

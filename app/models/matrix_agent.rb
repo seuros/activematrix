@@ -36,7 +36,7 @@ class MatrixAgent < ApplicationRecord
     event :connection_established do
       transition connecting: :online_idle
     end
-    
+
     after_transition to: :online_idle do |agent|
       agent.update(last_active_at: Time.current)
     end
@@ -88,7 +88,7 @@ class MatrixAgent < ApplicationRecord
   end
 
   def increment_messages_handled!
-    increment!(:messages_handled)
+    update!(messages_handled: messages_handled + 1)
   end
 
   def update_activity!
@@ -99,7 +99,7 @@ class MatrixAgent < ApplicationRecord
   attr_accessor :password
 
   def authenticate(password)
-    return false unless encrypted_password.present?
+    return false if encrypted_password.blank?
 
     BCrypt::Password.new(encrypted_password) == password
   end

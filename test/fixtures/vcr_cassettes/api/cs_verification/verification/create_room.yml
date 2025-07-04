@@ -1,0 +1,88 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/createRoom"
+    body:
+      encoding: UTF-8
+      string: '{"visibility":"public","name":"VCR Test Room","topic":"Testing room
+        creation with VCR","preset":"private_chat"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '111'
+      Authorization:
+      - Bearer sL87fHYLptwId1T-gm6R-VvVDit-RNBTR4UP0ayHmRE
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:34 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '48'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"room_id":"!kB7ARyucaJrUGiLL:arena.seuros.net"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:34 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!kB7ARyucaJrUGiLL:arena.seuros.net/leave"
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer sL87fHYLptwId1T-gm6R-VvVDit-RNBTR4UP0ayHmRE
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:34 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Fri, 04 Jul 2025 17:15:34 GMT
+recorded_with: VCR 6.3.1

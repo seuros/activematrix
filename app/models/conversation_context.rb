@@ -13,7 +13,7 @@ class ConversationContext < ApplicationRecord
   # Scopes
   scope :recent, -> { order(last_message_at: :desc) }
   scope :active, -> { where('last_message_at > ?', 1.hour.ago) }
-  scope :stale, -> { where('last_message_at < ?', 1.day.ago) }
+  scope :stale, -> { where(last_message_at: ...1.day.ago) }
 
   # Add a message to the history
   def add_message(message_data)

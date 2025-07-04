@@ -4,7 +4,7 @@ class GlobalMemory < ApplicationRecord
   validates :key, presence: true, uniqueness: true
 
   scope :active, -> { where('expires_at IS NULL OR expires_at > ?', Time.current) }
-  scope :expired, -> { where('expires_at <= ?', Time.current) }
+  scope :expired, -> { where(expires_at: ..Time.current) }
   scope :by_category, ->(category) { where(category: category) }
   scope :readable, -> { where(public_read: true) }
   scope :writable, -> { where(public_write: true) }

@@ -1,0 +1,48 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/publicRooms?limit=5"
+    body:
+      encoding: UTF-8
+      string: 'null'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '4'
+      Authorization:
+      - Bearer AQPEbRwhG7qGEiTrXPqwpSQUCpB5oh7H8gBynNZIc8c
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:32 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1069'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"chunk":[{"canonical_alias":"#lounge:arena.seuros.net","name":"The
+        Lounge","num_joined_members":7,"room_id":"!YWe0yFA6FPuSw1z1:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#valencia:arena.seuros.net","name":"Valencia","num_joined_members":3,"room_id":"!G8hjWAZEHUAqXn5H:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Madrid:arena.seuros.net","name":"Madrid","num_joined_members":2,"room_id":"!3hduWAxTl0G56dBt:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Tanger:arena.seuros.net","name":"Tanger","num_joined_members":2,"room_id":"!r0IB8coBRXygYADp:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#lab:arena.seuros.net","name":"Laboratory","num_joined_members":2,"room_id":"!Xug4Caiip9PNozWF:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"}],"next_batch":"T5","total_room_count_estimate":17}'
+  recorded_at: Fri, 04 Jul 2025 17:15:32 GMT
+recorded_with: VCR 6.3.1

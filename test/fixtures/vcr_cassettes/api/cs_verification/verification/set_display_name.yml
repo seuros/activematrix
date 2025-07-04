@@ -1,0 +1,87 @@
+---
+http_interactions:
+- request:
+    method: put
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:arena.seuros.net/displayname"
+    body:
+      encoding: UTF-8
+      string: '{"displayname":"VCR Test User"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '31'
+      Authorization:
+      - Bearer Cl1aZIB3MCyF6Gr0y-Xj6eWmPaeE3ydwplX4Ei3h_fI
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:20:19 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Fri, 04 Jul 2025 17:20:19 GMT
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:arena.seuros.net/displayname"
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer Cl1aZIB3MCyF6Gr0y-Xj6eWmPaeE3ydwplX4Ei3h_fI
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:20:19 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '31'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"displayname":"VCR Test User"}'
+  recorded_at: Fri, 04 Jul 2025 17:20:19 GMT
+recorded_with: VCR 6.3.1

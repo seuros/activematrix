@@ -1,0 +1,131 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/createRoom"
+    body:
+      encoding: UTF-8
+      string: '{"visibility":"public","name":"State Event Test Room"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '54'
+      Authorization:
+      - Bearer Cu7XNtmOA9lqRxdghKcVqkCn9gT4x4u0r9z6r9HKPqo
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:39 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '48'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"room_id":"!pN7s9L6V6KkUdDgA:arena.seuros.net"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:40 GMT
+- request:
+    method: put
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!pN7s9L6V6KkUdDgA:arena.seuros.net/state/m.room.topic"
+    body:
+      encoding: UTF-8
+      string: '{"topic":"New topic set by VCR test"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '37'
+      Authorization:
+      - Bearer Cu7XNtmOA9lqRxdghKcVqkCn9gT4x4u0r9z6r9HKPqo
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:40 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '59'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"event_id":"$PiMJ_2Y0sIG4PJ7JxrDr95TzRENaIvT9owNUxgPDzSU"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:40 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!pN7s9L6V6KkUdDgA:arena.seuros.net/leave"
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer Cu7XNtmOA9lqRxdghKcVqkCn9gT4x4u0r9z6r9HKPqo
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:40 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Fri, 04 Jul 2025 17:15:40 GMT
+recorded_with: VCR 6.3.1

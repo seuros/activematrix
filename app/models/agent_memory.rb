@@ -6,7 +6,7 @@ class AgentMemory < ApplicationRecord
   validates :key, presence: true, uniqueness: { scope: :matrix_agent_id }
 
   scope :active, -> { where('expires_at IS NULL OR expires_at > ?', Time.current) }
-  scope :expired, -> { where('expires_at <= ?', Time.current) }
+  scope :expired, -> { where(expires_at: ..Time.current) }
 
   # Automatically clean up expired memories
   after_commit :schedule_cleanup, if: :expires_at?
@@ -20,7 +20,7 @@ class AgentMemory < ApplicationRecord
   end
 
   def ttl
-    return nil unless expires_at.present?
+    return nil if expires_at.blank?
 
     remaining = expires_at - Time.current
     [remaining, 0].max

@@ -114,19 +114,46 @@ module VCRHelper
       @api
     end
 
-    def with_protocol_vcr(test_name, &block)
-      cassette_name = "api/#{self.class.name.underscore}/#{test_name}"
+    def vcr_cassette_path
+      # Allow test classes to define their own cassette path
+      if self.class.const_defined?(:VCR_CASSETTE_PATH)
+        self.class.const_get(:VCR_CASSETTE_PATH)
+      else
+        # Default to a simple api path
+        'api/protocol'
+      end
+    end
+
+    def with_protocol_vcr(test_name, cassette_path: nil, &)
+      path = cassette_path || vcr_cassette_path
+      cassette_name = "#{path}/#{test_name}"
+
+      # For login-related tests, ignore body in matching to handle device name variations
+      match_on = if test_name.include?('login') || test_name.include?('logout')
+                   %i[method uri_without_param]
+                 else
+                   %i[method uri_without_param body]
+                 end
+
       options = {
         record: vcr_mode,
-        match_requests_on: %i[method uri_without_param body],
+        match_requests_on: match_on,
         allow_playback_repeats: true
       }
-      
-      with_vcr_cassette(cassette_name, options, &block)
+
+      with_vcr_cassette(cassette_name, options, &)
     end
 
     def setup_authenticated_api
-      with_protocol_vcr('auth_setup') do
+      # Use a single shared auth cassette with playback repeats enabled
+      # This allows multiple tests to reuse the same login interaction
+      options = {
+        record: vcr_mode,
+        match_requests_on: %i[method uri_without_param],
+        allow_playback_repeats: true
+      }
+
+      with_vcr_cassette('api/shared_auth_setup', options) do
         api = setup_protocol_api
         creds = matrix_test_credentials
         response = api.login(user: creds[:username], password: creds[:password])
@@ -136,18 +163,18 @@ module VCRHelper
     end
 
     # Mock a real API response for gradual migration
-    def mock_or_real_response(cassette_name, mock_response = nil)
+    def mock_or_real_response(cassette_name, mock_response = nil, &)
       if ENV['USE_VCR_FOR_PROTOCOL_TESTS'] == 'true'
-        with_protocol_vcr(cassette_name) { yield }
+        with_protocol_vcr(cassette_name, &)
       else
         mock_response
       end
     end
-    
+
     # Create a test room for protocol tests
     def create_test_room(api, name_suffix = nil)
       room_name = "[TEST] Protocol Test Room #{name_suffix || Time.now.to_i}"
-      
+
       with_protocol_vcr("create_room_#{name_suffix || 'default'}") do
         response = api.create_room(
           name: room_name,
@@ -157,11 +184,11 @@ module VCRHelper
         response[:room_id]
       end
     end
-    
+
     # Clean up test room after test
     def cleanup_test_room(api, room_id)
       return unless ENV['USE_VCR_FOR_PROTOCOL_TESTS'] == 'true' && ENV['CLEANUP_TEST_ROOMS'] == 'true'
-      
+
       without_vcr do
         api.leave_room(room_id) rescue nil
       end
@@ -186,18 +213,18 @@ module VCRHelper
     c.register_request_matcher :uri_without_param do |request1, request2|
       uri1 = URI(request1.uri)
       uri2 = URI(request2.uri)
-      
+
       # Remove access_token and txn_id from comparison
       params_to_ignore = %w[access_token txn_id]
-      
+
       query1 = Rack::Utils.parse_query(uri1.query || '')
       query2 = Rack::Utils.parse_query(uri2.query || '')
-      
+
       params_to_ignore.each do |param|
         query1.delete(param)
         query2.delete(param)
       end
-      
+
       uri1.host == uri2.host &&
         uri1.path == uri2.path &&
         query1 == query2

@@ -1,0 +1,44 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:arena.seuros.net"
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer GT7-MGF-VZwAdYXSVG1nqBP_g8v0d8yB2BXpW5g9IKE
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:35 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '145'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"avatar_url":"mxc://arena.seuros.net/0a267e18acb36d6adccf683abba5ca99c0b75cb4537fb89259cb165af52409c5","displayname":"VCR
+        Test User 1751649328"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:35 GMT
+recorded_with: VCR 6.3.1

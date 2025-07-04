@@ -24,7 +24,6 @@ require 'uri'
 require_relative 'support/vcr_helper'
 require_relative 'support/active_matrix_test_base'
 
-
 # Configure VCR
 VCR.configure do |config|
   config.cassette_library_dir = 'test/fixtures/vcr_cassettes'

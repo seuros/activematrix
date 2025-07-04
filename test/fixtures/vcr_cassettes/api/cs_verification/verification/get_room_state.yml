@@ -1,0 +1,129 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/createRoom"
+    body:
+      encoding: UTF-8
+      string: '{"visibility":"public","name":"State Test Room"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '48'
+      Authorization:
+      - Bearer IYMJUMbVITQBiFmEFQLo04UrQsxPQXVw5muoAYZy5Lc
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:31 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '48'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '{"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net"}'
+  recorded_at: Fri, 04 Jul 2025 17:15:31 GMT
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!odZSRhAx8im9g2XG:arena.seuros.net/state"
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer IYMJUMbVITQBiFmEFQLo04UrQsxPQXVw5muoAYZy5Lc
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:31 GMT
+      Content-Type:
+      - application/json
+      Transfer-Encoding:
+      - chunked
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: '[{"content":{"creator":"@<TEST_USER>:arena.seuros.net","room_version":"10"},"event_id":"$_Waw5MQlcxU1_HqlC7khzCS1sAkDN8L3ZDXeuASk0mo","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"","type":"m.room.create"},{"content":{"avatar_url":"mxc://arena.seuros.net/0a267e18acb36d6adccf683abba5ca99c0b75cb4537fb89259cb165af52409c5","displayname":"VCR
+        Test User 1751649328","membership":"join"},"event_id":"$M2iGGPc9CEftY91wE31CqRzN-xTxWQ_iMaMhDANq554","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"@<TEST_USER>:arena.seuros.net","type":"m.room.member"},{"content":{"ban":50,"events":{"m.room.avatar":50,"m.room.canonical_alias":50,"m.room.encryption":100,"m.room.history_visibility":100,"m.room.name":50,"m.room.power_levels":100,"m.room.server_acl":100,"m.room.tombstone":100},"events_default":0,"invite":0,"kick":50,"notifications":{"room":50},"redact":50,"state_default":50,"users":{"@<TEST_USER>:arena.seuros.net":100},"users_default":0},"event_id":"$ZVTvjbNT9FOd_vNG9NrbY1Ru8uGoDt9fecUx1gDim1M","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"","type":"m.room.power_levels"},{"content":{"join_rule":"invite"},"event_id":"$mPLzy4VT3LHa9cyxRBCWpAZv8OjYYqq1GPOkgIQYl2k","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"","type":"m.room.join_rules"},{"content":{"history_visibility":"shared"},"event_id":"$ew2bw2zvRvOLBgxUy-O-ftLT6DQfiVtHAoAF3XWwkv4","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"","type":"m.room.history_visibility"},{"content":{"name":"State
+        Test Room"},"event_id":"$o9SvxlVlk2l1EkqS0HEu0HQrgWJZQwGOYkdjB807l28","origin_server_ts":1751649331272,"room_id":"!odZSRhAx8im9g2XG:arena.seuros.net","sender":"@<TEST_USER>:arena.seuros.net","state_key":"","type":"m.room.name"}]'
+  recorded_at: Fri, 04 Jul 2025 17:15:31 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!odZSRhAx8im9g2XG:arena.seuros.net/leave"
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer IYMJUMbVITQBiFmEFQLo04UrQsxPQXVw5muoAYZy5Lc
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx/1.18.0 (Ubuntu)
+      Date:
+      - Fri, 04 Jul 2025 17:15:31 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2'
+      Connection:
+      - keep-alive
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Allow-Origin:
+      - "*"
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Fri, 04 Jul 2025 17:15:31 GMT
+recorded_with: VCR 6.3.1
