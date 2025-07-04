@@ -33,6 +33,7 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.4'
 
+  spec.add_dependency 'activejob', '~> 8.0'
   spec.add_dependency 'activerecord', '~> 8.0'
   spec.add_dependency 'bcrypt', '~> 3.1'
   spec.add_dependency 'concurrent-ruby', '~> 1.2'

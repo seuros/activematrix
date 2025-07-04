@@ -5,12 +5,9 @@ require_relative 'active_matrix/version'
 
 require 'json'
 require 'zeitwerk'
-require 'active_support'
-require 'active_support/core_ext/integer/time'
-require 'active_support/core_ext/time/calculations'
-require 'active_support/core_ext/time/zones'
-require 'active_support/core_ext/hash/keys'
-require 'active_support/core_ext/object/blank'
+require 'active_record'
+require 'active_job'
+require 'state_machines-activerecord'
 
 module ActiveMatrix
   # Configuration
@@ -107,6 +104,6 @@ module ActiveMatrix
   require_relative 'active_matrix/events'
   require_relative 'active_matrix/uri_module'
 
-  # Load Railtie for Rails integration
-  require 'active_matrix/railtie' if defined?(Rails::Railtie)
+  # Load Engine for Rails integration
+  require 'active_matrix/engine'
 end

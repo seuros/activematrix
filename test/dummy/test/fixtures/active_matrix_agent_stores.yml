@@ -2,7 +2,9 @@
 
 # Agent Smith's memories
 smith_mission_log:
-  matrix_agent: agent_smith
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 1
   key: mission_log
   value:
     status: active
@@ -12,7 +14,9 @@ smith_mission_log:
     last_encounter: '!matrix:zion.net'
 
 smith_virus_state:
-  matrix_agent: agent_smith
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 1
   key: virus_state
   value:
     infected_programs: 23
@@ -22,7 +26,9 @@ smith_virus_state:
 
 # Neo's memories
 neo_abilities:
-  matrix_agent: neo
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 2
   key: abilities_learned
   value:
     martial_arts: ['kung_fu', 'jiu_jitsu', 'boxing']
@@ -31,7 +37,9 @@ neo_abilities:
     reality_perception: 'awakened'
 
 neo_prophecy:
-  matrix_agent: neo
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 2
   key: prophecy_status
   value:
     is_the_one: true
@@ -41,7 +49,9 @@ neo_prophecy:
 
 # Morpheus's memories
 morpheus_crew:
-  matrix_agent: morpheus
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 3
   key: crew_status
   value:
     active_crew: ['neo', 'trinity', 'tank']
@@ -50,7 +60,9 @@ morpheus_crew:
     last_mission: 'extract_neo'
 
 morpheus_belief:
-  matrix_agent: morpheus
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 3
   key: belief_system
   value:
     faith_in_neo: true
@@ -60,7 +72,9 @@ morpheus_belief:
 
 # Trinity's memories
 trinity_hacking:
-  matrix_agent: trinity
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 4
   key: hacking_records
   value:
     systems_breached: ['irs', 'social_security', 'fbi']
@@ -69,7 +83,9 @@ trinity_hacking:
     neo_rescues: 3
 
 trinity_emotions:
-  matrix_agent: trinity
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 4
   key: emotional_state
   value:
     love_for_neo: true
@@ -79,17 +95,21 @@ trinity_emotions:
 
 # Oracle's memories
 oracle_prophecies:
-  matrix_agent: oracle
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 5
   key: active_prophecies
   value:
     the_one_prophecy: 'fulfilled'
     matrix_cycles: 6
     anomalies_predicted: 23
     cookie_recipes: 42
-  expires_at: <%= 1.year.from_now %>
+  expires_at: 2025-01-01 12:00:00
 
 oracle_visitors:
-  matrix_agent: oracle
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 5
   key: recent_visitors
   value:
     neo_visits: 3
@@ -99,7 +119,9 @@ oracle_visitors:
 
 # Architect's memories
 architect_calculations:
-  matrix_agent: architect
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 6
   key: matrix_calculations
   value:
     matrix_version: 6.0
@@ -108,7 +130,9 @@ architect_calculations:
     system_efficiency: 0.9999
 
 architect_anomalies:
-  matrix_agent: architect
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 6
   key: anomaly_tracking
   value:
     current_anomalies: ['neo', 'smith']
@@ -118,7 +142,9 @@ architect_anomalies:
 
 # Tank's memories
 tank_operations:
-  matrix_agent: tank
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 8
   key: operator_log
   value:
     successful_extractions: 23
@@ -127,7 +153,9 @@ tank_operations:
     ship_maintenance: 'up_to_date'
 
 tank_brotherhood:
-  matrix_agent: tank
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 8
   key: family_status
   value:
     brother: 'dozer'
@@ -137,21 +165,25 @@ tank_brotherhood:
 
 # Cypher's memories (corrupted/expired)
 cypher_betrayal:
-  matrix_agent: cypher
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 9
   key: deal_with_smith
   value:
     promised_position: 'somebody_important'
     steak_preference: 'juicy_and_delicious'
     memory_wipe_requested: true
     crew_locations: 'transmitted'
-  expires_at: <%= 1.day.ago %>
+  expires_at: 2023-12-31 12:00:00
 
 cypher_regret:
-  matrix_agent: cypher
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 9
   key: final_thoughts
   value:
     regret_level: 0.9
     preferred_reality: 'matrix'
     last_words: 'not_like_this'
     system_error: true
-  expires_at: <%= 2.days.ago %>
+  expires_at: 2023-12-30 12:00:00

@@ -2,7 +2,9 @@
 
 # Neo and Morpheus in the Nebuchadnezzar
 neo_morpheus_training:
-  matrix_agent: neo
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 2
   user_id: '@morpheus:zion.net'
   room_id: '!training:nebuchadnezzar.net'
   context:
@@ -15,21 +17,23 @@ neo_morpheus_training:
       - event_id: '$train_001'
         sender: '@morpheus:zion.net'
         content: 'Free your mind, Neo. There is no spoon.'
-        timestamp: <%= 2.hours.ago.to_i %>
+        timestamp: 1704110400
       - event_id: '$train_002'
         sender: '@neo:zion.net'
         content: 'I know kung fu.'
-        timestamp: <%= 1.hour.ago.to_i %>
+        timestamp: 1704114000
       - event_id: '$train_003'
         sender: '@morpheus:zion.net'
         content: 'Show me.'
-        timestamp: <%= 1.hour.ago.to_i %>
-  last_message_at: <%= 1.hour.ago %>
+        timestamp: 1704114000
+  last_message_at: 2024-01-01 11:00:00
   message_count: 3
 
 # Agent Smith hunting Neo
 smith_neo_pursuit:
-  matrix_agent: agent_smith
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 1
   user_id: '@neo:zion.net'
   room_id: '!subway:matrix.net'
   context:
@@ -42,21 +46,23 @@ smith_neo_pursuit:
       - event_id: '$hunt_001'
         sender: '@smith:matrix.net'
         content: 'Mr. Anderson...'
-        timestamp: <%= 3.hours.ago.to_i %>
+        timestamp: 1704106800
       - event_id: '$hunt_002'
         sender: '@neo:zion.net'
         content: 'My name... is Neo!'
-        timestamp: <%= 3.hours.ago.to_i %>
+        timestamp: 1704106800
       - event_id: '$hunt_003'
         sender: '@smith:matrix.net'
         content: 'It is inevitable.'
-        timestamp: <%= 2.hours.ago.to_i %>
-  last_message_at: <%= 2.hours.ago %>
+        timestamp: 1704110400
+  last_message_at: 2024-01-01 10:00:00
   message_count: 3
 
 # Trinity and Neo romance
 trinity_neo_love:
-  matrix_agent: trinity
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 4
   user_id: '@neo:zion.net'
   room_id: '!private:nebuchadnezzar.net'
   context:
@@ -69,21 +75,23 @@ trinity_neo_love:
       - event_id: '$love_001'
         sender: '@trinity:zion.net'
         content: 'Neo, I have to tell you something...'
-        timestamp: <%= 4.hours.ago.to_i %>
+        timestamp: 1704103200
       - event_id: '$love_002'
         sender: '@neo:zion.net'
         content: 'What is it, Trinity?'
-        timestamp: <%= 4.hours.ago.to_i %>
+        timestamp: 1704103200
       - event_id: '$love_003'
         sender: '@trinity:zion.net'
         content: 'I love you.'
-        timestamp: <%= 3.hours.ago.to_i %>
-  last_message_at: <%= 3.hours.ago %>
+        timestamp: 1704106800
+  last_message_at: 2024-01-01 09:00:00
   message_count: 3
 
 # Oracle and Neo consultation
 oracle_neo_prophecy:
-  matrix_agent: oracle
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 5
   user_id: '@neo:zion.net'
   room_id: '!apartment:oracle.net'
   context:
@@ -96,29 +104,31 @@ oracle_neo_prophecy:
       - event_id: '$oracle_001'
         sender: '@oracle:matrix.net'
         content: 'I suppose the most obvious question is, do you know what that is?'
-        timestamp: <%= 6.hours.ago.to_i %>
+        timestamp: 1704096000
       - event_id: '$oracle_002'
         sender: '@neo:zion.net'
         content: 'It''s a vase.'
-        timestamp: <%= 6.hours.ago.to_i %>
+        timestamp: 1704096000
       - event_id: '$oracle_003'
         sender: '@oracle:matrix.net'
         content: 'That vase. That vase is going to fall.'
-        timestamp: <%= 5.hours.ago.to_i %>
+        timestamp: 1704099600
       - event_id: '$oracle_004'
         sender: '@neo:zion.net'
         content: 'How do you know?'
-        timestamp: <%= 5.hours.ago.to_i %>
+        timestamp: 1704099600
       - event_id: '$oracle_005'
         sender: '@oracle:matrix.net'
         content: 'I didn''t say it would fall. I said it was going to fall.'
-        timestamp: <%= 5.hours.ago.to_i %>
-  last_message_at: <%= 5.hours.ago %>
+        timestamp: 1704099600
+  last_message_at: 2024-01-01 07:00:00
   message_count: 5
 
 # Tank operating for the crew
 tank_morpheus_ops:
-  matrix_agent: tank
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 8
   user_id: '@morpheus:zion.net'
   room_id: '!ops:nebuchadnezzar.net'
   context:
@@ -131,21 +141,23 @@ tank_morpheus_ops:
       - event_id: '$ops_001'
         sender: '@tank:zion.net'
         content: 'We''ve got trouble, Morpheus. Sentinels.'
-        timestamp: <%= 1.hour.ago.to_i %>
+        timestamp: 1704114000
       - event_id: '$ops_002'
         sender: '@morpheus:zion.net'
         content: 'How many?'
-        timestamp: <%= 1.hour.ago.to_i %>
+        timestamp: 1704114000
       - event_id: '$ops_003'
         sender: '@tank:zion.net'
         content: 'Three... maybe more. They''re coming straight for us.'
-        timestamp: <%= 50.minutes.ago.to_i %>
-  last_message_at: <%= 50.minutes.ago %>
+        timestamp: 1704114600
+  last_message_at: 2024-01-01 11:10:00
   message_count: 3
 
 # Cypher's final betrayal
 cypher_smith_deal:
-  matrix_agent: cypher
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 9
   user_id: '@smith:matrix.net'
   room_id: '!restaurant:matrix.net'
   context:
@@ -158,21 +170,23 @@ cypher_smith_deal:
       - event_id: '$betray_001'
         sender: '@cypher:zion.net'
         content: 'You know, I know this steak doesn''t exist.'
-        timestamp: <%= 2.days.ago.to_i %>
+        timestamp: 1703944800
       - event_id: '$betray_002'
         sender: '@smith:matrix.net'
         content: 'Tell me, Mr. Reagan, what good is a phone call if you''re unable to speak?'
-        timestamp: <%= 2.days.ago.to_i %>
+        timestamp: 1703944800
       - event_id: '$betray_003'
         sender: '@cypher:zion.net'
         content: 'I want to remember nothing. Nothing!'
-        timestamp: <%= 2.days.ago.to_i %>
-  last_message_at: <%= 2.days.ago %>
+        timestamp: 1703944800
+  last_message_at: 2023-12-30 12:00:00
   message_count: 3
 
 # Architect explaining to Neo
 architect_neo_explanation:
-  matrix_agent: architect
+  created_at: 2024-01-01 12:00:00
+  updated_at: 2024-01-01 12:00:00
+  agent_id: 6
   user_id: '@neo:zion.net'
   room_id: '!source:matrix.net'
   context:
@@ -185,14 +199,14 @@ architect_neo_explanation:
       - event_id: '$arch_001'
         sender: '@architect:matrix.net'
         content: 'Hello, Neo. Or should I say... Mr. Anderson?'
-        timestamp: <%= 8.hours.ago.to_i %>
+        timestamp: 1704088800
       - event_id: '$arch_002'
         sender: '@neo:zion.net'
         content: 'You''re the Architect.'
-        timestamp: <%= 8.hours.ago.to_i %>
+        timestamp: 1704088800
       - event_id: '$arch_003'
         sender: '@architect:matrix.net'
         content: 'Precisely. As you are undoubtedly gathering, the anomaly is systemic.'
-        timestamp: <%= 7.hours.ago.to_i %>
-  last_message_at: <%= 7.hours.ago %>
+        timestamp: 1704092400
+  last_message_at: 2024-01-01 05:00:00
   message_count: 3
