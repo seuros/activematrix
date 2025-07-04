@@ -107,7 +107,4 @@ module ActiveMatrix
 
   # Load Railtie for Rails integration
   require 'active_matrix/railtie' if defined?(Rails::Railtie)
-
-  # Eager load all classes
-  Loader.eager_load
 end
