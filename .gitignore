@@ -13,3 +13,4 @@
 /test/dummy/db/*.sqlite3
 /test/dummy/db/*.sqlite3-*
 /test/tmp/
+/docs/
