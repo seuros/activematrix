@@ -46,7 +46,7 @@ module ActiveMatrix::Rooms
 
         room = self if entry == id
         room ||= rooms.find { |r| r.id == entry }
-        puts "Unable to find room for entry #{entry}" unless room
+        Rails.logger.debug { "Unable to find room for entry #{entry}" } unless room
         # next if room.nil?
 
         ret = {

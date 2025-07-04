@@ -10,7 +10,7 @@ class ClientTest < ActiveSupport::TestCase
   def test_creation
     client = ActiveMatrix::Client.new 'https://example.com'
 
-    assert !client.api.nil?
+    assert_not client.api.nil?
     assert_equal client.api.homeserver, URI('https://example.com')
   end
 
@@ -40,13 +40,13 @@ class ClientTest < ActiveSupport::TestCase
     cl_some.send :handle_state, room_id, event
     cl_none.send :handle_state, room_id, event
 
-    assert cl_none.instance_variable_get(:@rooms).empty?
-    assert !cl_some.instance_variable_get(:@rooms).empty?
-    assert !cl_all.instance_variable_get(:@rooms).empty?
+    assert_empty cl_none.instance_variable_get(:@rooms)
+    assert_not cl_some.instance_variable_get(:@rooms).empty?
+    assert_not cl_all.instance_variable_get(:@rooms).empty?
 
-    assert cl_none.instance_variable_get(:@users).empty?
-    assert cl_some.instance_variable_get(:@users).empty?
-    assert !cl_all.instance_variable_get(:@users).empty?
+    assert_empty cl_none.instance_variable_get(:@users)
+    assert_empty cl_some.instance_variable_get(:@users)
+    assert_not cl_all.instance_variable_get(:@users).empty?
   end
 
   def test_account_data
@@ -66,14 +66,15 @@ class ClientTest < ActiveSupport::TestCase
 
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
-    assert_equal({}, cl.account_data[:example_key_2])
+    assert_empty(cl.account_data[:example_key_2])
 
     cl.api
       .expects(:set_account_data)
       .with('@alice:example.com', 'example_key', { hello: 'test' })
       .once
 
-    assert cl.account_data['example_key'] = { hello: 'test' }
+    cl.account_data['example_key'] = { hello: 'test' }
+
     assert_equal({ hello: 'test' }, cl.account_data['example_key'])
 
     cl.account_data.reload!
@@ -92,7 +93,7 @@ class ClientTest < ActiveSupport::TestCase
 
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
     assert_equal({ hello: 'world' }, cl.account_data['example_key'])
-    assert_equal({}, cl.account_data[:example_key_2])
+    assert_empty(cl.account_data[:example_key_2])
 
     room = cl.ensure_room('!726s6s6q:example.com')
     room.account_data # Prime the account_data cache existence
@@ -175,6 +176,7 @@ class ClientTest < ActiveSupport::TestCase
     assert_equal 1, cl.rooms.count
 
     room = cl.rooms.first
+
     assert_equal '!726s6s6q:example.com', room.id
     assert_equal 2, room.events.count
     assert_equal 'I am a fish', room.events.last[:content][:body]
@@ -207,7 +209,8 @@ class ClientTest < ActiveSupport::TestCase
     cl = ActiveMatrix::Client.new 'https://example.com'
     # Stub version check requests
     cl.api.stubs(:request).with(:get, :client, '/versions').returns(ActiveMatrix::Response.new(cl.api, versions: ['r0.1.0', 'r0.2.0']))
-    assert_equal cl.cache, :all
+
+    assert_equal :all, cl.cache
 
     room = '!roomid:example.com'
     cl.send :ensure_room, room
@@ -221,6 +224,7 @@ class ClientTest < ActiveSupport::TestCase
     # After Alice joins, mock API to return her as a member
     cl.send(:handle_state, room, type: 'm.room.member', content: { membership: 'join', displayname: 'Alice' }, state_key: '@alice:example.com')
     cl.api.expects(:get_room_joined_members).returns(joined: { '@alice:example.com' => { display_name: 'Alice' } }).at_least_once
+
     assert_equal 'Alice', cl.rooms.first.display_name
 
     # After Bob joins, mock API to return both members
@@ -229,6 +233,7 @@ class ClientTest < ActiveSupport::TestCase
                                                        '@alice:example.com' => { display_name: 'Alice' },
                                                        '@bob:example.com' => { display_name: 'Bob' }
                                                      }).at_least_once
+
     assert_equal 'Alice and Bob', cl.rooms.first.display_name
 
     # After Charlie joins
@@ -238,6 +243,7 @@ class ClientTest < ActiveSupport::TestCase
                                                        '@bob:example.com' => { display_name: 'Bob' },
                                                        '@charlie:example.com' => { display_name: 'Charlie' }
                                                      }).at_least_once
+
     assert_equal 'Alice and 2 others', cl.rooms.first.display_name
 
     # After Charlie is kicked
@@ -246,25 +252,32 @@ class ClientTest < ActiveSupport::TestCase
                                                        '@alice:example.com' => { display_name: 'Alice' },
                                                        '@bob:example.com' => { display_name: 'Bob' }
                                                      }).at_least_once
+
     assert_equal 'Alice and Bob', cl.rooms.first.display_name
 
     cl.send(:handle_state, room, type: 'm.room.canonical_alias', content: { alias: '#test:example.com' })
+
     assert_equal '#test:example.com', cl.rooms.first.canonical_alias
     assert_equal '#test:example.com', cl.rooms.first.display_name
     cl.send(:handle_state, room, type: 'm.room.name', content: { name: 'Test room' })
+
     assert_equal 'Test room', cl.rooms.first.display_name
     cl.send(:handle_state, room, type: 'm.room.topic', content: { topic: 'Test room' })
+
     assert_equal 'Test room', cl.rooms.first.topic
 
     cl.send(:handle_state, room, type: 'm.room.canonical_alias', content: { alias: '#test:example.com', alt_aliases: ['#test:example1.com'] })
-    assert cl.rooms.first.aliases.include? '#test:example1.com'
-    assert cl.rooms.first.aliases.include? '#test:example.com'
+
+    assert_includes cl.rooms.first.aliases, '#test:example1.com'
+    assert_includes cl.rooms.first.aliases, '#test:example.com'
 
     cl.send(:handle_state, room, type: 'm.room.join_rules', content: { join_rule: :invite })
-    assert cl.rooms.first.invite_only?
+
+    assert_predicate cl.rooms.first, :invite_only?
 
     cl.send(:handle_state, room, type: 'm.room.guest_access', content: { guest_access: :can_join })
-    assert cl.rooms.first.guest_access?
+
+    assert_predicate cl.rooms.first, :guest_access?
 
     expected_room = cl.rooms.first
 
@@ -280,13 +293,13 @@ class ClientTest < ActiveSupport::TestCase
 
     cl.login('alice', 'password')
 
-    assert cl.logged_in?
+    assert_predicate cl, :logged_in?
     assert_equal '@alice:example.com', cl.mxid.to_s
 
     cl.api.expects(:logout)
     cl.logout
 
-    assert !cl.logged_in?
+    assert_not cl.logged_in?
     assert_not_equal '@alice:example.com', cl.mxid.to_s
   end
 
@@ -298,7 +311,7 @@ class ClientTest < ActiveSupport::TestCase
 
     cl.login_with_token('alice', 'token')
 
-    assert cl.logged_in?
+    assert_predicate cl, :logged_in?
     assert_equal '@alice:example.com', cl.mxid.to_s
   end
 
@@ -310,7 +323,7 @@ class ClientTest < ActiveSupport::TestCase
 
     cl.register_with_password('alice', 'password')
 
-    assert cl.logged_in?
+    assert_predicate cl, :logged_in?
     assert_equal '@alice:example.com', cl.mxid.to_s
   end
 
@@ -318,13 +331,15 @@ class ClientTest < ActiveSupport::TestCase
     cl = ActiveMatrix::Client.new 'https://example.com'
 
     user1 = cl.get_user '@alice:example.com'
-    refute_nil user1
+
+    assert_not_nil user1
     assert_equal '@alice:example.com', user1.id
 
     cl.api.expects(:access_token).returns('placeholder')
     cl.api.expects(:whoami?).returns(user_id: '@alice:example.com')
 
     user2 = cl.get_user :self
+
     assert_equal user2, user1
 
     assert_raises(ArgumentError) { cl.get_user '#room:example.com' }
@@ -353,7 +368,7 @@ class ClientTest < ActiveSupport::TestCase
 
     presence = cl.presence
 
-    refute presence.key? :user_id
+    assert_not presence.key? :user_id
     assert_equal 5, presence[:last_active_ago]
 
     cl.api.expects(:set_presence_status).with('@alice:example.com', :online, message: 'test').returns({})
@@ -380,6 +395,7 @@ class ClientTest < ActiveSupport::TestCase
     )
 
     room = cl.public_rooms.first
+
     assert_equal '!room:example.com', room.id
 
     # The room was created with name and topic, accessing them should not make API calls
@@ -390,7 +406,7 @@ class ClientTest < ActiveSupport::TestCase
 
     assert_equal 'Example room', room.name
     assert_equal 'Example topic', room.topic
-    assert_equal false, room.invite_only?
+    assert_not room.invite_only?
   end
 
   def test_create_room
@@ -442,7 +458,7 @@ class ClientTest < ActiveSupport::TestCase
     thread = cl.instance_variable_get(:@sync_thread)
     thread.join if thread.alive?
 
-    refute cl.listening?
+    assert_not cl.listening?
     assert thrown
   end
 end

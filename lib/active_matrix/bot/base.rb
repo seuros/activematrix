@@ -130,9 +130,7 @@ module ActiveMatrix::Bot
     end
 
     # Access settings defined with Base.set
-    def settings
-      self.class.settings
-    end
+    delegate :settings, to: :class
 
     # Access settings defined with Base.set
     def self.settings
@@ -255,7 +253,7 @@ module ActiveMatrix::Bot
       #   Can use :DM, :Admin, :Mod
       # @option params
       def command(command, desc: nil, notes: nil, only: nil, **params, &)
-        args = params[:args] || convert_to_lambda(&).parameters.map do |type, name|
+        args = params[:args] || convert_to_lambda(&).parameters.filter_map do |type, name|
           case type
           when :req
             name.to_s.upcase
@@ -264,7 +262,7 @@ module ActiveMatrix::Bot
           when :rest
             "[#{name.to_s.upcase}...]"
           end
-        end.compact.join(' ')
+        end.join(' ')
 
         logger.debug "Registering command #{command} with args #{args}"
 
@@ -435,7 +433,7 @@ module ActiveMatrix::Bot
       end
 
       def start_bot(bot_settings, &block)
-        cl = if homeserver =~ %r{^https?://}
+        cl = if %r{^https?://}.match?(homeserver)
                ActiveMatrix::Client.new homeserver
              else
                ActiveMatrix::Client.new_for_domain homeserver
@@ -652,7 +650,7 @@ module ActiveMatrix::Bot
       logger.error "#{e.class} when handling #{event[:type]}: #{e}\n#{e.backtrace[0, 10].join("\n")}"
       room.send_notice("Failed to handle event of type #{event[:type]} - #{e}.")
     rescue StandardError => e
-      puts e, e.backtrace if settings.respond_to?(:testing?) && settings.testing?
+      Rails.logger.debug e, e.backtrace if settings.respond_to?(:testing?) && settings.testing?
       logger.error "#{e.class} when handling #{event[:type]}: #{e}\n#{e.backtrace[0, 10].join("\n")}"
       room.send_notice("Failed to handle event of type #{event[:type]} - #{e}.\nMore information is available in the bot logs")
     ensure
@@ -718,7 +716,7 @@ module ActiveMatrix::Bot
       logger.error "#{e.class} when handling #{settings.command_prefix}#{command}: #{e}\n#{e.backtrace[0, 10].join("\n")}"
       room.send_notice("Failed to handle #{command} - #{e}.")
     rescue StandardError => e
-      puts e, e.backtrace if settings.respond_to?(:testing?) && settings.testing?
+      Rails.logger.debug e, e.backtrace if settings.respond_to?(:testing?) && settings.testing?
       logger.error "#{e.class} when handling #{settings.command_prefix}#{command}: #{e}\n#{e.backtrace[0, 10].join("\n")}"
       room.send_notice("Failed to handle #{command} - #{e}.\nMore information is available in the bot logs")
     ensure

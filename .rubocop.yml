@@ -1,3 +1,8 @@
+plugins:
+  - rubocop-rails
+  - rubocop-performance
+  - rubocop-minitest
+
 AllCops:
   TargetRubyVersion: 3.4
   Exclude:
@@ -26,9 +31,6 @@ Metrics/ClassLength:
 
 Metrics/BlockLength:
   Max: 50
-
-Metrics/MethodLength:
-  Max: 70
 
 # Matrix has a lot of methods in the CS API
 Metrics/ModuleLength:
@@ -91,3 +93,20 @@ Metrics/ParameterLists:
 
 Layout/RescueEnsureAlignment:
   Enabled: false
+
+# Development dependencies are fine in gemspec for gems
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# Tests may have multiple assertions
+Minitest/MultipleAssertions:
+  Enabled: false
+
+# Method length is fine for complex operations
+Metrics/MethodLength:
+  Enabled: false
+
+# Variable names with numbers are fine in tests
+Naming/VariableNumber:
+  Exclude:
+    - 'test/**/*'

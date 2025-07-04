@@ -4,7 +4,7 @@ module ActiveMatrix
   # A class for tracking information about a user on Matrix
   class User
     extend ActiveMatrix::Extensions
-    include ActiveMatrix::Util::Cacheable
+    include ActiveMatrix::Cacheable
 
     attr_reader :id, :client
     alias user_id :id
@@ -140,7 +140,7 @@ module ActiveMatrix
       since = raw_presence[:last_active_ago]
       return unless since
 
-      Time.now - (since / 1000)
+      Time.zone.now - (since / 1000)
     end
 
     # Gets a direct message room with the user if one exists

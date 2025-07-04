@@ -11,23 +11,23 @@ class MXIDTest < ActiveSupport::TestCase
     group = ActiveMatrix::MXID.new '+group:example.com'
     room_alias = ActiveMatrix::MXID.new '#alias:example.com'
 
-    assert user.valid?
-    assert room_id.valid?
-    assert event.valid?
-    assert event3.valid?
-    assert group.valid?
-    assert room_alias.valid?
+    assert_predicate user, :valid?
+    assert_predicate room_id, :valid?
+    assert_predicate event, :valid?
+    assert_predicate event3, :valid?
+    assert_predicate group, :valid?
+    assert_predicate room_alias, :valid?
 
-    assert user.user?
-    assert room_id.room?
-    assert room_id.room_id?
-    assert !room_id.room_alias?
-    assert event.event?
-    assert event3.event?
-    assert group.group?
-    assert room_alias.room?
-    assert !room_alias.room_id?
-    assert room_alias.room_alias?
+    assert_predicate user, :user?
+    assert_predicate room_id, :room?
+    assert_predicate room_id, :room_id?
+    assert_not room_id.room_alias?
+    assert_predicate event, :event?
+    assert_predicate event3, :event?
+    assert_predicate group, :group?
+    assert_predicate room_alias, :room?
+    assert_not room_alias.room_id?
+    assert_predicate room_alias, :room_alias?
   end
 
   def test_to_s
@@ -36,8 +36,8 @@ class MXIDTest < ActiveSupport::TestCase
       parsed = ActiveMatrix::MXID.new mxid
 
       assert_equal mxid, parsed.to_s
-      assert mxid == parsed
-      assert parsed == mxid
+      assert_equal mxid, parsed
+      assert_equal parsed, mxid
     end
   end
 

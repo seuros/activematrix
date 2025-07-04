@@ -12,11 +12,16 @@ require 'active_matrix'
 require 'active_support'
 require 'active_support/test_case'
 require 'active_support/testing/autorun'
+require 'active_support/core_ext/time/zones'
 require 'mocha/minitest'
 require 'vcr'
 require 'webmock/minitest'
 require 'uri'
 require_relative 'support/vcr_helper'
+
+# Set up timezone for tests
+ActiveSupport.to_time_preserves_timezone = true
+Time.zone = 'UTC' # rubocop:disable Rails/TimeZoneAssignment
 
 # Configure VCR
 VCR.configure do |config|

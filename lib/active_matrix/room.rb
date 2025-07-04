@@ -5,7 +5,7 @@ module ActiveMatrix
   class Room
     extend ActiveMatrix::Extensions
     include ActiveMatrix::Logging
-    include ActiveMatrix::Util::Cacheable
+    include ActiveMatrix::Cacheable
 
     # @!attribute [rw] event_history_limit
     #   @return [Fixnum] the limit of events to keep in the event log
@@ -179,8 +179,6 @@ module ActiveMatrix
       # Return cached instance if available
       return @cached_joined_members if @cached_joined_members
 
-      return fetch_joined_members unless cache_available?
-
       # Cache the raw data that can be used to reconstruct User objects
       members_data = cache.fetch(cache_key(:joined_members), expires_in: 1.hour) do
         # Convert API response to cacheable format
@@ -226,7 +224,7 @@ module ActiveMatrix
       # Return cached instance if available and no params
       return @cached_all_members if @cached_all_members && params.empty?
 
-      return fetch_all_members(**params) if !params.empty? || client.cache == :none || !cache_available?
+      return fetch_all_members(**params) if !params.empty? || client.cache == :none
 
       # Cache the raw member state keys, not User objects
       members_data = cache.fetch(cache_key(:all_members), expires_in: 1.hour) do
@@ -269,7 +267,7 @@ module ActiveMatrix
       rooms = client.direct_rooms
       dirty = false
       list_for_room = (rooms[id.to_s] ||= [])
-      if direct && !list_for_room.include?(id.to_s)
+      if direct && list_for_room.exclude?(id.to_s)
         list_for_room << id.to_s
         dirty = true
       elsif !direct && list_for_room.include?(id.to_s)
@@ -330,9 +328,9 @@ module ActiveMatrix
     end
 
     def room_state
-      return ActiveMatrix::Util::StateEventCache.new self if client.cache == :none
+      return ActiveMatrix::StateEventCache.new self if client.cache == :none
 
-      @room_state ||= ActiveMatrix::Util::StateEventCache.new self
+      @room_state ||= ActiveMatrix::StateEventCache.new self
     end
 
     # Gets a state object in the room
@@ -365,7 +363,7 @@ module ActiveMatrix
     # @param canonical_only [Boolean] Should the list of aliases only contain the canonical ones
     # @return [Array[String]] The assigned room aliases
     def aliases(canonical_only: true)
-      return fetch_aliases(canonical_only: canonical_only) if !canonical_only || client.cache == :none || !cache_available?
+      return fetch_aliases(canonical_only: canonical_only) if !canonical_only || client.cache == :none
 
       cache.fetch(cache_key(:aliases), expires_in: 1.hour) do
         fetch_aliases(canonical_only: true)
@@ -506,10 +504,8 @@ module ActiveMatrix
     # @param content [Hash] The custom content of the message
     # @param msgtype [String] The type of the message, should be one of the known types (m.text, m.notice, m.emote, etc)
     def send_custom_message(body, content = {}, msgtype: nil)
-      content.merge!(
-        body: body,
-        msgtype: msgtype || 'm.text'
-      )
+      content[:body] = body
+      content[:msgtype] = msgtype || 'm.text'
 
       client.api.send_message_event(id, 'm.room.message', content)
     end
@@ -622,9 +618,9 @@ module ActiveMatrix
     end
 
     def account_data
-      return ActiveMatrix::Util::AccountDataCache.new client, room: self if client.cache == :none
+      return ActiveMatrix::AccountDataCache.new client, room: self if client.cache == :none
 
-      @account_data ||= ActiveMatrix::Util::AccountDataCache.new client, room: self
+      @account_data ||= ActiveMatrix::AccountDataCache.new client, room: self
     end
 
     # Retrieves a custom entry from the room-specific account data
@@ -790,7 +786,7 @@ module ActiveMatrix
     def add_alias(room_alias)
       client.api.set_room_alias(id, room_alias)
       # Clear the cache to force refresh
-      cache.delete(cache_key(:aliases)) if cache_available?
+      cache.delete(cache_key(:aliases))
       true
     end
 
@@ -801,7 +797,7 @@ module ActiveMatrix
     #       alias list updates.
     def reload_aliases!
       room_state.expire('m.room.canonical_alias')
-      cache.delete(cache_key(:aliases)) if cache_available?
+      cache.delete(cache_key(:aliases))
     end
     alias refresh_aliases! reload_aliases!
 
@@ -981,7 +977,7 @@ module ActiveMatrix
     # @param params [Hash] other power-level params to change
     # @return [Boolean] if the change was successful
     def modify_required_power_levels(events = nil, params = {})
-      return false if events.nil? && (params.nil? || params.empty?)
+      return false if events.nil? && params.blank?
 
       room_state.expire 'm.room.power_levels'
 
@@ -1005,10 +1001,6 @@ module ActiveMatrix
       "activematrix:room:#{id}:#{method_name}"
     end
 
-    def cache_available?
-      defined?(::Rails) && ::Rails.respond_to?(:cache) && ::Rails.cache
-    end
-
     def cache
       ::Rails.cache
     end
@@ -1021,7 +1013,7 @@ module ActiveMatrix
       @pre_populated_members << member unless @pre_populated_members.include?(member)
 
       # Clear the cache to force a refresh on next access
-      cache.delete(cache_key(:joined_members)) if cache_available?
+      cache.delete(cache_key(:joined_members))
     end
 
     def handle_room_member(event)
@@ -1038,15 +1030,15 @@ module ActiveMatrix
       @cached_all_members = nil
 
       # Clear the cache when membership changes
-      cache.delete(cache_key(:joined_members)) if cache_available?
-      cache.delete(cache_key(:all_members)) if cache_available?
+      cache.delete(cache_key(:joined_members))
+      cache.delete(cache_key(:all_members))
     end
 
     def handle_room_canonical_alias(event)
       room_state.write('m.room.canonical_alias', event[:content])
 
       # Clear the aliases cache
-      cache.delete(cache_key(:aliases)) if cache_available?
+      cache.delete(cache_key(:aliases))
     end
 
     def room_handlers?

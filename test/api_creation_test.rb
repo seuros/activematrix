@@ -9,9 +9,11 @@ require 'ostruct'
 class ApiTest < ActiveSupport::TestCase
   def test_creation
     api = ActiveMatrix::Api.new 'https://matrix.example.com/_matrix/'
+
     assert_equal URI('https://matrix.example.com'), api.homeserver
 
     api = ActiveMatrix::Api.new 'matrix.com'
+
     assert_equal URI('https://matrix.com'), api.homeserver
   end
 
@@ -20,13 +22,13 @@ class ApiTest < ActiveSupport::TestCase
 
     assert api.protocol? :AS
     # Ensure CS protocol is also provided
-    assert api.respond_to? :join_room
+    assert_respond_to api, :join_room
   end
 
   def test_creation_with_cs_protocol
     api = ActiveMatrix::Api.new 'https://matrix.example.com'
 
-    assert api.respond_to? :join_room
+    assert_respond_to api, :join_room
     # assert !api.respond_to?(:identity_status) # No longer true since the definite include
   end
 
@@ -34,7 +36,7 @@ class ApiTest < ActiveSupport::TestCase
     api = ActiveMatrix::Api.new 'https://matrix.example.com', protocols: :IS
 
     # assert !api.respond_to?(:join_room) # No longer true since the definite include
-    assert api.respond_to? :identity_status
+    assert_respond_to api, :identity_status
   end
 
   def test_fail_creation
@@ -75,7 +77,7 @@ class ApiTest < ActiveSupport::TestCase
     http_mock
       .expects(:get)
       .with('/.well-known/matrix/client')
-      .returns(OpenStruct.new(body: '{"m.homeserver":{"base_url":"https://matrix.example.com"}}'))
+      .returns(stub(body: '{"m.homeserver":{"base_url":"https://matrix.example.com"}}'))
 
     Net::HTTP
       .expects(:start)
@@ -176,11 +178,13 @@ class ApiTest < ActiveSupport::TestCase
       .twice
 
     api = ActiveMatrix::Api.new_for_domain('example.com', target: :server)
+
     assert_equal 'https://example.com', api.homeserver.to_s
     assert_equal 'example.com', api.connection_address
     assert_equal 8448, api.connection_port
 
     api = ActiveMatrix::Api.new_for_domain('example.com', target: :client)
+
     assert_equal 'https://example.com', api.homeserver.to_s
     assert_equal 'example.com', api.connection_address
     assert_equal 8448, api.connection_port
@@ -232,6 +236,7 @@ class ApiTest < ActiveSupport::TestCase
     http = api.send(:http)
 
     http.expects(:request).returns(response)
+
     assert_equal({ user_id: '@alice:example.com' }, api.request(:get, :client_r0, '/account/whoami'))
 
     err = Net::HTTPTooManyRequests.new(nil, 200, 'GET')
@@ -249,12 +254,15 @@ class ApiTest < ActiveSupport::TestCase
     api = ActiveMatrix::Api.new 'https://example.com'
 
     api.read_timeout = 5
+
     assert_equal 5, api.read_timeout
 
     api.validate_certificate = true
-    assert_equal true, api.validate_certificate
+
+    assert api.validate_certificate
 
     api.homeserver = URI('https://matrix.example.com')
+
     assert_equal 'matrix.example.com', api.homeserver.host
 
     http = api.send :http
@@ -267,15 +275,19 @@ class ApiTest < ActiveSupport::TestCase
     api.send(:http).expects(:finish).times(4)
 
     api.read_timeout = 5
+
     assert_equal 5, api.read_timeout
 
     api.validate_certificate = true
-    assert_equal true, api.validate_certificate
+
+    assert api.validate_certificate
 
     api.homeserver = URI('https://matrix.example.com')
+
     assert_equal 'matrix.example.com', api.homeserver.host
 
     api.proxy_uri = URI('http://squid-proxy.example.com:3128')
+
     assert_equal 'squid-proxy.example.com', api.proxy_uri.host
 
     http = api.send :http

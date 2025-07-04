@@ -57,23 +57,23 @@ class BotTest < ActiveSupport::TestCase
   end
 
   def test_configuration
-    assert ExampleBot.testing?
+    assert_predicate ExampleBot, :testing?
     assert ExampleBot.command? 'help'
-    refute ExampleBot.command? 'help', ignore_inherited: true
+    assert_not ExampleBot.command? 'help', ignore_inherited: true
     assert ExampleBot.command? 'test'
     assert ExampleBot.command? 'test_arr'
 
     # Check sane default configuration
-    assert ExampleBot.accept_invites?
-    assert ExampleBot.ignore_own?
-    refute ExampleBot.require_fullname?
-    refute ExampleBot.store_sync_token?
-    assert ExampleBot.threadsafe?
-    refute ExampleBot.login?
-    refute ExampleBot.logging?
+    assert_predicate ExampleBot, :accept_invites?
+    assert_predicate ExampleBot, :ignore_own?
+    assert_not ExampleBot.require_fullname?
+    assert_not ExampleBot.store_sync_token?
+    assert_predicate ExampleBot, :threadsafe?
+    assert_not ExampleBot.login?
+    assert_not ExampleBot.logging?
 
     # Check generated configuration
-    assert ExampleBot.bot_name?
+    assert_predicate ExampleBot, :bot_name?
     # Bot name varies between 'rake_test_loader' and 'bot_test' depending on how test is run
     assert_includes %w[rake_test_loader bot_test], ExampleBot.bot_name
 
@@ -97,7 +97,7 @@ class BotTest < ActiveSupport::TestCase
       }
     }
 
-    refute @bot.command_allowed? 'not_a_command', ev
+    assert_not @bot.command_allowed? 'not_a_command', ev
     @bot.send :_handle_event, ev
 
     ev = {
@@ -110,7 +110,7 @@ class BotTest < ActiveSupport::TestCase
       }
     }
 
-    refute @bot.command_allowed? 'test_andmore', ev
+    assert_not @bot.command_allowed? 'test_andmore', ev
     @bot.send :_handle_event, ev
 
     @bot.expects(:test_executed).once
@@ -157,7 +157,7 @@ class BotTest < ActiveSupport::TestCase
 
     @bot.expects(:test_only).never
 
-    refute @bot.command_allowed? 'test_only', ev
+    assert_not @bot.command_allowed? 'test_only', ev
     @bot.send :_handle_event, ev
 
     @room.stubs(:dm?).returns(true)
@@ -180,7 +180,7 @@ class BotTest < ActiveSupport::TestCase
     @room.stubs(:user_can_send?).with('@alice:example.com', 'm.reaction').returns(false)
     @bot.expects(:test_only_proc).never
 
-    refute @bot.command_allowed? 'test_only_proc', ev
+    assert_not @bot.command_allowed? 'test_only_proc', ev
     @bot.send :_handle_event, ev
 
     @room.stubs(:user_can_send?).with('@alice:example.com', 'm.reaction').returns(true)

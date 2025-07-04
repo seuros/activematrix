@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ActiveMatrix::Util
+module ActiveMatrix
   class AccountDataCache
     extend ActiveMatrix::Extensions
     include Enumerable
@@ -26,8 +26,6 @@ module ActiveMatrix::Util
 
     def reload!
       # Clear all cache entries for this account data
-      return unless cache_available?
-
       if room
         cache.delete_matched("activematrix:account_data:#{client.mxid}:room:#{room.id}:*")
       else
@@ -48,7 +46,7 @@ module ActiveMatrix::Util
     end
 
     def key?(key)
-      cache_available? && cache.exist?(cache_key(key))
+      cache.exist?(cache_key(key))
     end
 
     def each(live: false)
@@ -63,7 +61,7 @@ module ActiveMatrix::Util
       else
         client.api.set_account_data(client.mxid, key, {})
       end
-      cache.delete(cache_key(key)) if cache_available?
+      cache.delete(cache_key(key))
     end
 
     def [](key)
@@ -71,8 +69,6 @@ module ActiveMatrix::Util
 
       # Track the key whenever it's accessed
       @tracked_keys.add(key)
-
-      return fetch_account_data(key) unless cache_available?
 
       cache.fetch(cache_key(key), expires_in: @cache_time) do
         fetch_account_data(key)
@@ -98,14 +94,14 @@ module ActiveMatrix::Util
       end
 
       @tracked_keys.add(key)
-      cache.write(cache_key(key), value, expires_in: @cache_time) if cache_available?
+      cache.write(cache_key(key), value, expires_in: @cache_time)
     end
 
     # Write data without making API call (for sync responses)
     def write(key, value)
       key = key.to_s unless key.is_a? String
       @tracked_keys.add(key)
-      cache.write(cache_key(key), value, expires_in: @cache_time) if cache_available?
+      cache.write(cache_key(key), value, expires_in: @cache_time)
     end
 
     private
@@ -116,10 +112,6 @@ module ActiveMatrix::Util
       else
         "activematrix:account_data:#{client.mxid}:global:#{key}"
       end
-    end
-
-    def cache_available?
-      defined?(::Rails) && ::Rails.respond_to?(:cache) && ::Rails.cache
     end
 
     def cache

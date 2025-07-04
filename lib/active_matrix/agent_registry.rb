@@ -56,12 +56,12 @@ module ActiveMatrix
 
     # Get all agent records
     def all_records
-      @agents.values.map { |entry| entry[:record] }
+      @agents.values.pluck(:record)
     end
 
     # Get all bot instances
     def all_instances
-      @agents.values.map { |entry| entry[:instance] }
+      @agents.values.pluck(:instance)
     end
 
     # Check if an agent is running

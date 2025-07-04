@@ -1,17 +1,5 @@
 # frozen_string_literal: true
 
-unless Object.respond_to? :yield_self
-  class Object
-    def yield_self
-      yield(self)
-    end
-  end
-end
-
-# Time.current is provided by ActiveSupport
-
-# Time duration helpers are provided by ActiveSupport
-
 module ActiveMatrix
   module Extensions
     def events(*symbols)
@@ -25,7 +13,7 @@ module ActiveMatrix
         name = sym.to_s
 
         initializers << "
-          @on_#{name} = ActiveMatrix::EventHandlerArray.new
+          @on_#{name} = ::ActiveMatrix::EventHandlerArray.new
         "
         readers << ":on_#{name}"
         methods << "

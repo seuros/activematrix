@@ -22,6 +22,7 @@ class ApiSSTest < ActiveSupport::TestCase
 
   def test_api_server_version
     @http.expects(:request).returns(mock_success('{"server":{"name":"Synapse","version":"0.99.5.2"}}'))
+
     assert_equal 'Synapse 0.99.5.2', @api.server_version.to_s
   end
 end

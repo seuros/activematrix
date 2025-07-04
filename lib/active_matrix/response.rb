@@ -23,7 +23,7 @@ module ActiveMatrix
   module Response
     def self.new(api, data)
       if data.is_a? Array
-        raise ArgumentError, 'Input data was not an array of hashes' unless data.all? { |v| v.is_a? Hash }
+        raise ArgumentError, 'Input data was not an array of hashes' unless data.all?(Hash)
 
         data.each do |value|
           Response.new api, value

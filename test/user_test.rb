@@ -23,9 +23,11 @@ class UserTest < ActiveSupport::TestCase
 
   def test_wrappers
     @api.expects(:get_display_name).with(@id).returns(displayname: nil)
+
     assert_equal @id, @user.friendly_name
 
     @api.expects(:get_display_name).with(@id).returns displayname: 'Alice'
+
     assert_equal 'Alice', @user.display_name
     assert_equal 'Alice', @user.friendly_name
 
@@ -33,6 +35,7 @@ class UserTest < ActiveSupport::TestCase
     @user.display_name = 'Alice'
 
     @api.expects(:get_avatar_url).with(@id).returns avatar_url: 'mxc://example.com/avatar'
+
     assert_equal 'mxc://example.com/avatar', @user.avatar_url
 
     @api.expects(:set_avatar_url).with(@id, 'mxc://example.com/avatar')
@@ -40,6 +43,7 @@ class UserTest < ActiveSupport::TestCase
 
     data = { device_keys: { @id.to_sym => ['Keys here'] } }
     @api.expects(:keys_query).with(device_keys: { @id => [] }).returns(data)
+
     assert_equal ['Keys here'], @user.device_keys
 
     data = {
@@ -50,9 +54,9 @@ class UserTest < ActiveSupport::TestCase
     }
     @api.expects(:get_presence_status).times(4).with(@id).returns data
 
-    assert @user.active?
+    assert_predicate @user, :active?
     assert_equal :online, @user.presence
     assert_equal 'Testing', @user.status_msg
-    assert_equal (Time.now - 5).to_i, @user.last_active.to_i
+    assert_equal (Time.zone.now - 5).to_i, @user.last_active.to_i
   end
 end

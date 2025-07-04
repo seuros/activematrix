@@ -35,7 +35,6 @@ module ActiveMatrix::Protocols::MSC
   #
   # @see Protocols::CS#sync
   # @see https://github.com/matrix-org/matrix-doc/pull/2108/
-  # rubocop:disable Metrics/MethodLength
   def msc2108_sync_sse(since: nil, **params, &on_data)
     raise ArgumentError, 'Must be given a block accepting two args - data and { event:, id: }' \
       unless on_data.is_a?(Proc) && on_data.arity == 2
