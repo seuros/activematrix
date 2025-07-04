@@ -58,6 +58,9 @@ module ActiveMatrix
 
   # Ignore directories that shouldn't be autoloaded
   Loader.ignore("#{__dir__}/generators")
+  
+  # Ignore files that are manually required
+  Loader.ignore("#{__dir__}/active_matrix/errors.rb")
 
   # Configure inflections for special cases
   Loader.inflector.inflect(
