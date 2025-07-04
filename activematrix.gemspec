@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = %w[CHANGELOG.md LICENSE.txt README.md]
   spec.files            = Dir['lib/**/*', 'app/**/*'] + spec.extra_rdoc_files
 
+  spec.add_development_dependency 'maxitest'
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'ostruct'
   spec.add_development_dependency 'rake'

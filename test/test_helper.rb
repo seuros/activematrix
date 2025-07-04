@@ -13,9 +13,9 @@ require_relative 'dummy/config/environment'
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'active_matrix'
 
+require 'maxitest/autorun'
 require 'active_support'
 require 'active_support/test_case'
-require 'active_support/testing/autorun'
 require 'active_support/core_ext/time/zones'
 require 'mocha/minitest'
 require 'vcr'

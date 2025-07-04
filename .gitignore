@@ -8,3 +8,8 @@
 /pkg/
 /spec/reports/
 /tmp/
+/test/dummy/log/
+/test/dummy/tmp/
+/test/dummy/db/*.sqlite3
+/test/dummy/db/*.sqlite3-*
+/test/tmp/
