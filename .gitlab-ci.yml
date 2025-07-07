@@ -17,13 +17,11 @@ lint:rubocop:
     - bundle install -j $(nproc) --path vendor
   coverage: '/\((\d+(?:.\d+)?)\%\) covered/'
   script:
-    - GENERATE_REPORTS=true CI_REPORTS=reports bundle exec rake test
+    - bundle exec rake test
   artifacts:
     expire_in: 1 week
     paths:
       - coverage/
-    reports:
-      junit: "reports/TEST-*.xml"
 
 test:ruby2.7:
   extends: .test

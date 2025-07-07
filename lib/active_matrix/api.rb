@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'erb'
-require 'net/http'
 require 'openssl'
 require 'uri'
 
@@ -64,10 +63,21 @@ module ActiveMatrix
       @global_headers = DEFAULT_HEADERS.dup
       @global_headers.merge!(params.fetch(:global_headers)) if params.key? :global_headers
       @synapse = params.fetch(:synapse, true)
-      @http = nil
-      @inflight = []
 
       self.threadsafe = params.fetch(:threadsafe, :multithread)
+
+      # Initialize the HTTP client
+      @http_client = HttpClient.new(
+        @homeserver,
+        threadsafe: @threadsafe,
+        proxy_uri: @proxy_uri,
+        validate_certificate: @validate_certificate,
+        open_timeout: @open_timeout,
+        read_timeout: @read_timeout,
+        global_headers: @global_headers,
+        access_token: @access_token,
+        logger: logger.debug? ? logger : nil
+      )
 
       ([params.fetch(:protocols, [:CS])].flatten - protocols).each do |proto|
         self.class.include ActiveMatrix::Protocols.const_get(proto)
@@ -123,9 +133,12 @@ module ActiveMatrix
           well_known = begin
             wk_uri = URI("https://#{domain}/.well-known/matrix/server")
             logger.debug "Trying #{wk_uri}..."
-            data = Net::HTTP.start(wk_uri.host, wk_uri.port, use_ssl: true, open_timeout: 5, read_timeout: 5, write_timeout: 5) do |http|
-              http.get(wk_uri.path).body
+            conn = Faraday.new(url: "https://#{wk_uri.host}") do |f|
+              f.options.open_timeout = 5
+              f.options.timeout = 5
+              f.adapter :net_http
             end
+            data = conn.get(wk_uri.path).body
             JSON.parse(data)
           rescue StandardError => e
             logger.debug "Well-known failed with #{e.class}: #{e.message}"
@@ -141,9 +154,12 @@ module ActiveMatrix
         well_known = begin
           wk_uri = URI("https://#{domain}/.well-known/matrix/client")
           logger.debug "Trying #{wk_uri}..."
-          data = Net::HTTP.start(wk_uri.host, wk_uri.port, use_ssl: true, open_timeout: 5, read_timeout: 5, write_timeout: 5) do |http|
-            http.get(wk_uri.path).body
+          conn = Faraday.new(url: "https://#{wk_uri.host}") do |f|
+            f.options.open_timeout = 5
+            f.options.timeout = 5
+            f.adapter :net_http
           end
+          data = conn.get(wk_uri.path).body
           JSON.parse(data)
         rescue StandardError => e
           logger.debug "Well-known failed with #{e.class}: #{e.message}"
@@ -204,23 +220,34 @@ module ActiveMatrix
     # @param seconds [Numeric]
     # @return [Numeric]
     def open_timeout=(seconds)
-      @http.finish if @http && @open_timeout != seconds
+      return unless @open_timeout != seconds
+
+      @http_client&.close
       @open_timeout = seconds
+      # Reinitialize HTTP client with new timeout
+      reinitialize_http_client
     end
 
     # @param seconds [Numeric]
     # @return [Numeric]
     def read_timeout=(seconds)
-      @http.finish if @http && @read_timeout != seconds
+      return unless @read_timeout != seconds
+
+      @http_client&.close
       @read_timeout = seconds
+      # Reinitialize HTTP client with new timeout
+      reinitialize_http_client
     end
 
     # @param validate [Boolean]
     # @return [Boolean]
     def validate_certificate=(validate)
-      # The HTTP connection needs to be reopened if this changes
-      @http.finish if @http && validate != @validate_certificate
+      return unless validate != @validate_certificate
+
+      @http_client&.close
       @validate_certificate = validate
+      # Reinitialize HTTP client with new certificate validation
+      reinitialize_http_client
     end
 
     # @param hs_info [URI]
@@ -229,8 +256,9 @@ module ActiveMatrix
       # TODO: DNS query for SRV information about HS?
       return unless hs_info.is_a? URI
 
-      @http.finish if @http && homeserver != hs_info
+      @http_client&.close if homeserver != hs_info
       @homeserver = hs_info
+      reinitialize_http_client if homeserver != hs_info
     end
 
     # @param [URI] proxy_uri The URI for the proxy to use
@@ -238,11 +266,11 @@ module ActiveMatrix
     def proxy_uri=(proxy_uri)
       proxy_uri = URI(proxy_uri.to_s) unless proxy_uri.is_a? URI
 
-      if @http && @proxy_uri != proxy_uri
-        @http.finish
-        @http = nil
-      end
+      return unless @proxy_uri != proxy_uri
+
+      @http_client&.close
       @proxy_uri = proxy_uri
+      reinitialize_http_client
     end
 
     # @param [Boolean,:multithread] threadsafe What level of thread-safety the API should use
@@ -252,14 +280,12 @@ module ActiveMatrix
       raise ArugmentError, 'JRuby only support :multithread/false for threadsafe' if RUBY_ENGINE == 'jruby' && threadsafe == true
 
       @threadsafe = threadsafe
-      @http_lock = nil unless threadsafe == true
-      @threadsafe
     end
 
     # Perform a raw Matrix API request
     #
     # @example Simple API query
-    #   api.request(:get, :client_r0, '/account/whoami')
+    #   api.request(:get, :client_v3, '/account/whoami')
     #   # => { :user_id => "@alice:matrix.org" }
     #
     # @example Advanced API request
@@ -270,8 +296,8 @@ module ActiveMatrix
     #               headers: { 'content-type' => 'image/png' })
     #   # => { :content_uri => "mxc://example.com/AQwafuaFswefuhsfAFAgsw" }
     #
-    # @param method [Symbol] The method to use, can be any of the ones under Net::HTTP
-    # @param api [Symbol] The API symbol to use, :client_r0 is the current CS one
+    # @param method [Symbol] The method to use (:get, :post, :put, :delete, etc.)
+    # @param api [Symbol] The API symbol to use, :client_v3 is the current CS one
     # @param path [String] The API path to call, this is the part that comes after the API definition in the spec
     # @param options [Hash] Additional options to pass along to the request
     # @option options [Hash] :query Query parameters to set on the URL
@@ -280,11 +306,10 @@ module ActiveMatrix
     # @option options [Hash] :headers Additional headers to set on the request
     # @option options [Boolean] :skip_auth (false) Skip authentication
     def request(method, api, path, **options)
-      url = homeserver.dup.tap do |u|
-        u.path = api_to_path(api) + path
-        u.query = [u.query, URI.encode_www_form(options.fetch(:query))].flatten.compact.join('&') if options[:query]
-        u.query = nil if u.query.blank?
-      end
+      full_path = api_to_path(api) + path
+
+      # Update access token if it changed
+      @http_client.access_token = @access_token if @http_client.access_token != @access_token
 
       failures = 0
       loop do
@@ -292,58 +317,52 @@ module ActiveMatrix
 
         req_id = ('A'..'Z').to_a.sample(4).join
 
-        req_obj = construct_request(url: url, method: method, **options)
-        print_http(req_obj, id: req_id)
-        response = duration = nil
-
-        loc_http = http
-        perform_request = proc do
-          @inflight << loc_http
-          dur_start = Time.zone.now
-          response = loc_http.request req_obj
-          dur_end = Time.zone.now
-          duration = dur_end - dur_start
-        rescue EOFError
-          logger.error 'Socket closed unexpectedly'
-          raise
-        ensure
-          @inflight.delete loc_http
+        # Log request
+        if logger.debug?
+          logger.debug "#{req_id} : > Sending a #{method.to_s.upcase} request to `#{full_path}`"
+          logger.debug "#{req_id} : > Query: #{options[:query].inspect}" if options[:query]
+          logger.debug "#{req_id} : > Body: #{options[:body].to_json}" if options[:body] && !options[:body].is_a?(String)
         end
 
-        if @threadsafe == true
-          http_lock.synchronize { perform_request.call }
-        else
-          perform_request.call
-          loc_http.finish if @threadsafe == :multithread
-        end
-        print_http(response, duration: duration, id: req_id)
-
+        dur_start = Time.zone.now
         begin
-          data = JSON.parse(response.body, symbolize_names: true)
-        rescue JSON::JSONError => e
-          logger.debug "#{e.class} error when parsing response. #{e}"
-          data = nil
+          response = @http_client.request(method, full_path, **options)
+        rescue Faraday::Error => e
+          logger.error "Request failed: #{e.message}"
+          raise MatrixConnectionError, e.message
+        end
+        dur_end = Time.zone.now
+        duration = dur_end - dur_start
+
+        # Log response
+        if logger.debug?
+          logger.debug "#{req_id} : < Received a #{response.status} response: [#{(duration * 1000).to_i}ms]"
+          logger.debug "#{req_id} : < Body: #{response.body.inspect}" if response.body
         end
 
-        if response.is_a? Net::HTTPTooManyRequests
-          raise MatrixRequestError.new_by_code(data, response.code) unless autoretry
+        # Handle rate limiting (429)
+        if response.status == 429
+          raise MatrixRequestError.new_by_code(response.body, response.status.to_s) unless autoretry
 
           failures += 1
-          waittime = data[:retry_after_ms] || data[:error][:retry_after_ms] || @backoff_time
+          waittime = response.body[:retry_after_ms] || response.body.dig(:error, :retry_after_ms) || @backoff_time
           sleep(waittime.to_f / 1000.0)
           next
         end
 
-        if response.is_a? Net::HTTPSuccess
-          unless data
-            logger.error "Received non-parsable data in 200 response; #{response.body.inspect}"
-            raise MatrixConnectionError, response
+        # Handle success (2xx)
+        if response.success?
+          unless response.body
+            logger.error "Received non-parsable data in #{response.status} response"
+            raise MatrixConnectionError, 'Empty response body'
           end
-          return ActiveMatrix::Response.new self, data
+          return ActiveMatrix::Response.new self, response.body
         end
-        raise MatrixRequestError.new_by_code(data, response.code) if data
 
-        raise MatrixConnectionError.class_by_code(response.code), response
+        # Handle other errors
+        raise MatrixRequestError.new_by_code(response.body, response.status.to_s) if response.body && response.body.is_a?(Hash)
+
+        raise MatrixConnectionError.class_by_code(response.status.to_s), "HTTP #{response.status}"
       end
     end
 
@@ -356,58 +375,20 @@ module ActiveMatrix
       ret
     end
 
-    def stop_inflight
-      @inflight.each(&:finish)
-    end
-
     private
 
-    def construct_request(method:, url:, **options)
-      request = Net::HTTP.const_get(method.to_s.capitalize.to_sym).new url.request_uri
-
-      # FIXME: Handle bodies better, avoid duplicating work
-      request.body = options[:body] if options.key? :body
-      request.body = request.body.to_json if options.key?(:body) && !request.body.is_a?(String)
-      request.body_stream = options[:body_stream] if options.key? :body_stream
-
-      global_headers.each { |h, v| request[h] = v }
-      if request.body || request.body_stream
-        request.content_type = 'application/json'
-        request.content_length = (request.body || request.body_stream).size
-      end
-
-      request['authorization'] = "Bearer #{access_token}" if access_token && !options.fetch(:skip_auth, false)
-      if options.key? :headers
-        options[:headers].each do |h, v|
-          request[h.to_s.downcase] = v
-        end
-      end
-
-      request
-    end
-
-    def print_http(http, body: true, duration: nil, id: nil)
-      return unless logger.debug?
-
-      if http.is_a? Net::HTTPRequest
-        dir = "#{"#{id} : " if id}>"
-        logger.debug "#{dir} Sending a #{http.method} request to `#{http.path}`:"
-      else
-        dir = "#{"#{id} : " if id}<"
-        logger.debug "#{dir} Received a #{http.code} #{http.message} response:#{" [#{(duration * 1000).to_i}ms]" if duration}"
-      end
-      http.to_hash.map { |k, v| "#{k}: #{k == 'authorization' ? '[ REDACTED ]' : v.join(', ')}" }.each do |h|
-        logger.debug "#{dir} #{h}"
-      end
-      logger.debug dir
-      if body
-        clean_body = JSON.parse(http.body) rescue nil if http.body
-        clean_body.each_key { |k| clean_body[k] = '[ REDACTED ]' if %w[password access_token].include?(k) }.to_json if clean_body.is_a? Hash
-        clean_body = clean_body.to_s if clean_body
-        logger.debug "#{dir} #{clean_body.length < 200 ? clean_body : clean_body.slice(0..200) + "... [truncated, #{clean_body.length} Bytes]"}" if clean_body
-      end
-    rescue StandardError => e
-      logger.warn "#{e.class} occured while printing request debug; #{e.message}\n#{e.backtrace.join "\n"}"
+    def reinitialize_http_client
+      @http_client = HttpClient.new(
+        @homeserver,
+        threadsafe: @threadsafe,
+        proxy_uri: @proxy_uri,
+        validate_certificate: @validate_certificate,
+        open_timeout: @open_timeout,
+        read_timeout: @read_timeout,
+        global_headers: @global_headers,
+        access_token: @access_token,
+        logger: logger.debug? ? logger : nil
+      )
     end
 
     def api_to_path(api)
@@ -415,33 +396,6 @@ module ActiveMatrix
 
       # TODO: <api>_current / <api>_latest
       "/_matrix/#{api.to_s.split('_').join('/')}"
-    end
-
-    def http
-      return @http if @http&.active?
-
-      host = @connection_address || homeserver.host
-      port = @connection_port || homeserver.port
-
-      connection = @http unless @threadsafe == :multithread
-      connection ||= if proxy_uri
-                       Net::HTTP.new(host, port, proxy_uri.host, proxy_uri.port, proxy_uri.user, proxy_uri.password)
-                     else
-                       Net::HTTP.new(host, port)
-                     end
-
-      connection.open_timeout = open_timeout if open_timeout
-      connection.read_timeout = read_timeout if read_timeout
-      connection.use_ssl = homeserver.scheme == 'https'
-      connection.verify_mode = validate_certificate ? ::OpenSSL::SSL::VERIFY_PEER : ::OpenSSL::SSL::VERIFY_NONE
-      connection.start
-      @http = connection unless @threadsafe == :multithread
-
-      connection
-    end
-
-    def http_lock
-      @http_lock ||= Mutex.new if @threadsafe == true
     end
   end
 end

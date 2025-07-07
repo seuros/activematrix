@@ -3,26 +3,20 @@
 require 'test_helper'
 
 class ApiSSTest < ActiveSupport::TestCase
+  include FaradayTestHelper
+
   def setup
-    @http = mock
-    @http.stubs(:active?).returns(true)
+    setup_faraday_stubs
 
     @api = ActiveMatrix::Api.new 'https://example.com', protocols: :SS, threadsafe: false
-    @api.instance_variable_set :@http, @http
-    @api.stubs(:print_http)
-  end
-
-  def mock_success(body)
-    response = mock
-    response.stubs(:is_a?).with(Net::HTTPTooManyRequests).returns(false)
-    response.stubs(:is_a?).with(Net::HTTPSuccess).returns(true)
-    response.stubs(:body).returns(body)
-    response
+    stub_http_client(@api)
   end
 
   def test_api_server_version
-    @http.expects(:request).returns(mock_success('{"server":{"name":"Synapse","version":"0.99.5.2"}}'))
+    stub_faraday_request(:get, '/_matrix/federation/v1/version',
+                         { server: { name: 'Synapse', version: '0.99.5.2' } })
 
     assert_equal 'Synapse 0.99.5.2', @api.server_version.to_s
+    verify_faraday_stubs
   end
 end

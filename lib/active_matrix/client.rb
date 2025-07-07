@@ -133,11 +133,11 @@ module ActiveMatrix
     #
     # @note This will try to list all public rooms on the HS, and may take a while on larger instances
     # @return [Array[Room]] The public rooms
-    def public_rooms
+    def public_rooms(**params)
       rooms = []
       since = nil
       loop do
-        data = api.get_public_rooms since: since
+        data = api.get_public_rooms since: since, **params
 
         data[:chunk].each do |chunk|
           rooms << Room.new(self, chunk[:room_id],
@@ -466,31 +466,7 @@ module ActiveMatrix
       return if listening?
 
       @should_listen = true
-      if api.protocol?(:MSC) && api.msc2108?
-        params[:filter] = sync_filter unless params.key? :filter
-        params[:filter] = params[:filter].to_json unless params[:filter].nil? || params[:filter].is_a?(String)
-        params[:since] = @next_batch if @next_batch
-
-        errors = 0
-        thread, cancel_token = api.msc2108_sync_sse(params) do |data, event:, id:|
-          @next_batch = id if id
-          case event.to_sym
-          when :sync
-            handle_sync_response(data)
-            errors = 0
-          when :sync_error
-            logger.error "SSE Sync error received; #{data.type}: #{data.message}"
-            errors += 1
-
-            # TODO: Allow configuring
-            raise 'Aborting due to excessive errors' if errors >= 5
-          end
-        end
-
-        @should_listen = cancel_token
-      else
-        thread = Thread.new { listen_forever(**params) }
-      end
+      thread = Thread.new { listen_forever(**params) }
       @sync_thread = thread
       thread.run
     end

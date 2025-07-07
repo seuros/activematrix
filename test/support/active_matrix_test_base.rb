@@ -7,14 +7,13 @@ class ActiveSupport::TestCase
 
   # Override setup to clear cache before each test
   def setup
-    # Clear Rails cache
+    # Clear Rails cache if it exists
     Rails.cache.clear
+
     cache_dir = File.expand_path('../../tmp/cache/test', __dir__)
     # Completely remove and recreate the cache directory
     FileUtils.rm_rf(cache_dir)
     FileUtils.mkdir_p(cache_dir)
-    # Force Rails to create a new cache instance
-    Rails.instance_variable_set(:@cache, nil)
 
     # Clear any pre-populated room members
     @room.instance_variable_set(:@pre_populated_members, nil) if defined?(@room)
@@ -27,7 +26,7 @@ class ActiveSupport::TestCase
     ActiveMatrix::Api
       .any_instance
       .stubs(:client_api_latest)
-      .returns(:client_r0)
+      .returns(:client_v3)
   end
 
   def expect_message(object, message, *)

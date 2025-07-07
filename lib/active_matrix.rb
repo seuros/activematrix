@@ -92,8 +92,7 @@ module ActiveMatrix
     'as' => 'AS',
     'cs' => 'CS',
     'is' => 'IS',
-    'ss' => 'SS',
-    'msc' => 'MSC'
+    'ss' => 'SS'
   )
 
   # Setup Zeitwerk autoloading

@@ -5,11 +5,12 @@ Rake::TestTask.new(:test) do |t|
   t.libs << 'test'
   t.libs << 'lib'
   t.test_files = FileList['test/**/*_test.rb']
+  t.warning = true
+  t.verbose = true if ENV['VERBOSE']
 end
 
-if ENV['GENERATE_REPORTS'] == 'true'
-  require 'ci/reporter/rake/test_unit'
-  task :test => 'ci:setup:testunit'
-end
+# Modern CI systems can parse Minitest output directly or use minitest-reporters
+# Example: TESTOPTS='--junit' rake test
+# This will output JUnit XML if minitest-reporters is installed
 
-task :default => :test
+task default: :test

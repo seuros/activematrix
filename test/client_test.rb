@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'support/faraday_test_helper'
 
 class ClientTest < ActiveSupport::TestCase
+  include FaradayTestHelper
+
   def setup
     super
-    ::Net::HTTP.any_instance.expects(:request).never
+    setup_faraday_stubs
+    expect_no_http_requests
   end
 
   def test_creation
@@ -401,9 +405,9 @@ class ClientTest < ActiveSupport::TestCase
 
     # The room was created with name and topic, accessing them should not make API calls
     # But due to cache behavior, stub the requests that might be made
-    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.name', query: {}).returns(ActiveMatrix::Response.new(cl.api, name: 'Example room'))
-    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.topic', query: {}).returns(ActiveMatrix::Response.new(cl.api, topic: 'Example topic'))
-    cl.api.stubs(:request).with(:get, :client_r0, '/rooms/%21room%3Aexample.com/state/m.room.join_rules', query: {}).returns(ActiveMatrix::Response.new(cl.api, join_rule: 'public'))
+    cl.api.stubs(:request).with(:get, :client_v3, '/rooms/%21room%3Aexample.com/state/m.room.name', query: {}).returns(ActiveMatrix::Response.new(cl.api, name: 'Example room'))
+    cl.api.stubs(:request).with(:get, :client_v3, '/rooms/%21room%3Aexample.com/state/m.room.topic', query: {}).returns(ActiveMatrix::Response.new(cl.api, topic: 'Example topic'))
+    cl.api.stubs(:request).with(:get, :client_v3, '/rooms/%21room%3Aexample.com/state/m.room.join_rules', query: {}).returns(ActiveMatrix::Response.new(cl.api, join_rule: 'public'))
 
     assert_equal 'Example room', room.name
     assert_equal 'Example topic', room.topic

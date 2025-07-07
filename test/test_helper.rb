@@ -23,6 +23,7 @@ require 'webmock/minitest'
 require 'uri'
 require_relative 'support/vcr_helper'
 require_relative 'support/active_matrix_test_base'
+require_relative 'support/faraday_test_helper'
 
 # Configure VCR
 VCR.configure do |config|
@@ -49,24 +50,12 @@ VCR.configure do |config|
   config.allow_http_connections_when_no_cassette = true
 end
 
-# Disable WebMock by default, enable it only for VCR tests
-WebMock.allow_net_connect!
-
-# Set up a test cache for Rails.cache
-require 'active_support/cache'
-require 'fileutils'
-
-module Rails
-  class << self
-    def cache
-      @cache ||= begin
-        cache_dir = File.expand_path('../tmp/cache/test', __dir__)
-        FileUtils.mkdir_p(cache_dir)
-        ActiveSupport::Cache::FileStore.new(cache_dir, expires_in: 1.hour)
-      end
-    end
-  end
-end
+# Disable network connections by default for test safety
+# VCR will handle allowing connections when recording cassettes
+WebMock.disable_net_connect!(
+  allow_localhost: true, # Allow connections to localhost for test servers
+  allow: 'chromedriver.storage.googleapis.com' # Allow chromedriver downloads if needed
+)
 
 # VCR helper methods for backwards compatibility
 def with_vcr_cassette(name = nil, options = {}, &)
@@ -98,10 +87,12 @@ def matrix_test_user_id
   "@#{matrix_test_credentials[:username]}:#{URI.parse(matrix_test_server).host}"
 end
 
-# Temporarily disable VCR for a block
+# Temporarily disable VCR for a block and allow real network connections
+# Use sparingly - prefer VCR cassettes for reproducible tests
 def without_vcr(&)
+  was_disabled = WebMock.net_connect_allowed?
   WebMock.allow_net_connect!
   VCR.turned_off(&)
 ensure
-  WebMock.disable_net_connect! if VCR.current_cassette
+  WebMock.disable_net_connect!(allow_localhost: true) unless was_disabled
 end

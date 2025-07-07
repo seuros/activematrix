@@ -13,7 +13,7 @@ class RoomTest < ActiveSupport::TestCase
     @http = mock
     @http.stubs(:active?).returns(true)
 
-    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS
+    @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS, disable_faraday: true
     @api.instance_variable_set :@http, @http
     @api.stubs(:print_http)
 
@@ -129,7 +129,7 @@ class RoomTest < ActiveSupport::TestCase
     @api.expects(:send_message).with(@id, text)
     @room.send_text(text)
 
-    @api.expects(:send_message_event).with(@id, 'm.room.message', body: 'test', msgtype: 'm.text', formatted_body: text, format: 'org.matrix.custom.html')
+    @api.expects(:send_message_event).with(@id, 'm.room.message', { body: 'test', msgtype: 'm.text', formatted_body: text, format: 'org.matrix.custom.html' })
     @room.send_html(text)
 
     @api.expects(:send_emote).with(@id, text)
@@ -172,21 +172,23 @@ class RoomTest < ActiveSupport::TestCase
     @client.instance_variable_get(:@rooms).expects(:delete).with(@id)
     @room.leave
 
-    @api.expects(:get_room_account_data).with('@alice:example.com', @id, 'com.example.Test')
-    @room.get_account_data('com.example.Test')
+    @api.expects(:get_room_account_data).with('@alice:example.com', @id, 'com.example.Test').returns({ test: 'data' })
+    result = @room.get_account_data('com.example.Test')
 
-    @api.expects(:set_room_account_data).with('@alice:example.com', @id, 'com.example.Test', data: true)
+    assert_equal({ test: 'data' }, result)
+
+    @api.expects(:set_room_account_data).with('@alice:example.com', @id, 'com.example.Test', { data: true })
     @room.set_account_data('com.example.Test', data: true)
 
     @api.expects(:get_membership).with(@id, '@alice:example.com').returns(membership: 'join')
-    @api.expects(:set_membership).with(@id, '@alice:example.com', 'join', 'Updating room profile information', membership: 'join', displayname: 'Alice',
-                                                                                                               avatar_url: 'mxc://example.com/avatar')
+    @api.expects(:set_membership).with(@id, '@alice:example.com', 'join', 'Updating room profile information', { membership: 'join', displayname: 'Alice',
+                                                                                                                 avatar_url: 'mxc://example.com/avatar' })
     @room.set_user_profile display_name: 'Alice', avatar_url: 'mxc://example.com/avatar'
 
     @api.expects(:get_user_tags).with('@alice:example.com', @id).returns(tags: { 'example.tag': {} })
     tags = @room.tags
 
-    @api.expects(:add_user_tag).with('@alice:example.com', @id, :'test.tag', data: true)
+    @api.expects(:add_user_tag).with('@alice:example.com', @id, :'test.tag', { data: true })
     tags.add 'test.tag', data: true
 
     @api.expects(:remove_user_tag).with('@alice:example.com', @id, :'test.tag')
@@ -203,7 +205,7 @@ class RoomTest < ActiveSupport::TestCase
 
     @api.expects(:request).with(
       :put,
-      :client_r0,
+      :client_v3,
       '/directory/room/%23room%3Aexample.com',
       body: { room_id: '!room:example.com' },
       query: {}
@@ -315,11 +317,11 @@ class RoomTest < ActiveSupport::TestCase
   def test_modifies
     @api.expects(:get_room_state).with(@id, 'm.room.power_levels').returns users_default: 0, redact: 50
 
-    @api.expects(:set_room_state).with(@id, 'm.room.power_levels', users_default: 5, redact: 50, users: { '@alice:example.com': 100 })
+    @api.expects(:set_room_state).with(@id, 'm.room.power_levels', { users_default: 5, redact: 50, users: { '@alice:example.com': 100 } })
     @room.modify_user_power_levels({ '@alice:example.com': 100 }, 5)
 
     @api.expects(:get_room_state).with(@id, 'm.room.power_levels').returns users_default: 0, redact: 50
-    @api.expects(:set_room_state).with(@id, 'm.room.power_levels', users_default: 0, redact: 50, events: { 'm.room.message': 100 })
+    @api.expects(:set_room_state).with(@id, 'm.room.power_levels', { users_default: 0, redact: 50, events: { 'm.room.message': 100 } })
     @room.modify_required_power_levels 'm.room.message': 100
   end
 end

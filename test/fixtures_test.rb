@@ -19,7 +19,6 @@ class FixturesTest < ActiveSupport::TestCase
 
     assert_equal 'agent_smith', agent.name
     assert_equal 'https://matrix.zion.net', agent.homeserver
-    puts "✅ Agent Smith fixture loaded: #{agent.name}"
   end
 
   def test_agent_stores_fixtures_load
@@ -27,7 +26,6 @@ class FixturesTest < ActiveSupport::TestCase
 
     assert_equal 'mission_log', store.key
     assert_equal active_matrix_agents(:agent_smith), store.agent
-    puts "✅ Agent store fixture loaded: #{store.key}"
   end
 
   def test_chat_sessions_fixtures_load
@@ -35,7 +33,6 @@ class FixturesTest < ActiveSupport::TestCase
 
     assert_equal '@morpheus:zion.net', session.user_id
     assert_equal active_matrix_agents(:neo), session.agent
-    puts '✅ Chat session fixture loaded'
   end
 
   def test_knowledge_bases_fixtures_load
@@ -43,6 +40,5 @@ class FixturesTest < ActiveSupport::TestCase
 
     assert_equal 'matrix_version', kb.key
     assert_kind_of Hash, kb.value
-    puts "✅ Knowledge base fixture loaded: #{kb.key}"
   end
 end

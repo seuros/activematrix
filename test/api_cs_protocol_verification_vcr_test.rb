@@ -259,7 +259,7 @@ class ApiCSVerificationVCRTest < ActiveSupport::TestCase
       api.access_token = @api.access_token
 
       assert_raises(ActiveMatrix::MatrixNotFoundError) do
-        api.request(:get, :client_r0, '/non_existent_endpoint')
+        api.request(:get, :client_v3, '/non_existent_endpoint')
       end
     end
 

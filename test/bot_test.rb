@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'test_helper'
-require 'net/http'
 
 class BotTest < ActiveSupport::TestCase
+  include FaradayTestHelper
   class ExampleBot < ActiveMatrix::Bot::Base
     set :testing, true
 
@@ -35,14 +35,10 @@ class BotTest < ActiveSupport::TestCase
   end
 
   def setup
-    ::Net::HTTP.any_instance.expects(:request).never
-
-    @http = mock
-    @http.stubs(:active?).returns(true)
+    setup_faraday_stubs
 
     @api = ActiveMatrix::Api.new 'https://example.com', protocols: :CS
-    @api.instance_variable_set :@http, @http
-    @api.stubs(:print_http)
+    stub_http_client(@api)
 
     @client = ActiveMatrix::Client.new @api
     @client.stubs(:mxid).returns('@alice:example.com')

@@ -76,11 +76,17 @@ module ActiveMatrix
     end
 
     def fetch_account_data(key)
-      if room
-        client.api.get_room_account_data(client.mxid, room.id, key)
-      else
-        client.api.get_account_data(client.mxid, key)
-      end
+      response = if room
+                   client.api.get_room_account_data(client.mxid, room.id, key)
+                 else
+                   client.api.get_account_data(client.mxid, key)
+                 end
+      # Convert Response object to plain hash for caching
+      # Response objects extend Hash but contain @api instance variable that can't be serialized
+      # Create a new hash with just the data
+      plain_hash = {}
+      response.each { |k, v| plain_hash[k] = v }
+      plain_hash
     rescue ActiveMatrix::MatrixNotFoundError
       {}
     end

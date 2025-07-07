@@ -42,13 +42,9 @@ module ActiveMatrix::Protocols::CS
   end
 
   # Gets the latest version of the client API
-  # @return [Symbol] :client_r0 / :client_v3 / etc
+  # @return [Symbol] :client_v3
   def client_api_latest
-    @client_api_latest ||= :client_v3 if client_api_versions.any? { |v| v.start_with? 'v1.1' }
-    @client_api_latest ||= :client_r0
-  rescue StandardError => e
-    logger.warn "Failed to look up supported client API, defaulting to r0. The error was #{e.class}: #{e}"
-    @client_api_latest ||= :client_r0
+    @client_api_latest ||= :client_v3
   end
 
   # Gets the list of available methods for logging in
