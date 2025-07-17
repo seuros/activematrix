@@ -8,8 +8,15 @@ Gem::Specification.new do |spec|
   spec.authors          = ['Abdelkader Boudih', 'Alexander Olofsson']
   spec.email            = ['terminale@gmail.com', 'ace@haxalot.com']
 
-  spec.summary          = 'Rails gem for connecting to Matrix protocol'
-  spec.description      = 'A Ruby on Rails gem that provides seamless integration with the Matrix protocol, enabling Rails applications to connect and communicate with Matrix servers.'
+  spec.summary          = 'Rails-native Matrix SDK for building multi-agent bot systems and real-time communication'
+  spec.description      = <<~DESC
+    ActiveMatrix is a comprehensive Rails-native Matrix SDK that enables developers to build sophisticated multi-agent bot systems 
+    and real-time communication features. This gem provides deep Rails integration with ActiveRecord models, state machines for 
+    bot lifecycle management, multi-tiered memory systems, intelligent event routing, connection pooling, and built-in 
+    inter-agent communication. Perfect for building chatbots, automation systems, monitoring agents, and collaborative AI 
+    systems within Rails applications. Features include command handling, room management, media support, end-to-end encryption 
+    capabilities, and extensive protocol support (CS, AS, IS, SS).
+  DESC
   spec.homepage         = 'https://github.com/seuros/activematrix'
   spec.license          = 'MIT'
 
@@ -41,5 +48,21 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'state_machines-activerecord', '<= 0.100.0'
   spec.add_dependency 'zeitwerk', '~> 2.6'
 
-  spec.metadata['rubygems_mfa_required'] = 'true'
+  spec.metadata = {
+    'rubygems_mfa_required' => 'true',
+    'homepage_uri' => spec.homepage,
+    'source_code_uri' => 'https://github.com/seuros/activematrix',
+    'changelog_uri' => 'https://github.com/seuros/activematrix/blob/master/CHANGELOG.md',
+    'documentation_uri' => 'https://rubydoc.info/gems/activematrix',
+    'bug_tracker_uri' => 'https://github.com/seuros/activematrix/issues',
+    'wiki_uri' => 'https://github.com/seuros/activematrix/wiki'
+  }
+
+  # Tags for better discoverability on RubyGems
+  spec.metadata['tags'] = [
+    'matrix', 'matrix-protocol', 'matrix-sdk', 'matrix-api', 'matrix-client',
+    'rails', 'rails-engine', 'activerecord', 'activejob', 'rails-integration',
+    'bot', 'chatbot', 'multi-agent', 'agent-system', 'bot-framework',
+    'real-time', 'messaging', 'communication', 'chat', 'state-machine'
+  ].join(', ')
 end
