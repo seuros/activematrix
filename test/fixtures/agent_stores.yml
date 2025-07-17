@@ -1,4 +1,6 @@
 # Agent Memory Fixtures
+_fixture:
+  model_class: ActiveMatrix::AgentStore
 
 # Agent Smith's memories
 smith_mission_log:

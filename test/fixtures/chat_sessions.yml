@@ -1,4 +1,6 @@
 # Conversation Context Fixtures
+_fixture:
+  model_class: ActiveMatrix::ChatSession
 
 # Neo and Morpheus in the Nebuchadnezzar
 neo_morpheus_training:

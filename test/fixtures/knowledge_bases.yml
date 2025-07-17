@@ -1,4 +1,6 @@
 # Global Memory Fixtures
+_fixture:
+  model_class: ActiveMatrix::KnowledgeBase
 
 # System-wide Matrix information
 matrix_version:

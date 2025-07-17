@@ -1,4 +1,6 @@
 # Matrix Agent Fixtures
+_fixture:
+  model_class: ActiveMatrix::Agent
 
 agent_smith:
   name: agent_smith
