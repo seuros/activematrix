@@ -25,6 +25,6 @@ Next steps:
 Or start individual agents:
    ActiveMatrix::AgentManager.instance.start_agent(agent)
 
-For more information, visit: https://github.com/seuros/agent_smith
+For more information, visit: https://github.com/seuros/activematrix
 
 ===============================================================================

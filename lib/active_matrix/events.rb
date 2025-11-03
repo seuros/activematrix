@@ -3,6 +3,7 @@
 module ActiveMatrix
   class EventHandlerArray < Hash
     include ActiveMatrix::Logging
+
     attr_accessor :reraise_exceptions
 
     def initialize(*)
