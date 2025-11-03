@@ -15,16 +15,25 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         ruby-version: ['3.4']
+        rails-version: ['~> 8.0.0', '~> 8.1.0']
+
+    env:
+      RAILS_VERSION: ${{ matrix.rails-version }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
+    - name: Setup test database
+      run: |
+        cd test/dummy
+        bundle exec rails db:create db:migrate RAILS_ENV=test
     - name: Rubocop
       run: bundle exec rubocop lib/
     - name: Run tests

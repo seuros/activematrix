@@ -43,7 +43,7 @@ This creates a bot class in `app/bots/captain_bot.rb`:
 class CaptainBot < ActiveMatrix::Bot::MultiInstanceBase
   set :accept_invites, true
   set :command_prefix, '!'
-  
+
   command :status,
           desc: 'Get system status',
           args: '[component]' do |component = nil|
@@ -56,7 +56,7 @@ class CaptainBot < ActiveMatrix::Bot::MultiInstanceBase
       room.send_notice("All systems operational!")
     end
   end
-  
+
   command :deploy,
           desc: 'Deploy to production',
           args: 'target' do |target|
@@ -64,17 +64,17 @@ class CaptainBot < ActiveMatrix::Bot::MultiInstanceBase
     deployments = conversation_memory.remember(:deployments) { [] }
     deployments << { target: target, time: Time.current }
     conversation_memory[:deployments] = deployments
-    
+
     # Notify other agents
     broadcast_to_agents(:lieutenant, {
       type: 'deployment',
       target: target,
       initiated_by: agent_name
     })
-    
+
     room.send_notice("Deploying to #{target}...")
   end
-  
+
   # Handle inter-agent messages
   def receive_message(data, from:)
     case data[:type]
@@ -103,7 +103,7 @@ captain = MatrixAgent.create!(
 )
 
 lieutenant = MatrixAgent.create!(
-  name: 'lieutenant', 
+  name: 'lieutenant',
   homeserver: 'https://matrix.org',
   username: 'lieutenant_bot',
   password: 'secure_password',
@@ -156,7 +156,7 @@ recent = conversation_memory.recent_messages(5)
 ### Global Memory (Shared)
 ```ruby
 # Set global data
-global_memory.set('system_status', 'operational', 
+global_memory.set('system_status', 'operational',
   category: 'monitoring',
   expires_in: 5.minutes,
   public_read: true
@@ -180,7 +180,7 @@ class MonitorBot < ActiveMatrix::Bot::MultiInstanceBase
   route event_type: 'm.room.message', priority: 100 do |bot, event|
     # Custom processing
   end
-  
+
   route room_id: '!monitoring:matrix.org' do |bot, event|
     # Handle all events from monitoring room
   end
@@ -221,7 +221,7 @@ end
 RSpec.describe CaptainBot do
   let(:agent) { create(:matrix_agent, bot_class: 'CaptainBot') }
   let(:bot) { described_class.new(agent) }
-  
+
   it 'responds to status command' do
     expect(room).to receive(:send_notice).with(/operational/)
     bot.status
@@ -234,7 +234,7 @@ end
 ActiveMatrix implements a sophisticated multi-agent architecture:
 
 - **AgentManager**: Manages lifecycle of all bots (start/stop/restart)
-- **AgentRegistry**: Thread-safe registry of running bot instances  
+- **AgentRegistry**: Thread-safe registry of running bot instances
 - **EventRouter**: Routes Matrix events to appropriate bots
 - **ClientPool**: Manages shared client connections efficiently
 - **Memory System**: Hierarchical storage with caching
@@ -242,7 +242,7 @@ ActiveMatrix implements a sophisticated multi-agent architecture:
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/seuros/agent_smith
+Bug reports and pull requests are welcome on GitHub at https://github.com/seuros/activematrix
 
 ## License
 

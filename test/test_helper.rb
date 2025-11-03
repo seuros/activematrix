@@ -59,11 +59,11 @@ require 'fileutils'
 module Rails
   class << self
     def cache
-      @cache ||= begin
+      @cache ||= (
         cache_dir = File.expand_path('../tmp/cache/test', __dir__)
         FileUtils.mkdir_p(cache_dir)
         ActiveSupport::Cache::FileStore.new(cache_dir, expires_in: 1.hour)
-      end
+      )
     end
   end
 end

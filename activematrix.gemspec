@@ -10,11 +10,11 @@ Gem::Specification.new do |spec|
 
   spec.summary          = 'Rails-native Matrix SDK for building multi-agent bot systems and real-time communication'
   spec.description      = <<~DESC
-    ActiveMatrix is a comprehensive Rails-native Matrix SDK that enables developers to build sophisticated multi-agent bot systems 
-    and real-time communication features. This gem provides deep Rails integration with ActiveRecord models, state machines for 
-    bot lifecycle management, multi-tiered memory systems, intelligent event routing, connection pooling, and built-in 
-    inter-agent communication. Perfect for building chatbots, automation systems, monitoring agents, and collaborative AI 
-    systems within Rails applications. Features include command handling, room management, media support, end-to-end encryption 
+    ActiveMatrix is a comprehensive Rails-native Matrix SDK that enables developers to build sophisticated multi-agent bot systems
+    and real-time communication features. This gem provides deep Rails integration with ActiveRecord models, state machines for
+    bot lifecycle management, multi-tiered memory systems, intelligent event routing, connection pooling, and built-in
+    inter-agent communication. Perfect for building chatbots, automation systems, monitoring agents, and collaborative AI
+    systems within Rails applications. Features include command handling, room management, media support, end-to-end encryption
     capabilities, and extensive protocol support (CS, AS, IS, SS).
   DESC
   spec.homepage         = 'https://github.com/seuros/activematrix'
@@ -40,11 +40,11 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = '>= 3.4'
 
-  spec.add_dependency 'activejob', '~> 8.0'
-  spec.add_dependency 'activerecord', '~> 8.0'
+  spec.add_dependency 'activejob', '>= 8.0', '< 9'
+  spec.add_dependency 'activerecord', '>= 8.0', '< 9'
   spec.add_dependency 'bcrypt', '~> 3.1'
   spec.add_dependency 'concurrent-ruby', '~> 1.2'
-  spec.add_dependency 'railties', '~> 8.0'
+  spec.add_dependency 'railties', '>= 8.0', '< 9'
   spec.add_dependency 'state_machines-activerecord', '<= 0.100.0'
   spec.add_dependency 'zeitwerk', '~> 2.6'
 
