@@ -18,7 +18,7 @@ module ActiveMatrix
     # @!attribute sync_filter [rw] The global sync filter
     #   @return [Hash,String] A filter definition, either as defined by the
     #           Matrix spec, or as an identifier returned by a filter creation request
-    attr_reader :api
+    attr_reader :api, :sync_thread
     attr_accessor :cache, :sync_filter, :next_batch
 
     events :error, :event, :account_data, :presence_event, :invite_event, :leave_event, :ephemeral_event, :state_event

@@ -479,7 +479,7 @@ module ActiveMatrix::Bot
 
         bot.client.start_listener_thread
 
-        bot.client.instance_variable_get(:@sync_thread).join
+        bot.client.sync_thread&.join
       rescue Interrupt
         # Happens when killed
       rescue StandardError => e

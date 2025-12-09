@@ -13,15 +13,25 @@ module ActiveMatrix
     def initialize
       @registry = AgentRegistry.instance
       @config = ActiveMatrix.config
-      @shutdown = false
+      @shutdown = Concurrent::AtomicBoolean.new(false)
       @monitor_thread = nil
+    end
 
-      setup_signal_handlers
+    # Install signal handlers for graceful shutdown.
+    # Call this explicitly if you want the gem to handle SIGINT/SIGTERM.
+    # By default, signal handling is left to the host application.
+    def install_signal_handlers!
+      %w[INT TERM].each do |signal|
+        Signal.trap(signal) do
+          Thread.new { stop_all }.join
+          exit # rubocop:disable Rails/Exit
+        end
+      end
     end
 
     # Start all agents marked as active in the database
     def start_all
-      return if @shutdown
+      return if @shutdown.true?
 
       logger.info 'Starting all active agents...'
 
@@ -37,7 +47,7 @@ module ActiveMatrix
 
     # Start a specific agent
     def start_agent(agent)
-      return if @shutdown
+      return if @shutdown.true?
 
       if @registry.running?(agent)
         logger.warn "Agent #{agent.name} is already running"
@@ -54,7 +64,7 @@ module ActiveMatrix
         thread = Thread.new do
           Thread.current.name = "agent-#{agent.name}"
 
-          begin
+          wrap_with_executor do
             # Create client and bot instance
             client = create_client_for_agent(agent)
             bot_class = agent.bot_class.constantize
@@ -79,7 +89,9 @@ module ActiveMatrix
 
             # Start the sync loop
             client.start_listener_thread
-            client.instance_variable_get(:@sync_thread).join
+            client.sync_thread&.join
+          rescue Interrupt
+            logger.info "Agent #{agent.name} received shutdown signal"
           rescue StandardError => e
             logger.error "Error in agent #{agent.name}: #{e.message}"
             logger.error e.backtrace.join("\n")
@@ -115,10 +127,10 @@ module ActiveMatrix
         # Save sync token
         agent.update(last_sync_token: client.sync_token) if client.sync_token.present?
 
-        # Kill the thread if still alive
+        # Wait for thread to finish gracefully
         thread = entry[:thread]
         if thread&.alive?
-          thread.kill
+          thread.raise(Interrupt) # Signal thread to stop
           thread.join(5) # Wait up to 5 seconds
         end
 
@@ -135,10 +147,10 @@ module ActiveMatrix
     # Stop all running agents
     def stop_all
       logger.info 'Stopping all agents...'
-      @shutdown = true
+      @shutdown.make_true
 
-      # Stop monitor thread
-      @monitor_thread&.kill
+      # Stop monitor thread gracefully
+      @monitor_thread&.wakeup rescue nil # Wake from sleep
 
       # Stop all agents
       @registry.all_records.each do |agent|
@@ -194,7 +206,7 @@ module ActiveMatrix
         running: @registry.count,
         agents: @registry.health_status,
         monitor_active: @monitor_thread&.alive? || false,
-        shutdown: @shutdown
+        shutdown: @shutdown.true?
       }
     end
 
@@ -218,9 +230,9 @@ module ActiveMatrix
         Thread.current.name = 'agent-monitor'
 
         loop do
-          break if @shutdown
+          break if @shutdown.true?
 
-          begin
+          wrap_with_executor do
             check_agent_health
             cleanup_stale_data
           rescue StandardError => e
@@ -242,7 +254,7 @@ module ActiveMatrix
           logger.warn "Agent #{agent.name} thread died, restarting..."
           @registry.unregister(agent)
           agent.encounter_error!
-          start_agent(agent) unless @shutdown
+          start_agent(agent) unless @shutdown.true?
           next
         end
 
@@ -263,12 +275,13 @@ module ActiveMatrix
       GlobalMemory.cleanup_expired! if defined?(GlobalMemory)
     end
 
-    def setup_signal_handlers
-      %w[INT TERM].each do |signal|
-        Signal.trap(signal) do
-          Thread.new { stop_all }.join
-          exit # rubocop:disable Rails/Exit
-        end
+    # Wraps block with Rails executor if available.
+    # This ensures proper connection handling and prevents leaks.
+    def wrap_with_executor(&block)
+      if defined?(Rails) && Rails.application&.executor
+        Rails.application.executor.wrap(&block)
+      else
+        yield
       end
     end
   end
