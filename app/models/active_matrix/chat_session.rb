@@ -1,5 +1,34 @@
 # frozen_string_literal: true
 
+# <rails-lens:schema:begin>
+# table = "active_matrix_chat_sessions"
+# database_dialect = "PostgreSQL"
+#
+# columns = [
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "agent_id", type = "integer", null = false },
+#   { name = "user_id", type = "string", null = false },
+#   { name = "room_id", type = "string", null = false },
+#   { name = "context", type = "json" },
+#   { name = "message_history", type = "json" },
+#   { name = "last_message_at", type = "datetime" },
+#   { name = "message_count", type = "integer", null = false, default = "0" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "updated_at", type = "datetime", null = false }
+# ]
+#
+# indexes = [
+#   { name = "index_active_matrix_chat_sessions_on_agent_id", columns = ["agent_id"] },
+#   { name = "index_active_matrix_chat_sessions_on_last_message_at", columns = ["last_message_at"] },
+#   { name = "index_chat_sessions_on_agent_user_room", columns = ["agent_id", "user_id", "room_id"], unique = true }
+# ]
+#
+# foreign_keys = [
+#   { column = "agent_id", references_table = "active_matrix_agents", references_column = "id", name = "fk_rails_53457da357" }
+# ]
+#
+# notes = ["agent:INVERSE_OF", "context:NOT_NULL", "message_history:NOT_NULL", "user_id:LIMIT", "room_id:LIMIT"]
+# <rails-lens:schema:end>
 module ActiveMatrix
   class ChatSession < ApplicationRecord
     self.table_name = 'active_matrix_chat_sessions'

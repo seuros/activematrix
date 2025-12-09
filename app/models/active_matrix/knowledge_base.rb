@@ -1,5 +1,31 @@
 # frozen_string_literal: true
 
+# <rails-lens:schema:begin>
+# table = "active_matrix_knowledge_bases"
+# database_dialect = "PostgreSQL"
+#
+# columns = [
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "key", type = "string", null = false },
+#   { name = "value", type = "json" },
+#   { name = "category", type = "string" },
+#   { name = "expires_at", type = "datetime" },
+#   { name = "public_read", type = "boolean", null = false, default = "true" },
+#   { name = "public_write", type = "boolean", null = false, default = "false" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "updated_at", type = "datetime", null = false }
+# ]
+#
+# indexes = [
+#   { name = "index_active_matrix_knowledge_bases_on_category", columns = ["category"] },
+#   { name = "index_active_matrix_knowledge_bases_on_expires_at", columns = ["expires_at"] },
+#   { name = "index_active_matrix_knowledge_bases_on_key", columns = ["key"], unique = true },
+#   { name = "index_active_matrix_knowledge_bases_on_public_read", columns = ["public_read"] },
+#   { name = "index_active_matrix_knowledge_bases_on_public_write", columns = ["public_write"] }
+# ]
+#
+# notes = ["value:NOT_NULL", "category:NOT_NULL", "key:LIMIT", "category:LIMIT"]
+# <rails-lens:schema:end>
 module ActiveMatrix
   class KnowledgeBase < ApplicationRecord
     self.table_name = 'active_matrix_knowledge_bases'
