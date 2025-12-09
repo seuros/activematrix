@@ -11,6 +11,7 @@ A Rails-native Matrix SDK for building multi-agent bot systems and real-time com
 ## Features
 
 - **Multi-Agent Architecture**: Run multiple bots concurrently with async fiber-based lifecycle management
+- **Daemon Binary**: Production-ready `activematrix` daemon with multi-process workers and health probes
 - **Rails Integration**: Deep integration with ActiveRecord, Rails.cache, and Rails.logger
 - **State Machines**: state_machines-powered state management for bot lifecycle
 - **Memory System**: Three-tier memory architecture (agent, conversation, global)
@@ -118,10 +119,47 @@ lieutenant = ActiveMatrix::Agent.create!(
 )
 ```
 
-### Managing Agents
+### Running the Daemon
+
+The `activematrix` binary manages your bots in production, similar to Sidekiq or GoodJob:
+
+```bash
+# Start in foreground
+bundle exec activematrix start
+
+# Start with multiple worker processes
+bundle exec activematrix start --workers 3
+
+# Start specific agents only
+bundle exec activematrix start --agents captain,lieutenant
+
+# Daemonize with PID file
+bundle exec activematrix start --daemon --pidfile tmp/pids/activematrix.pid
+
+# Check status (queries health probe)
+bundle exec activematrix status
+
+# Graceful shutdown
+bundle exec activematrix stop
+
+# Reload agent configuration
+bundle exec activematrix reload
+```
+
+**Health Probes** (for Kubernetes/Docker):
+- `GET /health` - Returns 200 if healthy
+- `GET /status` - JSON with detailed agent status
+- `GET /metrics` - Prometheus-compatible metrics
+
+```bash
+curl http://localhost:3042/health
+curl http://localhost:3042/status
+```
+
+### Programmatic Agent Management
 
 ```ruby
-# Start all agents
+# Start all agents (blocks until shutdown)
 ActiveMatrix::AgentManager.instance.start_all
 
 # Start specific agent
@@ -212,12 +250,21 @@ room.send_text "Hello from ActiveMatrix!"
 ```ruby
 # config/initializers/active_matrix.rb
 ActiveMatrix.configure do |config|
+  # Agent settings
   config.agent_startup_delay = 2.seconds
   config.max_agents_per_process = 10
   config.agent_health_check_interval = 30.seconds
+
+  # Memory settings
   config.conversation_history_limit = 20
   config.conversation_stale_after = 1.day
   config.memory_cleanup_interval = 1.hour
+
+  # Daemon settings
+  config.daemon_workers = 2
+  config.probe_port = 3042
+  config.probe_host = '0.0.0.0'
+  config.shutdown_timeout = 30
 end
 ```
 

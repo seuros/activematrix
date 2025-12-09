@@ -36,20 +36,25 @@ module ActiveMatrix
     # Start all agents marked as active in the database
     # This is the main entry point - runs the async reactor
     def start_all
+      agents = ActiveMatrix::Agent.where.not(state: :offline)
+      start_agents(agents)
+    end
+
+    # Start specific agents (used by daemon workers)
+    # @param agents [ActiveRecord::Relation, Array<Agent>] Agents to start
+    def start_agents(agents)
       return if @running
 
       @running = true
-      logger.info 'Starting all active agents...'
+      agents_array = agents.respond_to?(:to_a) ? agents.to_a : agents
+      logger.info "Starting #{agents_array.size} agents..."
 
       Sync do
         @barrier = Async::Barrier.new
 
-        # Use load_async for non-blocking query
-        agents = AsyncQuery.load_async(ActiveMatrix::Agent.where.not(state: :offline))
-
         startup_delay = config.agent_startup_delay || 2
 
-        agents.each_with_index do |agent, index|
+        agents_array.each_with_index do |agent, index|
           sleep(startup_delay) if index.positive?
           start_agent(agent)
         end

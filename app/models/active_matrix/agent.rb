@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'bcrypt'
+
 # <rails-lens:schema:begin>
 # table = "active_matrix_agents"
 # database_dialect = "PostgreSQL"
