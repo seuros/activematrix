@@ -110,29 +110,31 @@ module ActiveMatrix
 
     def process_events
       while @processing
-        event = @event_queue.dequeue
+        begin
+          event = @event_queue.dequeue
 
-        next unless event
+          next unless event
 
-        # Find matching routes
-        matching_routes = find_matching_routes(event)
+          # Find matching routes
+          matching_routes = find_matching_routes(event)
 
-        if matching_routes.empty?
-          logger.debug "No routes matched for event: #{event[:type]} in #{event[:room_id]}"
-          next
-        end
-
-        # Process routes in priority order (each in its own fiber)
-        matching_routes.each do |route|
-          Async do
-            process_route(route, event)
+          if matching_routes.empty?
+            logger.debug "No routes matched for event: #{event[:type]} in #{event[:room_id]}"
+            next
           end
+
+          # Process routes in priority order (each in its own fiber)
+          matching_routes.each do |route|
+            Async do
+              process_route(route, event)
+            end
+          end
+        rescue Async::Stop
+          break
+        rescue StandardError => e
+          logger.error "Event router error: #{e.message}"
+          logger.error e.backtrace.first(10).join("\n")
         end
-      rescue Async::Stop
-        break
-      rescue StandardError => e
-        logger.error "Event router error: #{e.message}"
-        logger.error e.backtrace.first(10).join("\n")
       end
     end
 

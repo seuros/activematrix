@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'maxitest'
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'ostruct'
+  spec.add_development_dependency 'rails_lens'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'rubocop-minitest'
