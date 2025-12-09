@@ -57,14 +57,14 @@ module ActiveMatrix
       def keys
         return [] unless defined?(::AgentMemory)
 
-        @agent.agent_memories.active.pluck(:key)
+        AsyncQuery.async_pluck(@agent.agent_memories.active, :key)
       end
 
       # Get all memory as hash
       def all
         return {} unless defined?(::AgentMemory)
 
-        @agent.agent_memories.active.pluck(:key, :value).to_h
+        AsyncQuery.async_pluck(@agent.agent_memories.active, :key, :value).to_h
       end
 
       # Clear all agent memory

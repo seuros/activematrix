@@ -56,14 +56,15 @@ module ActiveMatrix
 
         scope = ::GlobalMemory.active
         scope = scope.by_category(category) if category
-        scope.pluck(:key)
+        AsyncQuery.async_pluck(scope, :key)
       end
 
       # Get all values in a category
       def by_category(category)
         return {} unless defined?(::GlobalMemory)
 
-        ::GlobalMemory.active.by_category(category).pluck(:key, :value).to_h
+        scope = ::GlobalMemory.active.by_category(category)
+        AsyncQuery.async_pluck(scope, :key, :value).to_h
       end
 
       # Check if readable by agent

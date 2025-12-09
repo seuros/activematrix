@@ -44,7 +44,13 @@ module ActiveMatrix
       Sync do
         @barrier = Async::Barrier.new
 
-        agents = defined?(MatrixAgent) ? MatrixAgent.where.not(state: :offline) : []
+        # Use load_async for non-blocking query
+        agents = if defined?(MatrixAgent)
+                   AsyncQuery.load_async(MatrixAgent.where.not(state: :offline))
+                 else
+                   []
+                 end
+
         startup_delay = config.agent_startup_delay || 2
 
         agents.each_with_index do |agent, index|
