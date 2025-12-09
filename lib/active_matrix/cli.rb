@@ -29,6 +29,8 @@ module ActiveMatrix
     option :logfile, type: :string, desc: 'Log file path'
     option :require, type: :string, aliases: '-r', desc: 'File to require before starting'
     option :environment, type: :string, aliases: '-e', desc: 'Rails environment'
+    option :otel, type: :boolean, default: false, desc: 'Enable OpenTelemetry tracing'
+    option :otel_exporter, type: :string, default: 'otlp', desc: 'OTel exporter (otlp, console)'
     def start
       boot_rails
       configure_from_options
@@ -130,6 +132,18 @@ module ActiveMatrix
         config.probe_port = options[:probe_port] if options[:probe_port]
         config.probe_host = options[:probe_host] if options[:probe_host]
       end
+
+      configure_telemetry if options[:otel]
+    end
+
+    def configure_telemetry
+      require 'active_matrix/telemetry'
+
+      exporter = options[:otel_exporter]&.to_sym
+      ActiveMatrix::Telemetry.configure!(exporter: exporter)
+    rescue LoadError => e
+      say "OpenTelemetry not available: #{e.message}", :yellow
+      say 'Install opentelemetry-sdk and opentelemetry-exporter-otlp gems', :yellow
     end
 
     def daemonize

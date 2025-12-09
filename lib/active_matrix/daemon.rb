@@ -3,6 +3,7 @@
 require_relative 'daemon/signal_handler'
 require_relative 'daemon/probe_server'
 require_relative 'daemon/worker'
+require_relative 'telemetry'
 
 module ActiveMatrix
   # Main daemon coordinator for managing Matrix bot agents
@@ -33,6 +34,9 @@ module ActiveMatrix
 
       logger.info "Starting ActiveMatrix daemon (workers: #{workers_count}, probe: #{probe_host}:#{probe_port})"
 
+      # Initialize OpenTelemetry if available
+      logger.info 'OpenTelemetry tracing enabled' if Telemetry.configure!
+
       install_signal_handlers
       start_probe_server
       start_workers
@@ -50,6 +54,8 @@ module ActiveMatrix
 
       stop_probe_server
       stop_workers
+
+      Telemetry.shutdown
 
       logger.info 'ActiveMatrix daemon stopped'
     end

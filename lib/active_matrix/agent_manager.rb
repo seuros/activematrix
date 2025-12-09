@@ -11,6 +11,12 @@ module ActiveMatrix
     include Singleton
     include ActiveMatrix::Logging
 
+    # OpenTelemetry semantic conventions for messaging
+    OTEL_ATTRS = {
+      service: 'activematrix.agent_manager',
+      messaging_system: 'matrix'
+    }.freeze
+
     attr_reader :registry, :config
 
     def initialize
@@ -201,33 +207,39 @@ module ActiveMatrix
     private
 
     def run_agent(agent)
-      # Create client and bot instance
-      client = create_client_for_agent(agent)
-      bot_class = agent.bot_class.constantize
-      bot_instance = bot_class.new(client)
+      Telemetry.trace('agent.run', attributes: agent_attributes(agent)) do |span|
+        # Create client and bot instance
+        client = create_client_for_agent(agent)
+        bot_class = agent.bot_class.constantize
+        bot_instance = bot_class.new(client)
 
-      # Register the agent
-      @registry.register(agent, bot_instance)
+        # Register the agent
+        @registry.register(agent, bot_instance)
 
-      # Authenticate if needed
-      if agent.access_token.present?
-        client.access_token = agent.access_token
-      else
-        client.login(agent.username, agent.password)
-        agent.update(access_token: client.access_token)
+        # Authenticate if needed
+        if agent.access_token.present?
+          client.access_token = agent.access_token
+        else
+          Telemetry.trace('agent.login', attributes: agent_attributes(agent)) do
+            client.login(agent.username, agent.password)
+            agent.update(access_token: client.access_token)
+          end
+        end
+
+        # Restore sync token if available
+        client.sync_token = agent.last_sync_token if agent.last_sync_token.present?
+
+        # Mark as online
+        agent.connection_established!
+        span&.add_event('agent.connected')
+
+        # Run the sync loop (blocks until stopped)
+        client.listen_forever
       end
-
-      # Restore sync token if available
-      client.sync_token = agent.last_sync_token if agent.last_sync_token.present?
-
-      # Mark as online
-      agent.connection_established!
-
-      # Run the sync loop (blocks until stopped)
-      client.listen_forever
     rescue Async::Stop
       logger.info "Agent #{agent.name} stopping gracefully"
     rescue StandardError => e
+      Telemetry.record_exception(e, attributes: agent_attributes(agent))
       logger.error "Error in agent #{agent.name}: #{e.message}"
       logger.error e.backtrace.first(10).join("\n")
       agent.encounter_error!
@@ -274,9 +286,7 @@ module ActiveMatrix
         end
 
         # Check last activity
-        if agent.last_active_at && agent.last_active_at < 5.minutes.ago
-          logger.warn "Agent #{agent.name} seems inactive"
-        end
+        logger.warn "Agent #{agent.name} seems inactive" if agent.last_active_at && agent.last_active_at < 5.minutes.ago
       end
     end
 
@@ -284,6 +294,15 @@ module ActiveMatrix
       ActiveMatrix::ChatSession.cleanup_stale!
       ActiveMatrix::AgentStore.cleanup_expired!
       ActiveMatrix::KnowledgeBase.cleanup_expired!
+    end
+
+    def agent_attributes(agent)
+      OTEL_ATTRS.merge(
+        'agent.id' => agent.id,
+        'agent.name' => agent.name,
+        'agent.homeserver' => agent.homeserver,
+        'agent.bot_class' => agent.bot_class
+      )
     end
   end
 end
