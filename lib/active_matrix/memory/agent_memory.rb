@@ -14,19 +14,15 @@ module ActiveMatrix
       # Get a value from agent memory
       def get(key)
         fetch_with_cache(key) do
-          return nil unless defined?(::AgentMemory)
-
-          memory = @agent.agent_memories.active.find_by(key: key)
+          memory = @agent.agent_stores.active.find_by(key: key)
           memory&.value
         end
       end
 
       # Set a value in agent memory
       def set(key, value, expires_in: nil)
-        return false unless defined?(::AgentMemory)
-
         write_through(key, value, expires_in: expires_in) do
-          memory = @agent.agent_memories.find_or_initialize_by(key: key)
+          memory = @agent.agent_stores.find_or_initialize_by(key: key)
           memory.value = value
           memory.expires_at = expires_in.present? ? Time.current + expires_in : nil
           memory.save!
@@ -35,43 +31,33 @@ module ActiveMatrix
 
       # Check if a key exists
       def exists?(key)
-        return false unless defined?(::AgentMemory)
-
         if @cache_enabled && Rails.cache.exist?(cache_key(key))
           true
         else
-          @agent.agent_memories.active.exists?(key: key)
+          @agent.agent_stores.active.exists?(key: key)
         end
       end
 
       # Delete a key
       def delete(key)
-        return false unless defined?(::AgentMemory)
-
         delete_through(key) do
-          @agent.agent_memories.where(key: key).destroy_all.any?
+          @agent.agent_stores.where(key: key).destroy_all.any?
         end
       end
 
       # Get all keys
       def keys
-        return [] unless defined?(::AgentMemory)
-
-        AsyncQuery.async_pluck(@agent.agent_memories.active, :key)
+        AsyncQuery.async_pluck(@agent.agent_stores.active, :key)
       end
 
       # Get all memory as hash
       def all
-        return {} unless defined?(::AgentMemory)
-
-        AsyncQuery.async_pluck(@agent.agent_memories.active, :key, :value).to_h
+        AsyncQuery.async_pluck(@agent.agent_stores.active, :key, :value).to_h
       end
 
       # Clear all agent memory
       def clear!
-        return false unless defined?(::AgentMemory)
-
-        @agent.agent_memories.destroy_all
+        @agent.agent_stores.destroy_all
 
         # Clear cache entries
         keys.each { |key| Rails.cache.delete(cache_key(key)) } if @cache_enabled

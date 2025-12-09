@@ -45,11 +45,7 @@ module ActiveMatrix
         @barrier = Async::Barrier.new
 
         # Use load_async for non-blocking query
-        agents = if defined?(MatrixAgent)
-                   AsyncQuery.load_async(MatrixAgent.where.not(state: :offline))
-                 else
-                   []
-                 end
+        agents = AsyncQuery.load_async(ActiveMatrix::Agent.where.not(state: :offline))
 
         startup_delay = config.agent_startup_delay || 2
 
@@ -237,14 +233,7 @@ module ActiveMatrix
     end
 
     def create_client_for_agent(agent)
-      # Use shared client pool if available
-      if defined?(ClientPool)
-        ClientPool.instance.get_client(agent.homeserver)
-      else
-        ActiveMatrix::Client.new(agent.homeserver,
-                                 client_cache: :some,
-                                 sync_filter_limit: 20)
-      end
+      ClientPool.instance.get_client(agent.homeserver)
     end
 
     def start_monitor_task
@@ -287,12 +276,9 @@ module ActiveMatrix
     end
 
     def cleanup_stale_data
-      # Clean up old conversation contexts
-      ConversationContext.cleanup_stale! if defined?(ConversationContext)
-
-      # Clean up expired memories
-      AgentMemory.cleanup_expired! if defined?(AgentMemory)
-      GlobalMemory.cleanup_expired! if defined?(GlobalMemory)
+      ActiveMatrix::ChatSession.cleanup_stale!
+      ActiveMatrix::AgentStore.cleanup_expired!
+      ActiveMatrix::KnowledgeBase.cleanup_expired!
     end
   end
 end

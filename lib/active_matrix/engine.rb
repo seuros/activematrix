@@ -7,7 +7,6 @@ module ActiveMatrix
     engine_name 'activematrix'
 
     initializer 'activematrix.configure_logger' do
-      # Configure logger
       ActiveMatrix.logger = Rails.logger
     end
   end

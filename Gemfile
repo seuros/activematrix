@@ -11,4 +11,5 @@ gem 'activejob', rails_version
 gem 'activerecord', rails_version
 gem 'railties', rails_version
 
-# gem 'ci_reporter_test_unit'
+# PostgreSQL 18 required
+gem 'pg', '>= 1.6'

@@ -1,22 +1,16 @@
 # frozen_string_literal: true
 
 require 'rails/generators'
-require 'rails/generators/active_record'
 
 module ActiveMatrix
   module Generators
     class InstallGenerator < Rails::Generators::Base
-      include ActiveRecord::Generators::Migration
-
       source_root File.expand_path('templates', __dir__)
 
-      desc 'Creates ActiveMatrix migrations and initializers'
+      desc 'Installs ActiveMatrix initializer and copies migrations'
 
-      def create_migrations
-        migration_template 'create_matrix_agents.rb', 'db/migrate/create_matrix_agents.rb'
-        migration_template 'create_agent_memories.rb', 'db/migrate/create_agent_memories.rb'
-        migration_template 'create_conversation_contexts.rb', 'db/migrate/create_conversation_contexts.rb'
-        migration_template 'create_global_memories.rb', 'db/migrate/create_global_memories.rb'
+      def copy_migrations
+        rails_command 'active_matrix:install:migrations', inline: true
       end
 
       def create_initializer
@@ -25,12 +19,6 @@ module ActiveMatrix
 
       def display_post_install
         readme 'README' if behavior == :invoke
-      end
-
-      private
-
-      def migration_version
-        "[#{ActiveRecord::VERSION::MAJOR}.#{ActiveRecord::VERSION::MINOR}]"
       end
     end
   end

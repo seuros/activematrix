@@ -2,6 +2,9 @@
 
 ActiveMatrix Multi-Agent System has been installed!
 
+Requirements:
+- PostgreSQL 18+ (for UUIDv7 support)
+
 Next steps:
 
 1. Run migrations:
@@ -11,7 +14,7 @@ Next steps:
    rails generate active_matrix:bot MyFirstBot
 
 3. Configure your agents in the Rails console:
-   agent = MatrixAgent.create!(
+   agent = ActiveMatrix::Agent.create!(
      name: 'captain',
      homeserver: 'https://matrix.org',
      username: 'captain_bot',

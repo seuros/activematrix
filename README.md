@@ -2,23 +2,30 @@
 
 A Rails-native Matrix SDK for building multi-agent bot systems and real-time communication features. This gem is a fork of the [matrix-sdk](https://github.com/ananace/ruby-matrix-sdk) gem, extensively enhanced with Rails integration, multi-agent architecture, and persistent state management.
 
+## Requirements
+
+- **Ruby 3.4+**
+- **Rails 8.0+**
+- **PostgreSQL 18+** (required for UUIDv7 primary keys)
+
 ## Features
 
-- **Multi-Agent Architecture**: Run multiple bots concurrently with lifecycle management
+- **Multi-Agent Architecture**: Run multiple bots concurrently with async fiber-based lifecycle management
 - **Rails Integration**: Deep integration with ActiveRecord, Rails.cache, and Rails.logger
 - **State Machines**: state_machines-powered state management for bot lifecycle
 - **Memory System**: Three-tier memory architecture (agent, conversation, global)
 - **Event Routing**: Intelligent event distribution to appropriate agents
-- **Client Pooling**: Efficient connection management for multiple bots
+- **Client Pooling**: Efficient connection management with async semaphores
 - **Generators**: Rails generators for quick bot creation
 - **Inter-Agent Communication**: Built-in messaging between bots
+- **PostgreSQL 18 Features**: UUIDv7 primary keys, JSONB with GIN indexes
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'activematrix', '~> 0.0.3'
+gem 'activematrix'
 ```
 
 And then execute:
@@ -90,7 +97,7 @@ end
 
 ```ruby
 # Create agent records in Rails console or seeds
-captain = MatrixAgent.create!(
+captain = ActiveMatrix::Agent.create!(
   name: 'captain',
   homeserver: 'https://matrix.org',
   username: 'captain_bot',
@@ -102,7 +109,7 @@ captain = MatrixAgent.create!(
   }
 )
 
-lieutenant = MatrixAgent.create!(
+lieutenant = ActiveMatrix::Agent.create!(
   name: 'lieutenant',
   homeserver: 'https://matrix.org',
   username: 'lieutenant_bot',
@@ -217,14 +224,19 @@ end
 ## Testing
 
 ```ruby
-# spec/bots/captain_bot_spec.rb
-RSpec.describe CaptainBot do
-  let(:agent) { create(:matrix_agent, bot_class: 'CaptainBot') }
-  let(:bot) { described_class.new(agent) }
+# test/bots/captain_bot_test.rb
+class CaptainBotTest < ActiveSupport::TestCase
+  def setup
+    @agent = ActiveMatrix::Agent.create!(
+      name: 'test_captain',
+      homeserver: 'https://matrix.org',
+      username: 'test_bot',
+      bot_class: 'CaptainBot'
+    )
+  end
 
-  it 'responds to status command' do
-    expect(room).to receive(:send_notice).with(/operational/)
-    bot.status
+  test 'responds to status command' do
+    # Your test logic here
   end
 end
 ```
@@ -233,12 +245,21 @@ end
 
 ActiveMatrix implements a sophisticated multi-agent architecture:
 
-- **AgentManager**: Manages lifecycle of all bots (start/stop/restart)
-- **AgentRegistry**: Thread-safe registry of running bot instances
-- **EventRouter**: Routes Matrix events to appropriate bots
-- **ClientPool**: Manages shared client connections efficiently
+- **AgentManager**: Manages lifecycle of all bots using async fibers (start/stop/restart)
+- **AgentRegistry**: Fiber-safe registry of running bot instances
+- **EventRouter**: Routes Matrix events to appropriate bots via async queues
+- **ClientPool**: Manages shared client connections with async semaphores
 - **Memory System**: Hierarchical storage with caching
 - **State Machines**: Track agent states (offline/connecting/online/busy/error)
+
+### Models
+
+All models are namespaced under `ActiveMatrix::`:
+
+- `ActiveMatrix::Agent` - Bot agent records with state machine
+- `ActiveMatrix::AgentStore` - Per-agent key-value storage
+- `ActiveMatrix::ChatSession` - Conversation context per user/room
+- `ActiveMatrix::KnowledgeBase` - Global shared storage
 
 ## Contributing
 

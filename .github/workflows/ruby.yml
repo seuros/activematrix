@@ -3,10 +3,10 @@ name: Ruby
 
 on:
   push:
-    tags: [ "*" ]
-    branches: [ "master" ]
+    tags: ["*"]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 permissions:
   contents: read
@@ -20,8 +20,26 @@ jobs:
         ruby-version: ['3.4']
         rails-version: ['~> 8.0.0', '~> 8.1.0']
 
+    services:
+      db:
+        image: ghcr.io/seuros/postgis-with-extensions:18
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_USER: ubuntu
+          POSTGRES_DB: ubuntu
+          POSTGRES_PASSWORD: ubuntu
+          POSTGRES_INITDB_ARGS: "--data-checksums"
+        options: >-
+          --health-cmd="pg_isready -U ubuntu"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     env:
       RAILS_VERSION: ${{ matrix.rails-version }}
+      DATABASE_URL: postgres://ubuntu:ubuntu@localhost:5432/activematrix_test
 
     steps:
     - uses: actions/checkout@v5

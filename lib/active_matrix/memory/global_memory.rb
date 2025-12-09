@@ -11,75 +11,59 @@ module ActiveMatrix
       # Get a value from global memory
       def get(key)
         fetch_with_cache(key) do
-          return nil unless defined?(::GlobalMemory)
-
-          ::GlobalMemory.get(key)
+          ActiveMatrix::KnowledgeBase.get(key)
         end
       end
 
       # Set a value in global memory
       def set(key, value, category: nil, expires_in: nil, public_read: true, public_write: false)
-        return false unless defined?(::GlobalMemory)
-
         write_through(key, value, expires_in: expires_in) do
-          ::GlobalMemory.set(key, value,
-                             category: category,
-                             expires_in: expires_in,
-                             public_read: public_read,
-                             public_write: public_write)
+          ActiveMatrix::KnowledgeBase.set(key, value,
+                                          category: category,
+                                          expires_in: expires_in,
+                                          public_read: public_read,
+                                          public_write: public_write)
         end
       end
 
       # Check if a key exists
       def exists?(key)
-        return false unless defined?(::GlobalMemory)
-
         if @cache_enabled && Rails.cache.exist?(cache_key(key))
           true
         else
-          ::GlobalMemory.active.exists?(key: key)
+          ActiveMatrix::KnowledgeBase.active.exists?(key: key)
         end
       end
 
       # Delete a key
       def delete(key)
-        return false unless defined?(::GlobalMemory)
-
         delete_through(key) do
-          ::GlobalMemory.where(key: key).destroy_all.any?
+          ActiveMatrix::KnowledgeBase.where(key: key).destroy_all.any?
         end
       end
 
       # Get all keys in a category
       def keys(category: nil)
-        return [] unless defined?(::GlobalMemory)
-
-        scope = ::GlobalMemory.active
+        scope = ActiveMatrix::KnowledgeBase.active
         scope = scope.by_category(category) if category
         AsyncQuery.async_pluck(scope, :key)
       end
 
       # Get all values in a category
       def by_category(category)
-        return {} unless defined?(::GlobalMemory)
-
-        scope = ::GlobalMemory.active.by_category(category)
+        scope = ActiveMatrix::KnowledgeBase.active.by_category(category)
         AsyncQuery.async_pluck(scope, :key, :value).to_h
       end
 
       # Check if readable by agent
       def readable?(key, agent = nil)
-        return false unless defined?(::GlobalMemory)
-
-        memory = ::GlobalMemory.find_by(key: key)
+        memory = ActiveMatrix::KnowledgeBase.find_by(key: key)
         memory&.readable_by?(agent)
       end
 
       # Check if writable by agent
       def writable?(key, agent = nil)
-        return false unless defined?(::GlobalMemory)
-
-        memory = ::GlobalMemory.find_by(key: key)
+        memory = ActiveMatrix::KnowledgeBase.find_by(key: key)
         memory&.writable_by?(agent)
       end
 
@@ -93,7 +77,7 @@ module ActiveMatrix
       # Set with permission check
       def set_for_agent(key, value, agent, **)
         # Allow creating new keys or updating writable ones
-        memory = ::GlobalMemory.find_by(key: key)
+        memory = ActiveMatrix::KnowledgeBase.find_by(key: key)
         return false if memory && !memory.writable_by?(agent)
 
         set(key, value, **)
