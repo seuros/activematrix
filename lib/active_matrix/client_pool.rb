@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'singleton'
-require 'concurrent'
+require 'async'
+require 'async/semaphore'
+require 'async/condition'
 
 module ActiveMatrix
   # Manages a pool of Matrix client connections for efficiency
@@ -10,17 +12,15 @@ module ActiveMatrix
     include ActiveMatrix::Logging
 
     def initialize
-      @pools = Concurrent::Hash.new
+      @pools = {}
       @config = ActiveMatrix.config
       @mutex = Mutex.new
     end
 
     # Get or create a client for a homeserver
     def get_client(homeserver, **)
-      @mutex.synchronize do
-        pool = get_or_create_pool(homeserver)
-        pool.checkout(**)
-      end
+      pool = @mutex.synchronize { get_or_create_pool(homeserver) }
+      pool.checkout(**)
     end
 
     # Return a client to the pool
@@ -78,22 +78,19 @@ module ActiveMatrix
         @available = []
         @in_use = {}
         @mutex = Mutex.new
-        @condition = ConditionVariable.new
+        @semaphore = Async::Semaphore.new(max_size)
       end
 
       def checkout(**)
+        # Acquire from semaphore (blocks if pool is exhausted)
+        @semaphore.acquire
+
         @mutex.synchronize do
           # Try to find an available client
           client = find_available_client
 
-          # Create new client if needed and pool not full
-          client = create_client(**) if client.nil? && @in_use.size < @max_size
-
-          # Wait for a client if pool is full
-          while client.nil?
-            @condition.wait(@mutex, 1)
-            client = find_available_client
-          end
+          # Create new client if needed
+          client = create_client(**) if client.nil?
 
           # Mark as in use
           @available.delete(client)
@@ -118,10 +115,10 @@ module ActiveMatrix
             # Client is no longer valid, don't return to pool
             logger.debug "Discarding invalid client for #{@homeserver}"
           end
-
-          # Signal waiting threads
-          @condition.signal
         end
+
+        # Release semaphore slot
+        @semaphore.release
       end
 
       def size
@@ -140,7 +137,7 @@ module ActiveMatrix
         @mutex.synchronize do
           # Stop all clients
           (@available + @in_use.values.map { |e| e[:client] }).each do |client|
-            client.stop_listener_thread if client.listening?
+            client.stop_listener if client.listening?
             client.logout if client.logged_in?
           rescue StandardError => e
             logger.error "Error cleaning up client: #{e.message}"
@@ -158,7 +155,7 @@ module ActiveMatrix
         @available.select! { |client| client_valid?(client) }
 
         # Return first available
-        @available.first
+        @available.shift
       end
 
       def create_client(**)

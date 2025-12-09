@@ -1,19 +1,21 @@
 # frozen_string_literal: true
 
 require 'singleton'
-require 'concurrent'
+require 'async'
+require 'async/queue'
 
 module ActiveMatrix
-  # Routes Matrix events to appropriate agents
+  # Routes Matrix events to appropriate agents using async fibers
   class EventRouter
     include Singleton
     include ActiveMatrix::Logging
 
     def initialize
-      @routes = Concurrent::Array.new
-      @event_queue = Queue.new
+      @routes = []
+      @mutex = Mutex.new
+      @event_queue = nil
       @processing = false
-      @worker_thread = nil
+      @worker_task = nil
     end
 
     # Register an event route
@@ -28,8 +30,10 @@ module ActiveMatrix
         handler: block
       }
 
-      @routes << route
-      @routes.sort_by! { |r| -r[:priority] } # Higher priority first
+      @mutex.synchronize do
+        @routes << route
+        @routes.sort_by! { |r| -r[:priority] } # Higher priority first
+      end
 
       logger.debug "Registered route: #{route.except(:handler).inspect}"
       route[:id]
@@ -37,29 +41,35 @@ module ActiveMatrix
 
     # Unregister a route
     def unregister_route(route_id)
-      @routes.delete_if { |route| route[:id] == route_id }
+      @mutex.synchronize do
+        @routes.delete_if { |route| route[:id] == route_id }
+      end
     end
 
     # Clear all routes for an agent
     def clear_agent_routes(agent_id)
-      @routes.delete_if { |route| route[:agent_id] == agent_id }
+      @mutex.synchronize do
+        @routes.delete_if { |route| route[:agent_id] == agent_id }
+      end
     end
 
     # Route an event to appropriate agents
     def route_event(event)
-      return unless @processing
+      return unless @processing && @event_queue
 
       # Queue the event for processing
-      @event_queue << event
+      @event_queue.enqueue(event)
     end
 
-    # Start the event router
+    # Start the event router (call from within async context)
     def start
       return if @processing
 
       @processing = true
-      @worker_thread = Thread.new do
-        Thread.current.name = 'event-router'
+      @event_queue = Async::Queue.new
+
+      @worker_task = Async(transient: true) do |task|
+        task.annotate 'event-router'
         process_events
       end
 
@@ -69,20 +79,22 @@ module ActiveMatrix
     # Stop the event router
     def stop
       @processing = false
-      @worker_thread&.kill
-      @event_queue.clear
+      @worker_task&.stop
+      @event_queue = nil
 
       logger.info 'Event router stopped'
     end
 
     # Check if router is running
     def running?
-      @processing && @worker_thread&.alive?
+      @processing && @worker_task&.alive?
     end
 
     # Get routes for debugging
     def routes_summary
-      @routes.map { |r| r.except(:handler) }
+      @mutex.synchronize do
+        @routes.map { |r| r.except(:handler) }
+      end
     end
 
     # Broadcast an event to all agents
@@ -98,51 +110,51 @@ module ActiveMatrix
 
     def process_events
       while @processing
-        begin
-          # Wait for event with timeout
-          event = nil
-          Timeout.timeout(1) { event = @event_queue.pop }
+        event = @event_queue.dequeue
 
-          next unless event
+        next unless event
 
-          # Find matching routes
-          matching_routes = find_matching_routes(event)
+        # Find matching routes
+        matching_routes = find_matching_routes(event)
 
-          if matching_routes.empty?
-            logger.debug "No routes matched for event: #{event[:type]} in #{event[:room_id]}"
-            next
-          end
+        if matching_routes.empty?
+          logger.debug "No routes matched for event: #{event[:type]} in #{event[:room_id]}"
+          next
+        end
 
-          # Process routes in priority order
-          matching_routes.each do |route|
+        # Process routes in priority order (each in its own fiber)
+        matching_routes.each do |route|
+          Async do
             process_route(route, event)
           end
-        rescue Timeout::Error
-          # Normal timeout, continue loop
-        rescue StandardError => e
-          logger.error "Event router error: #{e.message}"
-          logger.error e.backtrace.join("\n")
         end
+      rescue Async::Stop
+        break
+      rescue StandardError => e
+        logger.error "Event router error: #{e.message}"
+        logger.error e.backtrace.first(10).join("\n")
       end
     end
 
     def find_matching_routes(event)
-      @routes.select do |route|
-        # Check room match
-        next false if route[:room_id] && route[:room_id] != event[:room_id]
+      @mutex.synchronize do
+        @routes.select do |route|
+          # Check room match
+          next false if route[:room_id] && route[:room_id] != event[:room_id]
 
-        # Check event type match
-        next false if route[:event_type] && route[:event_type] != event[:type]
+          # Check event type match
+          next false if route[:event_type] && route[:event_type] != event[:type]
 
-        # Check user match
-        next false if route[:user_id] && route[:user_id] != event[:sender]
+          # Check user match
+          next false if route[:user_id] && route[:user_id] != event[:sender]
 
-        # Check if agent is running
-        registry = AgentRegistry.instance
-        agent_entry = registry.get(route[:agent_id])
-        next false unless agent_entry
+          # Check if agent is running
+          registry = AgentRegistry.instance
+          agent_entry = registry.get(route[:agent_id])
+          next false unless agent_entry
 
-        true
+          true
+        end
       end
     end
 
@@ -154,18 +166,16 @@ module ActiveMatrix
 
       bot = agent_entry[:instance]
 
-      begin
-        if route[:handler]
-          # Custom handler
-          route[:handler].call(bot, event)
-        elsif bot.respond_to?(:_handle_event)
-          # Default handling
-          bot._handle_event(event)
-        end
-      rescue StandardError => e
-        logger.error "Error processing route for agent #{agent_entry[:record].name}: #{e.message}"
-        logger.error e.backtrace.first(5).join("\n")
+      if route[:handler]
+        # Custom handler
+        route[:handler].call(bot, event)
+      elsif bot.respond_to?(:_handle_event)
+        # Default handling
+        bot._handle_event(event)
       end
+    rescue StandardError => e
+      logger.error "Error processing route for agent #{agent_entry[:record].name}: #{e.message}"
+      logger.error e.backtrace.first(5).join("\n")
     end
   end
 

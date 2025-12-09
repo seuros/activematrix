@@ -22,11 +22,19 @@ module ActiveMatrix
         @agents[agent_record.id] = {
           record: agent_record,
           instance: bot_instance,
-          thread: Thread.current,
+          task: nil,
           started_at: Time.current
         }
 
         logger.info "Registered agent: #{agent_record.name} (#{agent_record.id})"
+      end
+    end
+
+    # Register an async task for an agent
+    def register_task(agent_record, task)
+      @mutex.synchronize do
+        entry = @agents[agent_record.id]
+        entry[:task] = task if entry
       end
     end
 
@@ -135,11 +143,16 @@ module ActiveMatrix
           id: id,
           name: entry[:record].name,
           state: entry[:record].state,
-          thread_alive: entry[:thread]&.alive?,
+          task_alive: entry[:task]&.alive?,
           uptime: Time.current - entry[:started_at],
           last_active: entry[:record].last_active_at
         }
       end
+    end
+
+    # Iterate through all agents
+    def find_each(&block)
+      @agents.values.each(&block)
     end
 
     private

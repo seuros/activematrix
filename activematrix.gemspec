@@ -42,8 +42,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activejob', '>= 8.0', '< 9'
   spec.add_dependency 'activerecord', '>= 8.0', '< 9'
+  spec.add_dependency 'async', '>= 2.21'
   spec.add_dependency 'bcrypt', '~> 3.1'
-  spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'railties', '>= 8.0', '< 9'
   spec.add_dependency 'state_machines-activerecord', '>= 0.100.0'
   spec.add_dependency 'zeitwerk', '~> 2.6'
