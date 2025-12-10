@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.executables      = ['activematrix']
 
   spec.add_development_dependency 'maxitest'
+  spec.add_development_dependency 'opentelemetry-sdk'
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'ostruct'
   spec.add_development_dependency 'rails_lens'
