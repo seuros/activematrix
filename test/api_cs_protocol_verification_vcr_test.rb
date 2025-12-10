@@ -92,18 +92,16 @@ class ApiCSVerificationVCRTest < ActiveSupport::TestCase
   end
 
   def test_register_new_user
-    skip 'User registration may be disabled on test server'
-
     with_protocol_vcr('verification/register_new_user') do
       api = ActiveMatrix::Api.new(matrix_test_server, protocols: :CS)
 
-      # Generate unique username for test
-      username = "test_user_#{Time.now.to_i}"
+      # Generate unique username for test (use fixed name for VCR reproducibility)
+      username = "vcr_test_user"
 
       response = api.register(
         username: username,
         password: 'test_password_12345',
-        initial_device_display_name: 'ActiveMatrix VCR Test'
+        auth: { type: 'm.login.dummy' }
       )
 
       assert response.key?(:access_token)
@@ -146,7 +144,26 @@ class ApiCSVerificationVCRTest < ActiveSupport::TestCase
   end
 
   def test_join_and_leave_room
-    skip 'Requires a public room or invite'
+    with_protocol_vcr('verification/join_and_leave_room') do
+      # Create a public room first
+      room = @api.create_room(
+        name: 'Join Test Room',
+        preset: 'public_chat',
+        visibility: 'public'
+      )
+      room_id = room[:room_id]
+
+      # Leave the room we just created
+      @api.leave_room(room_id)
+
+      # Now join it back via room_id
+      join_response = @api.join_room(room_id)
+      assert join_response.key?(:room_id)
+      assert_equal room_id, join_response[:room_id]
+
+      # Leave again to clean up
+      @api.leave_room(room_id)
+    end
   end
 
   def test_get_room_state

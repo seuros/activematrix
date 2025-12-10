@@ -14,143 +14,97 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer q_g0DeWSlbPbMjz7OMjq6ea7-8OdvMoyLEZvDmJdjUM
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:41 GMT
       Content-Type:
       - application/json
-      Transfer-Encoding:
-      - chunked
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Wed, 10 Dec 2025 17:56:47 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"devices":[{"device_id":"AHh7Gcye","display_name":"Ruby Matrix SDK
-        v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649341385},{"device_id":"T24uDkKg","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649340772},{"device_id":"BuoJnB8a","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649339641},{"device_id":"34ad7ZjO","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649337725},{"device_id":"Nv00hAJJ","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649336090},{"device_id":"2HrlPSl2","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649335578},{"device_id":"r01l10Af","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649335182},{"device_id":"c3GNvevp","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649334103},{"device_id":"VTGXMeeG","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649332938},{"device_id":"JqtpSfQl","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649332369},{"device_id":"xp61K7NN","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649331149},{"device_id":"bb9EEEoF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649330581},{"device_id":"2HYvyLVo","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649329927},{"device_id":"RSmsPVgI","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649328597},{"device_id":"vLYxQumP","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649328083},{"device_id":"ATwXVyQy","display_name":"ActiveMatrix
-        VCR Test","last_seen_ip":"172.18.0.1","last_seen_ts":1751649327594},{"device_id":"ri88jogk","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649326728},{"device_id":"dm1Yz1DQ","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649326122},{"device_id":"CMh_Q3_K","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649325540},{"device_id":"YOego8PN","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649308883},{"device_id":"3_9LTj-C","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649308442},{"device_id":"vdOgU7Y_","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649307999},{"device_id":"iYfZt-Ub","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649306953},{"device_id":"bV2qRkQW","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649306278},{"device_id":"c5FcVTpw","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649305714},{"device_id":"XWhVd1gx","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649305309},{"device_id":"m12L14kX","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649304928},{"device_id":"F5wiOreL","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649304321},{"device_id":"hQHn8fRy","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751649303621},{"device_id":"rf2MY0R4","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648464062},{"device_id":"3Z3tCa7X","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648463649},{"device_id":"XvDHnyfT","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648463223},{"device_id":"ZQgfdymH","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648462826},{"device_id":"wOVulSg3","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648462380},{"device_id":"qLJBb0dF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648461803},{"device_id":"iyUEKWZA","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648461150},{"device_id":"wjlVfJKE","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648460744},{"device_id":"ikKf6hla","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648460352},{"device_id":"38IHhTNl","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648459965},{"device_id":"m_KIjcHk","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648379956},{"device_id":"HOYvDt5S","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751648296527},{"device_id":"VUNuEPQe","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638971228},{"device_id":"Jv_10JaD","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638953082},{"device_id":"4PPNKjik","display_name":"ActiveMatrix
-        VCR Test","last_seen_ip":"172.18.0.1","last_seen_ts":1751638952667},{"device_id":"LlIsvPk8","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638952233},{"device_id":"VUXsagmW","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638951852},{"device_id":"e29wDSEF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638951450},{"device_id":"fghe_WbF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638951040},{"device_id":"SGN7OQuk","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638950614},{"device_id":"eHmRnxBm","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638950114},{"device_id":"1xM8T4yn","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638949669},{"device_id":"KibopLc9","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638948881},{"device_id":"olGYuFmd","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638948456},{"device_id":"pAjG9xUA","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638948036},{"device_id":"bFmxCrWg","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638946891},{"device_id":"v3j8EJhy","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638946395},{"device_id":"PPfd8TZN","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638945263},{"device_id":"DhF3VaSw","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638944852},{"device_id":"fRdF4ybg","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638944261},{"device_id":"iZix3THR","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638943853},{"device_id":"jiKs1-CL","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638943432},{"device_id":"MWrVFH2x","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638943030},{"device_id":"1TfzTzB0","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638906487},{"device_id":"qkZtU3bC","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638838132},{"device_id":"DPFPktSb","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638692128},{"device_id":"0CsXn4oS","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638691705},{"device_id":"60BR7YHb","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638690383},{"device_id":"DNg9FiNB","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638689865},{"device_id":"lFF-rczh","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638689345},{"device_id":"M_iswPJv","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638688945},{"device_id":"KGvFVmBP","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638688552},{"device_id":"A-VbWmql","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638688032},{"device_id":"Fl6nt8xl","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638687614},{"device_id":"Fzv0FjxN","display_name":"ActiveMatrix
-        VCR Test","last_seen_ip":"172.18.0.1","last_seen_ts":1751638687185},{"device_id":"M_5ENhY9","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638686492},{"device_id":"v7YUl0_p","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638685922},{"device_id":"oiku36FF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638685153},{"device_id":"gYGcrAS8","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638683100},{"device_id":"29Ocut4H","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638682699},{"device_id":"jjmp4ojm","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638681928},{"device_id":"h5vT4_N0","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638680649},{"device_id":"fXFMHnrE","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638680149},{"device_id":"qFV-FHNX","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638679528},{"device_id":"y3j5EGjQ","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638658637},{"device_id":"fxZEqUPK","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638657855},{"device_id":"5rkw0ey0","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638657312},{"device_id":"TxVEXRN2","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638656864},{"device_id":"Of6b4rFx","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638655746},{"device_id":"3wB8zKJB","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638655225},{"device_id":"n50uRs3m","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638654247},{"device_id":"nsPrLm0-","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638554466},{"device_id":"cIFb4ugj","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638524395},{"device_id":"IfgZp8DB","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638230779},{"device_id":"J1-RTz16","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638230354},{"device_id":"ekLlJXnI","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638229906},{"device_id":"qMbzc1IC","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638229520},{"device_id":"AVHq8KbF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638228709},{"device_id":"ue-iDjBL","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638228050},{"device_id":"R4Aipcps","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638227251},{"device_id":"qsIMZTaD","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638226752},{"device_id":"xPm1a8tv","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638226351},{"device_id":"qdjNBALF","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638225851},{"device_id":"BfeWUxPz","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1751638146678},{"device_id":"AEHSvVGk","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750604744154},{"device_id":"test_script_1750501799","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750501800253},{"device_id":"TestScript","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750409032035},{"device_id":"ZmUeMDYX","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750403259143},{"device_id":"t733W0zC","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750374823657},{"device_id":"B9qt5Lli","display_name":"Ruby
-        Matrix SDK v0.0.6","last_seen_ip":"172.18.0.1","last_seen_ts":1750244799269},{"device_id":"CommonShareTestUserGreeting","display_name":"Ruby
-        Matrix SDK v2.8.0","last_seen_ip":"172.18.0.1","last_seen_ts":1750223511880},{"device_id":"TestUserQuickGreeting","display_name":"Ruby
-        Matrix SDK v2.8.0","last_seen_ip":"172.18.0.1","last_seen_ts":1750223501702},{"device_id":"CommonShareBotTest","display_name":"Ruby
-        Matrix SDK v2.8.0","last_seen_ip":"172.18.0.1","last_seen_ts":1749807532019},{"device_id":"A8MP0yo4","display_name":"Ruby
-        Matrix SDK v2.8.0","last_seen_ip":"172.18.0.1","last_seen_ts":1748527020890},{"device_id":"shared_secret_registration","display_name":"<TEST_USER>","last_seen_ip":"::1","last_seen_ts":1748463702361}]}'
-  recorded_at: Fri, 04 Jul 2025 17:15:41 GMT
+      encoding: ASCII-8BIT
+      string: '{"devices":[{"device_id":"DEVICE_019b0968-924b-7450-98e1-d4c79a19270b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389407000},{"device_id":"DEVICE_019b0968-93be-7e43-9014-0add5ec9b02b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389407000},{"device_id":"DEVICE_019b0968-90c2-7901-9e21-409c787c9b8c","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389406000},{"device_id":"DEVICE_019b0968-8edb-7a33-b69d-884312aee91a","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389406000},{"device_id":"DEVICE_019b0968-8d8d-7551-bd47-d63dd4b556e5","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389406000},{"device_id":"DEVICE_019b0968-8aab-7b42-a980-b7b9af0ef487","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389405000},{"device_id":"DEVICE_019b0968-8c17-75d0-b784-0cca83d5f14c","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389405000},{"device_id":"DEVICE_019b0968-87c4-7823-9453-86b2506769b0","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389404000},{"device_id":"DEVICE_019b0968-8929-7830-99f5-aafbfdce17c2","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389404000},{"device_id":"DEVICE_019b0967-90ba-7d51-88b6-854149ac789a","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389341000},{"device_id":"DEVICE_019b0967-8ef8-7551-bd87-59b3c4ccb822","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389340000},{"device_id":"DEVICE_019b0967-8c8c-7151-a413-d6b2196e06c3","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389340000},{"device_id":"DEVICE_019b0967-8921-74a3-962a-96a2999742ab","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389339000},{"device_id":"DEVICE_019b0967-8a6d-7c71-91a0-51f7278ff2db","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389339000},{"device_id":"DEVICE_019b0967-87bc-7630-9ca1-ea28a268fc18","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389339000},{"device_id":"DEVICE_019b0967-84e2-7bb0-b7d3-0cb78c62b1ca","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389338000},{"device_id":"DEVICE_019b0967-8628-7250-9312-593499ddfa4b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389338000},{"device_id":"DEVICE_019b0967-83a5-7ed1-ac28-6213fe54bf53","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389338000},{"device_id":"DEVICE_019b0967-823a-73d1-a3f3-f30228367d38","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389337000},{"device_id":"DEVICE_019b0967-80c4-7891-bffb-4ce4432357ec","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389337000},{"device_id":"DEVICE_019b0967-7ed3-7270-b9bb-4e1c55503709","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389336000},{"device_id":"DEVICE_019b0967-7d7f-7812-966e-77c028e3cbcc","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389336000},{"device_id":"DEVICE_019b0967-79ef-7b03-a331-00d92548c43c","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389335000},{"device_id":"DEVICE_019b0967-7b9f-7c80-90f4-c774ede0f5f4","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389335000},{"device_id":"DEVICE_019b0967-787a-7462-b638-168a0c342baf","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389335000},{"device_id":"DEVICE_019b0967-7703-7803-9137-d92a9914043b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389334000},{"device_id":"DEVICE_019b0967-75b7-7c01-b10a-cf42de0e87d6","display_name":"ActiveMatrix
+        VCR Test","last_seen_ip":null,"last_seen_ts":1765389334000},{"device_id":"DEVICE_019b0967-73f4-7bf1-9c0c-01d403be29e3","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389333000},{"device_id":"DEVICE_019b0967-725f-71a1-98f5-c8023f170e63","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765389333000},{"device_id":"DEVICE_019b0951-0421-75c3-8980-729f937544a5","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387863000},{"device_id":"DEVICE_019b0951-057b-7830-8f0b-8da973f2ff3f","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387863000},{"device_id":"DEVICE_019b0951-02b5-7dc2-837b-5688c8b4e21c","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387863000},{"device_id":"DEVICE_019b0950-fe98-7f53-88d3-25cdc0dd3a39","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387862000},{"device_id":"DEVICE_019b0950-ffe4-7be2-a772-4c41dd2bccc8","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387862000},{"device_id":"DEVICE_019b0951-0163-7d01-8bda-9d9bcb4070f6","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387862000},{"device_id":"DEVICE_019b0950-fcce-7d13-abd0-e318cd5b3898","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387861000},{"device_id":"DEVICE_019b0950-fb8b-7e50-8f5b-ae20065e6c3c","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387861000},{"device_id":"DEVICE_019b0950-fa35-7361-b7e0-15edb68936c9","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387861000},{"device_id":"DEVICE_019b0950-f71b-7ce0-858a-5f6292859841","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387860000},{"device_id":"DEVICE_019b0950-f8ac-7d81-b30a-053065863a64","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387860000},{"device_id":"DEVICE_019b0950-f42c-7203-a9eb-cfcc6c862c41","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387859000},{"device_id":"DEVICE_019b0950-f5ac-7580-b3c7-bc48fe0aef30","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387859000},{"device_id":"DEVICE_019b0950-f264-72f1-a3c3-d690fc6f8df9","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387859000},{"device_id":"DEVICE_019b0950-f0fb-76e1-8479-938c88bfed2e","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387858000},{"device_id":"DEVICE_019b0950-ef82-7601-bc3c-3332bf7e97c8","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387858000},{"device_id":"DEVICE_019b0950-ecf0-7bb1-bc80-0e6956c55edf","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387857000},{"device_id":"DEVICE_019b0950-ee40-7fd0-b3ab-c07b6bfab0ce","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387857000},{"device_id":"DEVICE_019b0950-eba9-7d82-96f4-ab80a15d3825","display_name":"ActiveMatrix
+        VCR Test","last_seen_ip":null,"last_seen_ts":1765387857000},{"device_id":"DEVICE_019b0950-ea6d-71b0-aa22-63f3643b83b3","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765387856000},{"device_id":"DEVICE_019b092a-837c-7723-91bf-51e77a1f3d3b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385340000},{"device_id":"DEVICE_019b092a-809b-7ba1-a4a6-b7d7d9994ceb","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385339000},{"device_id":"DEVICE_019b092a-820f-74c3-a7c7-cefe03c222a2","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385339000},{"device_id":"DEVICE_019b092a-7ef9-7d93-b225-f784d0b9afa7","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385339000},{"device_id":"DEVICE_019b092a-7d4b-7fc0-ac54-9273d9f6a8d7","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385338000},{"device_id":"DEVICE_019b092a-7be7-7113-ba27-29ce616573fa","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385338000},{"device_id":"DEVICE_019b092a-7a9f-76d0-aa91-d51c56b1b9df","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385338000},{"device_id":"DEVICE_019b092a-7708-7ef2-92a1-25ef1f51ac9d","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385337000},{"device_id":"DEVICE_019b092a-78e7-7fb1-889b-3b1005e550f6","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385337000},{"device_id":"DEVICE_019b092a-743a-7aa0-8ca6-c320506bad35","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385336000},{"device_id":"DEVICE_019b092a-758d-7f31-bd21-1b4b4758e335","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385336000},{"device_id":"DEVICE_019b092a-72d8-77f3-9abc-0cf98af9f0cb","display_name":"ActiveMatrix
+        VCR Test","last_seen_ip":null,"last_seen_ts":1765385336000},{"device_id":"DEVICE_019b092a-718d-7f20-b41f-fa75a80e9a6d","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385335000},{"device_id":"DEVICE_019b092a-7034-7352-8326-ca5609bbf0c1","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385335000},{"device_id":"DEVICE_019b092a-6d67-7401-9233-085eaf238e0b","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385334000},{"device_id":"DEVICE_019b092a-6ec4-79a3-a6d7-1b2d1b0ea6fa","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385334000},{"device_id":"DEVICE_019b092a-6bb8-7522-b244-34d7653f3603","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385334000},{"device_id":"DEVICE_019b092a-6921-7ec3-9e72-cdf4c3b033be","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385333000},{"device_id":"DEVICE_019b092a-6a6c-73c0-8d11-08091a155ee0","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385333000},{"device_id":"DEVICE_019b092a-6782-7293-8875-aef9997e50dc","display_name":"Ruby
+        Matrix SDK v0.0.6","last_seen_ip":null,"last_seen_ts":1765385333000},{"device_id":"DEVICE_019b092a-489c-7133-aff0-c704217efbe5","display_name":null,"last_seen_ip":null,"last_seen_ts":1765385325000}]}'
+  recorded_at: Wed, 10 Dec 2025 17:56:47 GMT
 recorded_with: VCR 6.3.1

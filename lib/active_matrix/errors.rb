@@ -54,7 +54,7 @@ module ActiveMatrix
     # An error raised when errors occur in the connection layer
     class MatrixConnectionError < MatrixError
       def self.class_by_code(code)
-        return MatrixTimeoutError if code == 504
+        return MatrixTimeoutError if code.to_i == 504
 
         MatrixConnectionError
       end

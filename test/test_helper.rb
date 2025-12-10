@@ -33,17 +33,38 @@ VCR.configure do |config|
     match_requests_on: %i[method uri body]
   }
 
-  # Filter sensitive data
-  config.filter_sensitive_data('<ACCESS_TOKEN>') do |interaction|
-    interaction.request.headers['Authorization']&.first&.gsub(/Bearer .+/, 'Bearer <ACCESS_TOKEN>')
+  # Filter sensitive data - server and domain
+  config.filter_sensitive_data('<MATRIX_SERVER>') { ENV.fetch('MATRIX_TEST_SERVER', 'https://matrix.test.local:8443') }
+  config.filter_sensitive_data('<TEST_USER>') { ENV.fetch('MATRIX_TEST_USER', 'testbot2') }
+  config.filter_sensitive_data('<MATRIX_DOMAIN>') { ENV.fetch('MATRIX_TEST_DOMAIN', 'matrix.test.local') }
+
+  # Filter Authorization header (access tokens)
+  config.filter_sensitive_data('Bearer <ACCESS_TOKEN>') do |interaction|
+    auth = interaction.request.headers['Authorization']&.first
+    auth if auth&.start_with?('Bearer ')
   end
 
+  # Filter password in request body
   config.filter_sensitive_data('<PASSWORD>') do |interaction|
-    JSON.parse(interaction.request.body)['password'] rescue nil if interaction.request.body&.include?('password')
+    if interaction.request.body&.include?('password')
+      begin
+        JSON.parse(interaction.request.body)['password']
+      rescue StandardError
+        nil
+      end
+    end
   end
 
-  config.filter_sensitive_data('<MATRIX_SERVER>') { ENV.fetch('MATRIX_TEST_SERVER', 'https://arena.seuros.net') }
-  config.filter_sensitive_data('<TEST_USER>') { ENV.fetch('MATRIX_TEST_USER', 'testuser') }
+  # Filter access_token in response body
+  config.filter_sensitive_data('<ACCESS_TOKEN>') do |interaction|
+    if interaction.response.body&.include?('access_token')
+      begin
+        JSON.parse(interaction.response.body)['access_token']
+      rescue StandardError
+        nil
+      end
+    end
+  end
 
   # Allow connections to localhost for non-VCR tests
   config.allow_http_connections_when_no_cassette = true
@@ -83,19 +104,23 @@ def use_real_matrix_server?
 end
 
 def matrix_test_server
-  ENV.fetch('MATRIX_TEST_SERVER', 'https://arena.seuros.net')
+  ENV.fetch('MATRIX_TEST_SERVER', 'https://matrix.test.local:8443')
+end
+
+def matrix_test_domain
+  ENV.fetch('MATRIX_TEST_DOMAIN', 'matrix.test.local')
 end
 
 def matrix_test_credentials
   {
     server: matrix_test_server,
-    username: ENV.fetch('MATRIX_TEST_USER', 'testuser'),
-    password: ENV.fetch('MATRIX_TEST_PASSWORD', 'testuser12345678')
+    username: ENV.fetch('MATRIX_TEST_USER', 'testbot2'),
+    password: ENV.fetch('MATRIX_TEST_PASSWORD', 'TestBot12345')
   }
 end
 
 def matrix_test_user_id
-  "@#{matrix_test_credentials[:username]}:#{URI.parse(matrix_test_server).host}"
+  "@#{matrix_test_credentials[:username]}:#{matrix_test_domain}"
 end
 
 # Temporarily disable VCR for a block

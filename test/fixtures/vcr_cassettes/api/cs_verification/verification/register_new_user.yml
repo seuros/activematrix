@@ -1,49 +1,8 @@
 ---
 http_interactions:
 - request:
-    method: put
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:<MATRIX_DOMAIN>/displayname"
-    body:
-      encoding: UTF-8
-      string: '{"displayname":"VCR Test User"}'
-    headers:
-      Accept-Encoding:
-      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
-      Accept:
-      - application/json
-      User-Agent:
-      - Ruby Matrix SDK v0.0.6
-      Content-Type:
-      - application/json
-      Content-Length:
-      - '31'
-      Authorization:
-      - Bearer <ACCESS_TOKEN>
-  response:
-    status:
-      code: 200
-      message: OK
-    headers:
-      Content-Type:
-      - application/json
-      Vary:
-      - origin, access-control-request-method, access-control-request-headers
-      - origin, access-control-request-method, access-control-request-headers
-      Access-Control-Allow-Origin:
-      - "*"
-      Access-Control-Expose-Headers:
-      - "*"
-      Content-Length:
-      - '2'
-      Date:
-      - Wed, 10 Dec 2025 17:56:44 GMT
-    body:
-      encoding: UTF-8
-      string: "{}"
-  recorded_at: Wed, 10 Dec 2025 17:56:44 GMT
-- request:
     method: get
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:<MATRIX_DOMAIN>/displayname"
+    uri: "<MATRIX_SERVER>/_matrix/client/versions"
     body:
       encoding: US-ASCII
       string: ''
@@ -54,8 +13,6 @@ http_interactions:
       - application/json
       User-Agent:
       - Ruby Matrix SDK v0.0.6
-      Authorization:
-      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
@@ -64,18 +21,59 @@ http_interactions:
       Content-Type:
       - application/json
       Vary:
+      - accept-encoding
       - origin, access-control-request-method, access-control-request-headers
       - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
       Access-Control-Expose-Headers:
       - "*"
-      Content-Length:
-      - '31'
       Date:
-      - Wed, 10 Dec 2025 17:56:44 GMT
+      - Wed, 10 Dec 2025 17:56:49 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.16"]}'
+  recorded_at: Wed, 10 Dec 2025 17:56:48 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/register?kind=user"
     body:
       encoding: UTF-8
-      string: '{"displayname":"VCR Test User"}'
-  recorded_at: Wed, 10 Dec 2025 17:56:44 GMT
+      string: '{"username":"vcr_test_user","password":"<PASSWORD>","auth":{"type":"m.login.dummy"}}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '93'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Wed, 10 Dec 2025 17:56:49 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"access_token":"<ACCESS_TOKEN>","user_id":"@vcr_test_user:<MATRIX_DOMAIN>","device_id":"DEVICE_019b0968-9c28-7a12-b36b-e3a5dd065544"}'
+  recorded_at: Wed, 10 Dec 2025 17:56:49 GMT
 recorded_with: VCR 6.3.1

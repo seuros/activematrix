@@ -19,35 +19,33 @@ http_interactions:
       Content-Length:
       - '111'
       Authorization:
-      - Bearer sL87fHYLptwId1T-gm6R-VvVDit-RNBTR4UP0ayHmRE
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:34 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '48'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Wed, 10 Dec 2025 17:56:47 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"room_id":"!kB7ARyucaJrUGiLL:arena.seuros.net"}'
-  recorded_at: Fri, 04 Jul 2025 17:15:34 GMT
+      encoding: ASCII-8BIT
+      string: '{"room_id":"!019b0968-9542-71e3-b3e3-e3c795e9c51a:<MATRIX_DOMAIN>"}'
+  recorded_at: Wed, 10 Dec 2025 17:56:47 GMT
 - request:
     method: post
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!kB7ARyucaJrUGiLL:arena.seuros.net/leave"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!019b0968-9542-71e3-b3e3-e3c795e9c51a:<MATRIX_DOMAIN>/leave"
     body:
       encoding: UTF-8
       string: ''
@@ -59,30 +57,27 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer sL87fHYLptwId1T-gm6R-VvVDit-RNBTR4UP0ayHmRE
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:34 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '2'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '2'
+      Date:
+      - Wed, 10 Dec 2025 17:56:47 GMT
     body:
       encoding: UTF-8
       string: "{}"
-  recorded_at: Fri, 04 Jul 2025 17:15:34 GMT
+  recorded_at: Wed, 10 Dec 2025 17:56:47 GMT
 recorded_with: VCR 6.3.1

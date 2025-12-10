@@ -14,30 +14,28 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer XKTGyQNjG6eednplCKjlD_w9y7kdIUPMVgMRJwSXdR8
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:40 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '80'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Wed, 10 Dec 2025 17:56:51 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"user_id":"@<TEST_USER>:arena.seuros.net","device_id":"T24uDkKg","is_guest":false}'
-  recorded_at: Fri, 04 Jul 2025 17:15:40 GMT
+      encoding: ASCII-8BIT
+      string: '{"user_id":"@<TEST_USER>:<MATRIX_DOMAIN>","device_id":"DEVICE_019b0968-a2f8-7062-80af-fccfd923011f"}'
+  recorded_at: Wed, 10 Dec 2025 17:56:50 GMT
 recorded_with: VCR 6.3.1

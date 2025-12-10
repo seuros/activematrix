@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: put
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/presence/@<TEST_USER>:arena.seuros.net/status"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/presence/@<TEST_USER>:<MATRIX_DOMAIN>/status"
     body:
       encoding: UTF-8
       string: '{"presence":"online","status_msg":"Testing VCR"}'
@@ -18,30 +18,27 @@ http_interactions:
       Content-Length:
       - '48'
       Authorization:
-      - Bearer DtdGrdHe-8eFLwVQNg25uRY29dM7D--eg3Ica5YRw_8
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:25 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '2'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '2'
+      Date:
+      - Wed, 10 Dec 2025 17:56:44 GMT
     body:
       encoding: UTF-8
       string: "{}"
-  recorded_at: Fri, 04 Jul 2025 17:15:25 GMT
+  recorded_at: Wed, 10 Dec 2025 17:56:44 GMT
 recorded_with: VCR 6.3.1

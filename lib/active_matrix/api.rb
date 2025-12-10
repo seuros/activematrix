@@ -343,6 +343,12 @@ module ActiveMatrix
         end
         raise MatrixRequestError.new_by_code(data, response.code) if data
 
+        # For 4xx errors without JSON body, construct a synthetic error
+        if response.code.to_i >= 400 && response.code.to_i < 500
+          synthetic_error = { errcode: "M_UNKNOWN", error: "HTTP #{response.code} #{response.message}" }
+          raise MatrixRequestError.new_by_code(synthetic_error, response.code)
+        end
+
         raise MatrixConnectionError.class_by_code(response.code), response
       end
     end

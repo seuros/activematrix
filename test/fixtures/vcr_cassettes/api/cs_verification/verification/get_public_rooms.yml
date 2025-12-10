@@ -18,31 +18,34 @@ http_interactions:
       Content-Length:
       - '4'
       Authorization:
-      - Bearer AQPEbRwhG7qGEiTrXPqwpSQUCpB5oh7H8gBynNZIc8c
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:32 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '1069'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Wed, 10 Dec 2025 17:56:45 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"chunk":[{"canonical_alias":"#lounge:arena.seuros.net","name":"The
-        Lounge","num_joined_members":7,"room_id":"!YWe0yFA6FPuSw1z1:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#valencia:arena.seuros.net","name":"Valencia","num_joined_members":3,"room_id":"!G8hjWAZEHUAqXn5H:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Madrid:arena.seuros.net","name":"Madrid","num_joined_members":2,"room_id":"!3hduWAxTl0G56dBt:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Tanger:arena.seuros.net","name":"Tanger","num_joined_members":2,"room_id":"!r0IB8coBRXygYADp:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#lab:arena.seuros.net","name":"Laboratory","num_joined_members":2,"room_id":"!Xug4Caiip9PNozWF:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"}],"next_batch":"T5","total_room_count_estimate":17}'
-  recorded_at: Fri, 04 Jul 2025 17:15:32 GMT
+      encoding: ASCII-8BIT
+      string: '{"chunk":[{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"State
+        Event Test Room","num_joined_members":0,"room_id":"!019b092a-7d74-7c62-a212-1702a25514b4:<MATRIX_DOMAIN>","room_type":null,"topic":null,"world_readable":true},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"State
+        Test Room","num_joined_members":0,"room_id":"!019b092a-80b5-7e90-aa9e-ab03854d24e5:<MATRIX_DOMAIN>","room_type":null,"topic":null,"world_readable":true},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"VCR
+        Test Room","num_joined_members":0,"room_id":"!019b092a-8228-72e1-bc0a-409405097ba8:<MATRIX_DOMAIN>","room_type":null,"topic":"Testing
+        room creation with VCR","world_readable":true},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"State
+        Test Room","num_joined_members":0,"room_id":"!019b0950-ef98-7d73-aa15-0da422b7f066:<MATRIX_DOMAIN>","room_type":null,"topic":null,"world_readable":true},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"State
+        Event Test Room","num_joined_members":0,"room_id":"!019b0950-f110-7d81-9a07-c3181967d577:<MATRIX_DOMAIN>","room_type":null,"topic":null,"world_readable":true}],"next_batch":"n5","prev_batch":null,"total_room_count_estimate":10}'
+  recorded_at: Wed, 10 Dec 2025 17:56:45 GMT
 recorded_with: VCR 6.3.1
