@@ -13,3 +13,6 @@ gem 'railties', rails_version
 
 # PostgreSQL 18 required
 gem 'pg', '>= 1.6'
+
+# Lock minitest 5.x until Rails 8.1.2+ is released (minitest 6 incompatibility)
+gem 'minitest', '~> 5.25'
