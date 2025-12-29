@@ -11,27 +11,37 @@ module ActiveMatrix
 
       argument :commands, type: :array, default: [], banner: 'command1 command2'
 
+      check_class_collision suffix: 'Bot'
+
       def create_bot_file
         template 'bot.rb.erb', "app/bots/#{file_name}_bot.rb"
       end
 
-      def create_bot_spec
-        template 'bot_spec.rb.erb', "spec/bots/#{file_name}_bot_spec.rb"
+      def create_bot_test
+        template 'bot_test.rb.erb', "test/bots/#{file_name}_bot_test.rb"
       end
 
       def display_usage
         say "\nBot created! To use your bot:\n\n"
         say '1. Create an agent in Rails console:'
-        say '   agent = MatrixAgent.create!('
-        say "     name: '#{file_name}',"
-        say "     homeserver: 'https://matrix.org',"
-        say "     username: 'your_bot_username',"
-        say "     password: 'your_bot_password',"
+        say '   agent = ActiveMatrix::Agent.create!('
+        say "     name: '#{file_name.dasherize}',"
+        say "     matrix_connection: 'primary',"
         say "     bot_class: '#{class_name}Bot'"
         say '   )'
-        say "\n2. Start the agent:"
-        say '   ActiveMatrix::AgentManager.instance.start_agent(agent)'
+        say "\n2. Start the daemon:"
+        say '   bundle exec activematrix start'
         say "\n"
+      end
+
+      private
+
+      def file_name
+        @_file_name ||= remove_possible_suffix(super)
+      end
+
+      def remove_possible_suffix(name)
+        name.sub(/_?bot$/i, '')
       end
     end
   end

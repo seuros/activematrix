@@ -1,0 +1,37 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+
+class <%= class_name %>BotTest < ActiveSupport::TestCase
+  setup do
+    @agent = ActiveMatrix::Agent.create!(
+      name: '<%= file_name %>_test',
+      homeserver: 'https://matrix.example.com',
+      username: 'test_bot',
+      bot_class: '<%= class_name %>Bot'
+    )
+  end
+
+  test 'bot class is valid' do
+    assert_equal '<%= class_name %>Bot', @agent.bot_class
+    assert @agent.valid?
+  end
+<% if commands.any? %>
+<% commands.each do |command| %>
+  test '<%= command %> command is defined' do
+    bot_class = @agent.bot_class.constantize
+    assert bot_class.commands.key?(:<%= command %>)
+  end
+<% end %>
+<% else %>
+  test 'hello command is defined' do
+    bot_class = @agent.bot_class.constantize
+    assert bot_class.commands.key?(:hello)
+  end
+
+  test 'broadcast command is defined' do
+    bot_class = @agent.bot_class.constantize
+    assert bot_class.commands.key?(:broadcast)
+  end
+<% end %>
+end
