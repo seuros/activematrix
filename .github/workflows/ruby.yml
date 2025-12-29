@@ -17,7 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: ['3.4', '4.0']
+        # Ruby 4.0 blocked until Rails 8.1.2+ (minitest 6 compatibility)
+        ruby-version: ['3.4']
         rails-version: ['~> 8.0.0', '~> 8.1.0']
 
     services:
