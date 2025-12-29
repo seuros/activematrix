@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.license          = 'MIT'
 
   spec.extra_rdoc_files = %w[CHANGELOG.md LICENSE.txt README.md]
-  spec.files            = Dir['lib/**/*', 'app/**/*', 'exe/*'] + spec.extra_rdoc_files
+  spec.files            = Dir['lib/**/*', 'app/**/*', 'db/**/*', 'config/**/*', 'exe/*'] + spec.extra_rdoc_files
   spec.bindir           = 'exe'
   spec.executables      = ['activematrix']
 

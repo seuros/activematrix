@@ -1,0 +1,19 @@
+# Test configuration for ActiveMatrix connections
+
+default: &default
+  sync_filter_limit: 20
+
+primary:
+  <<: *default
+  homeserver_url: https://matrix.example.com
+  access_token: test_access_token_primary
+
+notifications:
+  <<: *default
+  homeserver_url: https://matrix.example.com
+  access_token: test_access_token_notifications
+
+test_bot:
+  <<: *default
+  homeserver_url: https://matrix.test.com
+  access_token: test_access_token_bot

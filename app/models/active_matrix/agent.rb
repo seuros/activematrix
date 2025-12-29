@@ -43,12 +43,14 @@ module ActiveMatrix
     has_many :agent_stores, class_name: 'ActiveMatrix::AgentStore', dependent: :destroy
     has_many :chat_sessions, class_name: 'ActiveMatrix::ChatSession', dependent: :destroy
 
+    # Encrypt access_token for user-uploaded credentials
+    encrypts :access_token, deterministic: true
+
     # Validations
     validates :name, presence: true, uniqueness: true
-    validates :homeserver, presence: true
-    validates :username, presence: true
     validates :bot_class, presence: true
     validate :valid_bot_class?
+    validate :valid_connection_config?
 
     # Scopes
     scope :active, -> { where.not(state: %i[offline error]) }
@@ -109,12 +111,26 @@ module ActiveMatrix
       @bot_instance ||= bot_class.constantize.new(client) if running?
     end
 
+    # Returns a Matrix client using resolved connection config
+    # Resolution order:
+    #   1. matrix_connection → lookup from config/active_matrix.yml
+    #   2. Inline credentials (homeserver, access_token) → user-uploaded bots
     def client
-      @client ||= if access_token.present?
-                    ActiveMatrix::Client.new(homeserver, access_token: access_token)
-                  else
-                    ActiveMatrix::Client.new(homeserver)
-                  end
+      @client ||= build_client
+    end
+
+    # Returns the resolved connection configuration
+    # @return [Hash] with :homeserver_url and :access_token keys
+    def connection_config
+      if matrix_connection.present?
+        ActiveMatrix.connection(matrix_connection)
+      else
+        {
+          homeserver_url: homeserver,
+          access_token: access_token,
+          username: username
+        }.compact
+      end
     end
 
     def running?
@@ -161,6 +177,36 @@ module ActiveMatrix
       rescue NameError
         errors.add(:bot_class, 'must be a valid class name')
       end
+    end
+
+    def valid_connection_config?
+      if matrix_connection.present?
+        # Validate connection exists in YAML
+        errors.add(:matrix_connection, "connection '#{matrix_connection}' not found in config/active_matrix.yml") unless ActiveMatrix.connection_exists?(matrix_connection)
+      elsif homeserver.blank?
+        # Require inline credentials when no matrix_connection
+        errors.add(:homeserver, "can't be blank without matrix_connection")
+      end
+    end
+
+    def build_client
+      config = connection_config
+      homeserver_url = config[:homeserver_url] || config[:homeserver]
+
+      client = ActiveMatrix::Client.new(
+        homeserver_url,
+        client_cache: :some,
+        sync_filter_limit: config[:sync_filter_limit] || 20
+      )
+
+      # Authenticate
+      if config[:access_token].present?
+        client.access_token = config[:access_token]
+      elsif config[:username].present? && encrypted_password.present?
+        client.login(config[:username], BCrypt::Password.new(encrypted_password).to_s, no_sync: true)
+      end
+
+      client
     end
   end
 end

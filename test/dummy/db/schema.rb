@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_01_000000) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_29_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -29,8 +29,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_000000) do
 
   create_table "active_matrix_agents", id: :uuid, default: -> { "uuidv7()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "homeserver", null: false
-    t.string "username", null: false
+    t.string "homeserver"
+    t.string "username"
     t.string "bot_class", null: false
     t.string "state", default: "offline", null: false
     t.string "access_token"
@@ -39,9 +39,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_01_000000) do
     t.string "last_sync_token"
     t.datetime "last_active_at"
     t.integer "messages_handled", default: 0, null: false
+    t.string "matrix_connection"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["homeserver"], name: "index_active_matrix_agents_on_homeserver"
+    t.index ["matrix_connection"], name: "index_active_matrix_agents_on_matrix_connection"
     t.index ["name"], name: "index_active_matrix_agents_on_name", unique: true
     t.index ["settings"], name: "index_active_matrix_agents_on_settings", using: :gin
     t.index ["state"], name: "index_active_matrix_agents_on_state"

@@ -1,0 +1,32 @@
+# ActiveMatrix Connection Configuration
+# Each key defines a named connection that can be referenced by agents.
+#
+# Usage:
+#   ActiveMatrix.client                  # Uses :primary connection
+#   ActiveMatrix.client(:notifications)  # Uses :notifications connection
+#
+# Agents can reference connections via connection_name column,
+# or provide inline credentials for user-uploaded/dynamic bots.
+
+default: &default
+  # Sync filter limit for Matrix sync requests
+  sync_filter_limit: 20
+
+primary:
+  <<: *default
+  homeserver_url: <%= ENV.fetch('MATRIX_HOMESERVER_URL', 'https://matrix.example.com') %>
+  access_token: <%= ENV['MATRIX_ACCESS_TOKEN'] %>
+  # Or use Rails credentials:
+  # access_token: <%%= Rails.application.credentials.dig(:matrix, :access_token) %>
+
+# Example additional connections:
+#
+# notifications:
+#   <<: *default
+#   homeserver_url: <%= ENV.fetch('MATRIX_HOMESERVER_URL', 'https://matrix.example.com') %>
+#   access_token: <%= ENV['MATRIX_NOTIFICATIONS_TOKEN'] %>
+#
+# support:
+#   <<: *default
+#   homeserver_url: <%= ENV['SUPPORT_MATRIX_HOMESERVER'] %>
+#   access_token: <%%= Rails.application.credentials.dig(:matrix, :support_token) %>

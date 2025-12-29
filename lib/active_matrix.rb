@@ -78,6 +78,36 @@ module ActiveMatrix
     def global_logger?
       instance_variable_defined?(:@logger)
     end
+
+    # Get a client for a named connection
+    # @param name [Symbol, String] connection name (default: :primary)
+    # @return [ActiveMatrix::Client] authenticated client
+    # @example
+    #   ActiveMatrix.client.send_message(room_id, message)
+    #   ActiveMatrix.client(:notifications).send_notice(room_id, notice)
+    def client(name = :primary)
+      ConnectionRegistry.instance.client(name)
+    end
+
+    # Get connection configuration by name
+    # @param name [Symbol, String] connection name (default: :primary)
+    # @return [Hash] connection configuration
+    def connection(name = :primary)
+      ConnectionRegistry.instance.connection(name)
+    end
+
+    # Check if a connection exists
+    # @param name [Symbol, String] connection name
+    # @return [Boolean]
+    def connection_exists?(name)
+      ConnectionRegistry.instance.connection_exists?(name)
+    end
+
+    # List all available connection names
+    # @return [Array<String>]
+    def connection_names
+      ConnectionRegistry.instance.connection_names
+    end
   end
 
   # Set up Zeitwerk loader
