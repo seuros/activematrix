@@ -10,7 +10,7 @@ module ActiveMatrix
     extend ActiveMatrix::Extensions
     include ActiveMatrix::Logging
 
-    USER_AGENT = "Ruby Matrix SDK v#{ActiveMatrix::VERSION}".freeze
+    USER_AGENT = "ActiveMatrix v#{ActiveMatrix::VERSION}".freeze
     DEFAULT_HEADERS = {
       'accept' => 'application/json',
       'user-agent' => USER_AGENT

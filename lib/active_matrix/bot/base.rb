@@ -377,7 +377,7 @@ module ActiveMatrix::Bot
         if settings.store_sync_token
           begin
             active_bot.client.api.set_account_data(
-              active_bot.client.mxid, "dev.ananace.ruby-sdk.#{settings.bot_name}",
+              active_bot.client.mxid, "com.seuros.active_matrix.#{settings.bot_name}",
               { sync_token: active_bot.client.sync_token }
             )
           rescue StandardError => e
@@ -466,7 +466,7 @@ module ActiveMatrix::Bot
           bot.client.instance_variable_set(:@next_batch, settings.sync_token)
         elsif settings.store_sync_token?
           begin
-            data = bot.client.api.get_account_data(bot.client.mxid, "dev.ananace.ruby-sdk.#{bot_name}")
+            data = bot.client.api.get_account_data(bot.client.mxid, "com.seuros.active_matrix.#{bot_name}")
             bot.client.sync_token = data[:sync_token]
           rescue ActiveMatrix::MatrixNotFoundError
             # Valid
