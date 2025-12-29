@@ -1,5 +1,40 @@
 # frozen_string_literal: true
 
+require 'bcrypt'
+
+# <rails-lens:schema:begin>
+# table = "active_matrix_agents"
+# database_dialect = "PostgreSQL"
+#
+# columns = [
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "name", type = "string", null = false },
+#   { name = "homeserver", type = "string", null = false },
+#   { name = "username", type = "string", null = false },
+#   { name = "bot_class", type = "string", null = false },
+#   { name = "state", type = "string", null = false, default = "offline" },
+#   { name = "access_token", type = "string" },
+#   { name = "encrypted_password", type = "string" },
+#   { name = "settings", type = "json" },
+#   { name = "last_sync_token", type = "string" },
+#   { name = "last_active_at", type = "datetime" },
+#   { name = "messages_handled", type = "integer", null = false, default = "0" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "updated_at", type = "datetime", null = false }
+# ]
+#
+# indexes = [
+#   { name = "index_active_matrix_agents_on_homeserver", columns = ["homeserver"] },
+#   { name = "index_active_matrix_agents_on_name", columns = ["name"], unique = true },
+#   { name = "index_active_matrix_agents_on_state", columns = ["state"] }
+# ]
+#
+# [callbacks]
+# before_save = [{ method = "encrypt_password", if = ["password_changed?"] }]
+# around_validation = [{ method = "machine" }]
+#
+# notes = ["agent_stores:INVERSE_OF", "chat_sessions:INVERSE_OF", "agent_stores:N_PLUS_ONE", "chat_sessions:N_PLUS_ONE", "access_token:NOT_NULL", "encrypted_password:NOT_NULL", "settings:NOT_NULL", "name:LIMIT", "homeserver:LIMIT", "username:LIMIT", "bot_class:LIMIT", "state:LIMIT", "access_token:LIMIT", "encrypted_password:LIMIT", "last_sync_token:LIMIT", "username:INDEX", "access_token:INDEX", "last_sync_token:INDEX"]
+# <rails-lens:schema:end>
 module ActiveMatrix
   class Agent < ApplicationRecord
     self.table_name = 'active_matrix_agents'
@@ -41,7 +76,7 @@ module ActiveMatrix
       end
 
       after_transition to: :online_idle do |agent|
-        agent.update(last_active_at: Time.current)
+        agent.update_column(:last_active_at, Time.current)
       end
 
       event :start_processing do

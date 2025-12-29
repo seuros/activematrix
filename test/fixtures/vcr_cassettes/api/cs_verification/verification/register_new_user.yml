@@ -1,0 +1,79 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: "<MATRIX_SERVER>/_matrix/client/versions"
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:23:48 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.17"]}'
+  recorded_at: Mon, 29 Dec 2025 18:23:48 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/register?kind=user"
+    body:
+      encoding: UTF-8
+      string: '{"username":"vault_dweller_111","password":"<PASSWORD>","auth":{"type":"m.login.dummy"}}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '97'
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:23:49 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"access_token":"<ACCESS_TOKEN>","user_id":"@vault_dweller_111:<MATRIX_DOMAIN>","device_id":"DEVICE_019b6b5a-27fd-7450-958e-70513075dcf7"}'
+  recorded_at: Mon, 29 Dec 2025 18:23:49 GMT
+recorded_with: VCR 6.3.1

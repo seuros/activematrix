@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: put
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:arena.seuros.net/displayname"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:<MATRIX_DOMAIN>/displayname"
     body:
       encoding: UTF-8
       string: '{"displayname":"VCR Test User"}'
@@ -18,35 +18,32 @@ http_interactions:
       Content-Length:
       - '31'
       Authorization:
-      - Bearer Cl1aZIB3MCyF6Gr0y-Xj6eWmPaeE3ydwplX4Ei3h_fI
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:20:19 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '2'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '2'
+      Date:
+      - Mon, 29 Dec 2025 18:15:01 GMT
     body:
       encoding: UTF-8
       string: "{}"
-  recorded_at: Fri, 04 Jul 2025 17:20:19 GMT
+  recorded_at: Mon, 29 Dec 2025 18:15:01 GMT
 - request:
     method: get
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:arena.seuros.net/displayname"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/profile/@<TEST_USER>:<MATRIX_DOMAIN>/displayname"
     body:
       encoding: US-ASCII
       string: ''
@@ -58,30 +55,27 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer Cl1aZIB3MCyF6Gr0y-Xj6eWmPaeE3ydwplX4Ei3h_fI
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:20:19 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '31'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '31'
+      Date:
+      - Mon, 29 Dec 2025 18:15:01 GMT
     body:
       encoding: UTF-8
       string: '{"displayname":"VCR Test User"}'
-  recorded_at: Fri, 04 Jul 2025 17:20:19 GMT
+  recorded_at: Mon, 29 Dec 2025 18:15:01 GMT
 recorded_with: VCR 6.3.1

@@ -10,7 +10,7 @@ module ActiveMatrix
     extend ActiveMatrix::Extensions
     include ActiveMatrix::Logging
 
-    USER_AGENT = "Ruby Matrix SDK v#{ActiveMatrix::VERSION}".freeze
+    USER_AGENT = "ActiveMatrix v#{ActiveMatrix::VERSION}".freeze
     DEFAULT_HEADERS = {
       'accept' => 'application/json',
       'user-agent' => USER_AGENT
@@ -287,7 +287,7 @@ module ActiveMatrix
       end
 
       failures = 0
-      loop do
+      loop do # rubocop:disable Metrics/BlockLength
         raise MatrixConnectionError, "Server still too busy to handle request after #{failures} attempts, try again later" if failures >= 10
 
         req_id = ('A'..'Z').to_a.sample(4).join
@@ -342,6 +342,12 @@ module ActiveMatrix
           return ActiveMatrix::Response.new self, data
         end
         raise MatrixRequestError.new_by_code(data, response.code) if data
+
+        # For 4xx errors without JSON body, construct a synthetic error
+        if response.code.to_i >= 400 && response.code.to_i < 500
+          synthetic_error = { errcode: 'M_UNKNOWN', error: "HTTP #{response.code} #{response.message}" }
+          raise MatrixRequestError.new_by_code(synthetic_error, response.code)
+        end
 
         raise MatrixConnectionError.class_by_code(response.code), response
       end

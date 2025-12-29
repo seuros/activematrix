@@ -18,35 +18,48 @@ http_interactions:
       Content-Length:
       - '4'
       Authorization:
-      - Bearer KuDfJPppZ3a934fy3UA3h4NaNZr97_0CuwE_3ilo1Yc
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:06 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '2005'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:15:05 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"chunk":[{"canonical_alias":"#lounge:arena.seuros.net","name":"The
-        Lounge","num_joined_members":7,"room_id":"!YWe0yFA6FPuSw1z1:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#valencia:arena.seuros.net","name":"Valencia","num_joined_members":3,"room_id":"!G8hjWAZEHUAqXn5H:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#lab:arena.seuros.net","name":"Laboratory","num_joined_members":2,"room_id":"!Xug4Caiip9PNozWF:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Madrid:arena.seuros.net","name":"Madrid","num_joined_members":2,"room_id":"!3hduWAxTl0G56dBt:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Tanger:arena.seuros.net","name":"Tanger","num_joined_members":2,"room_id":"!r0IB8coBRXygYADp:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"canonical_alias":"#Ankara:arena.seuros.net","name":"Ankara","num_joined_members":2,"room_id":"!lAZmFI8RS5XbcwZ5:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"},{"num_joined_members":1,"room_id":"!g918lTlYMD7Mz7EB:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"invite"},{"name":"VCR
-        Test Room","num_joined_members":1,"room_id":"!yxrMMMwaGba1pCm7:arena.seuros.net","topic":"Test
-        room for VCR testing","world_readable":false,"guest_can_join":false,"join_rule":"invite"},{"name":"VCR
-        Test Room","num_joined_members":1,"room_id":"!N0KSDprAcI2s3Cb7:arena.seuros.net","topic":"Test
-        room for VCR testing","world_readable":false,"guest_can_join":false,"join_rule":"invite"},{"canonical_alias":"#london:arena.seuros.net","name":"London","num_joined_members":1,"room_id":"!xg23PVcwBd1z61Wc:arena.seuros.net","world_readable":false,"guest_can_join":false,"join_rule":"public"}],"next_batch":"T10","total_room_count_estimate":16}'
-  recorded_at: Fri, 04 Jul 2025 17:15:06 GMT
+      encoding: ASCII-8BIT
+      string: '{"chunk":[{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Velvet
+        Fortress","num_joined_members":0,"room_id":"!00b16abac663bbc59bacf493:<MATRIX_DOMAIN>","room_type":null,"topic":"We
+        put the fun in function","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Crystal
+        Fortress","num_joined_members":0,"room_id":"!00b1cc9f06dbac2683faf574:<MATRIX_DOMAIN>","room_type":null,"topic":"Git
+        blame archaeology department","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Cosmic
+        Forge","num_joined_members":0,"room_id":"!00d0a21b43cc4aefea3ae472:<MATRIX_DOMAIN>","room_type":null,"topic":"We
+        ship on Fridays","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Eternal
+        Dominion","num_joined_members":0,"room_id":"!00f7a05667e49faa232ea2be:<MATRIX_DOMAIN>","room_type":null,"topic":"Monads
+        are just monoids in the category of endofunctors","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Frozen
+        Sanctum","num_joined_members":0,"room_id":"!00fe644907b6e91d5a968b76:<MATRIX_DOMAIN>","room_type":null,"topic":"Abandon
+        all hope ye who enter here","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Crystal
+        Vault","num_joined_members":0,"room_id":"!010ffabf72fea4c53167186c:<MATRIX_DOMAIN>","room_type":null,"topic":"Git
+        blame archaeology department","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Shadow
+        Oasis","num_joined_members":0,"room_id":"!011fd7c63b208b0377aba1af:<MATRIX_DOMAIN>","room_type":null,"topic":"The
+        cake is a lie, but the code is real","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Cyber
+        Labyrinth","num_joined_members":0,"room_id":"!012a4a035864e45be248e95f:<MATRIX_DOMAIN>","room_type":null,"topic":"The
+        cake is a lie, but the code is real","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Stellar
+        Temple","num_joined_members":0,"room_id":"!013138bb51a47bc8e471c1bc:<MATRIX_DOMAIN>","room_type":null,"topic":"Abandon
+        all hope ye who enter here","world_readable":false},{"avatar_url":null,"canonical_alias":null,"guest_can_join":false,"join_rule":"public","name":"Stellar
+        Vault","num_joined_members":0,"room_id":"!008e76e7223abe279ecadd1f:<MATRIX_DOMAIN>","room_type":null,"topic":"Plotting
+        world domination (in Rust)","world_readable":false}],"next_batch":"n10","prev_batch":null,"total_room_count_estimate":1420}'
+  recorded_at: Mon, 29 Dec 2025 18:15:05 GMT
 recorded_with: VCR 6.3.1

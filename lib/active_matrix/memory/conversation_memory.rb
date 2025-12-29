@@ -16,8 +16,6 @@ module ActiveMatrix
       # Get conversation context
       def context
         fetch_with_cache('context', expires_in: 1.hour) do
-          return {} unless defined?(::ConversationContext)
-
           record = find_or_create_record
           record.context
         end
@@ -25,8 +23,6 @@ module ActiveMatrix
 
       # Update conversation context
       def update_context(data)
-        return false unless defined?(::ConversationContext)
-
         record = find_or_create_record
         record.context = record.context.merge(data)
         record.save!
@@ -38,8 +34,6 @@ module ActiveMatrix
 
       # Add a message to history
       def add_message(event)
-        return false unless defined?(::ConversationContext)
-
         record = find_or_create_record
         record.add_message({
                              event_id: event[:event_id],
@@ -60,8 +54,6 @@ module ActiveMatrix
       # Get recent messages
       def recent_messages(limit = 10)
         fetch_with_cache('recent_messages', expires_in: 5.minutes) do
-          return [] unless defined?(::ConversationContext)
-
           record = find_or_create_record
           record.recent_messages(limit)
         end
@@ -69,8 +61,6 @@ module ActiveMatrix
 
       # Get last message timestamp
       def last_message_at
-        return nil unless defined?(::ConversationContext)
-
         record = conversation_record
         record&.last_message_at
       end
@@ -83,8 +73,6 @@ module ActiveMatrix
 
       # Clear conversation history but keep context
       def clear_history!
-        return false unless defined?(::ConversationContext)
-
         record = conversation_record
         return false unless record
 
@@ -131,20 +119,16 @@ module ActiveMatrix
       end
 
       def conversation_record
-        return nil unless defined?(::ConversationContext)
-
-        ::ConversationContext.find_by(
-          matrix_agent: @agent,
+        ActiveMatrix::ChatSession.find_by(
+          agent: @agent,
           user_id: @user_id,
           room_id: @room_id
         )
       end
 
       def find_or_create_record
-        return nil unless defined?(::ConversationContext)
-
-        ::ConversationContext.find_or_create_by!(
-          matrix_agent: @agent,
+        ActiveMatrix::ChatSession.find_or_create_by!(
+          agent: @agent,
           user_id: @user_id,
           room_id: @room_id
         )

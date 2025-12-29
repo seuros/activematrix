@@ -28,7 +28,9 @@ module ActiveMatrix
                   :conversation_stale_after, :memory_cleanup_interval,
                   :event_queue_size, :event_processing_timeout,
                   :max_clients_per_homeserver, :client_idle_timeout,
-                  :agent_log_level, :log_agent_events
+                  :agent_log_level, :log_agent_events,
+                  # Daemon settings
+                  :daemon_workers, :probe_port, :probe_host, :shutdown_timeout
 
     def initialize
       # Set defaults
@@ -44,6 +46,11 @@ module ActiveMatrix
       @client_idle_timeout = 300 # 5 minutes
       @agent_log_level = :info
       @log_agent_events = false
+      # Daemon defaults
+      @daemon_workers = 1
+      @probe_port = 3042
+      @probe_host = '127.0.0.1'
+      @shutdown_timeout = 30
     end
   end
 
@@ -80,10 +87,13 @@ module ActiveMatrix
   Loader.ignore("#{__dir__}/generators")
   Loader.ignore("#{__dir__}/activematrix.rb")
 
-  # Ignore files that don't follow Zeitwerk naming conventions
+  # Ignore files that don't follow Zeitwerk naming conventions or are standalone
   Loader.ignore("#{__dir__}/active_matrix/errors.rb")
   Loader.ignore("#{__dir__}/active_matrix/events.rb")
   Loader.ignore("#{__dir__}/active_matrix/uri_module.rb")
+  Loader.ignore("#{__dir__}/active_matrix/cli.rb")
+  Loader.ignore("#{__dir__}/active_matrix/daemon.rb")
+  Loader.ignore("#{__dir__}/active_matrix/daemon")
 
   # Configure inflections for special cases
   Loader.inflector.inflect(

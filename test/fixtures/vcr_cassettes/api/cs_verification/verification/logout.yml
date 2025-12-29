@@ -18,26 +18,24 @@ http_interactions:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:20:19 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '222'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:15:03 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"versions":["r0.0.1","r0.1.0","r0.2.0","r0.3.0","r0.4.0","r0.5.0","r0.6.1","v1.0","v1.1","v1.2"],"unstable_features":{"org.matrix.e2e_cross_signing":true,"org.matrix.msc2285.stable":true,"org.matrix.msc3916.stable":true}}'
-  recorded_at: Fri, 04 Jul 2025 17:20:19 GMT
+      encoding: ASCII-8BIT
+      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.17"]}'
+  recorded_at: Mon, 29 Dec 2025 18:15:03 GMT
 - request:
     method: post
     uri: "<MATRIX_SERVER>/_matrix/client/v3/login"
@@ -55,32 +53,30 @@ http_interactions:
       Content-Type:
       - application/json
       Content-Length:
-      - '130'
+      - '126'
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:20:20 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '124'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:15:03 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"user_id":"@<TEST_USER>:arena.seuros.net","access_token":"o8j0xETFsvHReOdeCwgK4mqef1lhJpcfRm6_1Bpx0BE","device_id":"oijXQZ_7"}'
-  recorded_at: Fri, 04 Jul 2025 17:20:20 GMT
+      encoding: ASCII-8BIT
+      string: '{"access_token":"<ACCESS_TOKEN>","device_id":"DEVICE_019b6b52-22d3-7d72-9811-b042f149a246","expires_in_ms":86400000,"refresh_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJAdGVzdGJvdDM6ZGFnLm1hIiwiaWF0IjoxNzY3MDMyMTAzLCJleHAiOjE3Njk2MjQxMDMsImRldmljZV9pZCI6IkRFVklDRV8wMTliNmI1Mi0yMmQzLTdkNzItOTgxMS1iMDQyZjE0OWEyNDYifQ.jD9TlEgOMpsO2vIwk4cZ25KW-XW81RE92TDB35_dNoU","user_id":"@<TEST_USER>:<MATRIX_DOMAIN>"}'
+  recorded_at: Mon, 29 Dec 2025 18:15:03 GMT
 - request:
     method: post
     uri: "<MATRIX_SERVER>/_matrix/client/v3/logout"
@@ -95,32 +91,29 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer o8j0xETFsvHReOdeCwgK4mqef1lhJpcfRm6_1Bpx0BE
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:20:20 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '2'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '2'
+      Date:
+      - Mon, 29 Dec 2025 18:15:03 GMT
     body:
       encoding: UTF-8
       string: "{}"
-  recorded_at: Fri, 04 Jul 2025 17:20:20 GMT
+  recorded_at: Mon, 29 Dec 2025 18:15:03 GMT
 - request:
     method: get
     uri: "<MATRIX_SERVER>/_matrix/client/v3/account/whoami"
@@ -135,30 +128,24 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer o8j0xETFsvHReOdeCwgK4mqef1lhJpcfRm6_1Bpx0BE
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 401
       message: Unauthorized
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
       Date:
-      - Fri, 04 Jul 2025 17:20:21 GMT
-      Content-Type:
-      - application/json
-      Content-Length:
-      - '53'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      - Mon, 29 Dec 2025 18:15:03 GMT
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      Content-Length:
+      - '0'
     body:
       encoding: UTF-8
-      string: '{"errcode":"M_UNKNOWN_TOKEN","error":"Unknown token"}'
-  recorded_at: Fri, 04 Jul 2025 17:20:21 GMT
+      string: ''
+  recorded_at: Mon, 29 Dec 2025 18:15:03 GMT
 recorded_with: VCR 6.3.1

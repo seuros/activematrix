@@ -1,43 +1,88 @@
 # frozen_string_literal: true
 
 require 'singleton'
+require 'async'
+require 'async/barrier'
+require 'async/semaphore'
 
 module ActiveMatrix
-  # Manages the lifecycle of Matrix bot agents
+  # Manages the lifecycle of Matrix bot agents using async fibers
   class AgentManager
     include Singleton
     include ActiveMatrix::Logging
+
+    # OpenTelemetry semantic conventions for messaging
+    OTEL_ATTRS = {
+      service: 'activematrix.agent_manager',
+      messaging_system: 'matrix'
+    }.freeze
 
     attr_reader :registry, :config
 
     def initialize
       @registry = AgentRegistry.instance
       @config = ActiveMatrix.config
-      @shutdown = false
-      @monitor_thread = nil
+      @barrier = nil
+      @monitor_task = nil
+      @running = false
+    end
 
-      setup_signal_handlers
+    # Install signal handlers for graceful shutdown.
+    # Call this explicitly if you want the gem to handle SIGINT/SIGTERM.
+    # By default, signal handling is left to the host application.
+    def install_signal_handlers!
+      %w[INT TERM].each do |signal|
+        Signal.trap(signal) do
+          stop_all
+          exit # rubocop:disable Rails/Exit
+        end
+      end
     end
 
     # Start all agents marked as active in the database
+    # This is the main entry point - runs the async reactor
     def start_all
-      return if @shutdown
-
-      logger.info 'Starting all active agents...'
-
-      agents = defined?(MatrixAgent) ? MatrixAgent.where.not(state: :offline) : []
-      agents.each_with_index do |agent, index|
-        sleep(config.agent_startup_delay || 2) if index.positive?
-        start_agent(agent)
-      end
-
-      start_monitor_thread
-      logger.info "Started #{@registry.count} agents"
+      agents = ActiveMatrix::Agent.where.not(state: :offline)
+      start_agents(agents)
     end
 
-    # Start a specific agent
+    # Start specific agents (used by daemon workers)
+    # @param agents [ActiveRecord::Relation, Array<Agent>] Agents to start
+    def start_agents(agents)
+      return if @running
+
+      @running = true
+      agents_array = agents.respond_to?(:to_a) ? agents.to_a : agents
+      logger.info "Starting #{agents_array.size} agents..."
+
+      Sync do
+        @barrier = Async::Barrier.new
+
+        # Start the event router for routing Matrix events
+        EventRouter.instance.start
+
+        startup_delay = config.agent_startup_delay || 2
+
+        agents_array.each_with_index do |agent, index|
+          sleep(startup_delay) if index.positive?
+          start_agent(agent)
+        end
+
+        start_monitor_task
+
+        logger.info "Started #{@registry.count} agents"
+
+        # Wait for all agent tasks to complete (blocks until shutdown)
+        @barrier.wait
+      ensure
+        @barrier&.stop
+        @running = false
+      end
+    end
+
+    # Start a specific agent as an async task
     def start_agent(agent)
-      return if @shutdown
+      return false unless @running
 
       if @registry.running?(agent)
         logger.warn "Agent #{agent.name} is already running"
@@ -47,51 +92,15 @@ module ActiveMatrix
       logger.info "Starting agent: #{agent.name}"
 
       begin
-        # Update state
         agent.connect!
 
-        # Create bot instance in a new thread
-        thread = Thread.new do
-          Thread.current.name = "agent-#{agent.name}"
-
-          begin
-            # Create client and bot instance
-            client = create_client_for_agent(agent)
-            bot_class = agent.bot_class.constantize
-            bot_instance = bot_class.new(client)
-
-            # Register the agent
-            @registry.register(agent, bot_instance)
-
-            # Authenticate if needed
-            if agent.access_token.present?
-              client.access_token = agent.access_token
-            else
-              client.login(agent.username, agent.password)
-              agent.update(access_token: client.access_token)
-            end
-
-            # Restore sync token if available
-            client.sync_token = agent.last_sync_token if agent.last_sync_token.present?
-
-            # Mark as online
-            agent.connection_established!
-
-            # Start the sync loop
-            client.start_listener_thread
-            client.instance_variable_get(:@sync_thread).join
-          rescue StandardError => e
-            logger.error "Error in agent #{agent.name}: #{e.message}"
-            logger.error e.backtrace.join("\n")
-            agent.encounter_error!
-            raise
-          ensure
-            @registry.unregister(agent)
-            agent.disconnect! if agent.may_disconnect?
-          end
+        task = @barrier.async do |subtask|
+          subtask.annotate "agent-#{agent.name}"
+          run_agent(agent)
         end
 
-        thread.abort_on_exception = true
+        # Store task reference for later control
+        @registry.register_task(agent, task)
         true
       rescue StandardError => e
         logger.error "Failed to start agent #{agent.name}: #{e.message}"
@@ -109,18 +118,15 @@ module ActiveMatrix
 
       begin
         # Stop the client sync
-        client = entry[:instance].client
-        client.stop_listener_thread if client.listening?
+        client = entry[:instance]&.client
+        client&.stop_listener if client&.listening?
 
         # Save sync token
-        agent.update(last_sync_token: client.sync_token) if client.sync_token.present?
+        agent.update(last_sync_token: client.sync_token) if client&.sync_token.present?
 
-        # Kill the thread if still alive
-        thread = entry[:thread]
-        if thread&.alive?
-          thread.kill
-          thread.join(5) # Wait up to 5 seconds
-        end
+        # Stop the async task gracefully
+        task = entry[:task]
+        task&.stop
 
         # Update state
         agent.disconnect! if agent.may_disconnect?
@@ -135,16 +141,17 @@ module ActiveMatrix
     # Stop all running agents
     def stop_all
       logger.info 'Stopping all agents...'
-      @shutdown = true
 
-      # Stop monitor thread
-      @monitor_thread&.kill
+      # Stop monitor task
+      @monitor_task&.stop
 
-      # Stop all agents
-      @registry.all_records.each do |agent|
-        stop_agent(agent)
-      end
+      # Stop event router
+      EventRouter.instance.stop
 
+      # Stop all agent tasks via barrier
+      @barrier&.stop
+
+      @running = false
       logger.info 'All agents stopped'
     end
 
@@ -164,8 +171,8 @@ module ActiveMatrix
 
       logger.info "Pausing agent: #{agent.name}"
 
-      client = entry[:instance].client
-      client.stop_listener_thread if client.listening?
+      client = entry[:instance]&.client
+      client&.stop_listener if client&.listening?
       agent.pause!
 
       true
@@ -181,8 +188,8 @@ module ActiveMatrix
       logger.info "Resuming agent: #{agent.name}"
 
       agent.resume!
-      client = entry[:instance].client
-      client.start_listener_thread
+      client = entry[:instance]&.client
+      client&.start_listener
       agent.connection_established!
 
       true
@@ -193,41 +200,79 @@ module ActiveMatrix
       {
         running: @registry.count,
         agents: @registry.health_status,
-        monitor_active: @monitor_thread&.alive? || false,
-        shutdown: @shutdown
+        monitor_active: @monitor_task&.alive? || false,
+        shutdown: !@running
       }
+    end
+
+    # Check if currently running
+    def running?
+      @running
     end
 
     private
 
-    def create_client_for_agent(agent)
-      # Use shared client pool if available
-      if defined?(ClientPool)
-        ClientPool.instance.get_client(agent.homeserver)
-      else
-        ActiveMatrix::Client.new(agent.homeserver,
-                                 client_cache: :some,
-                                 sync_filter_limit: 20)
+    def run_agent(agent)
+      Telemetry.trace('agent.run', attributes: agent_attributes(agent)) do |span|
+        # Create client and bot instance
+        client = create_client_for_agent(agent)
+        bot_class = agent.bot_class.constantize
+        bot_instance = bot_class.new(client)
+
+        # Register the agent
+        @registry.register(agent, bot_instance)
+
+        # Authenticate if needed
+        if agent.access_token.present?
+          client.access_token = agent.access_token
+        else
+          Telemetry.trace('agent.login', attributes: agent_attributes(agent)) do
+            client.login(agent.username, agent.password)
+            agent.update(access_token: client.access_token)
+          end
+        end
+
+        # Restore sync token if available
+        client.sync_token = agent.last_sync_token if agent.last_sync_token.present?
+
+        # Mark as online
+        agent.connection_established!
+        span&.add_event('agent.connected')
+
+        # Run the sync loop (blocks until stopped)
+        client.listen_forever
       end
+    rescue Async::Stop
+      logger.info "Agent #{agent.name} stopping gracefully"
+    rescue StandardError => e
+      Telemetry.record_exception(e, attributes: agent_attributes(agent))
+      logger.error "Error in agent #{agent.name}: #{e.message}"
+      logger.error e.backtrace.first(10).join("\n")
+      agent.encounter_error!
+      raise
+    ensure
+      @registry.unregister(agent)
+      agent.disconnect! if agent.may_disconnect?
     end
 
-    def start_monitor_thread
-      return if @monitor_thread&.alive?
+    def create_client_for_agent(agent)
+      ClientPool.instance.get_client(agent.homeserver)
+    end
 
-      @monitor_thread = Thread.new do
-        Thread.current.name = 'agent-monitor'
+    def start_monitor_task
+      return if @monitor_task&.alive?
+
+      health_interval = config.agent_health_check_interval || 30
+
+      @monitor_task = Async(transient: true) do |task|
+        task.annotate 'agent-monitor'
 
         loop do
-          break if @shutdown
-
-          begin
-            check_agent_health
-            cleanup_stale_data
-          rescue StandardError => e
-            logger.error "Monitor thread error: #{e.message}"
-          end
-
-          sleep(config.agent_health_check_interval || 30)
+          sleep(health_interval)
+          check_agent_health
+          cleanup_stale_data
+        rescue StandardError => e
+          logger.error "Monitor task error: #{e.message}"
         end
       end
     end
@@ -235,41 +280,35 @@ module ActiveMatrix
     def check_agent_health
       @registry.find_each do |entry|
         agent = entry[:record]
-        thread = entry[:thread]
+        task = entry[:task]
 
-        # Check if thread is alive
-        unless thread&.alive?
-          logger.warn "Agent #{agent.name} thread died, restarting..."
+        # Check if task is alive
+        unless task&.alive?
+          logger.warn "Agent #{agent.name} task died, restarting..."
           @registry.unregister(agent)
           agent.encounter_error!
-          start_agent(agent) unless @shutdown
+          start_agent(agent) if @running
           next
         end
 
         # Check last activity
-        if agent.last_active_at && agent.last_active_at < 5.minutes.ago
-          logger.warn "Agent #{agent.name} seems inactive"
-          # Could implement additional health checks here
-        end
+        logger.warn "Agent #{agent.name} seems inactive" if agent.last_active_at && agent.last_active_at < 5.minutes.ago
       end
     end
 
     def cleanup_stale_data
-      # Clean up old conversation contexts
-      ConversationContext.cleanup_stale! if defined?(ConversationContext)
-
-      # Clean up expired memories
-      AgentMemory.cleanup_expired! if defined?(AgentMemory)
-      GlobalMemory.cleanup_expired! if defined?(GlobalMemory)
+      ActiveMatrix::ChatSession.cleanup_stale!
+      ActiveMatrix::AgentStore.cleanup_expired!
+      ActiveMatrix::KnowledgeBase.cleanup_expired!
     end
 
-    def setup_signal_handlers
-      %w[INT TERM].each do |signal|
-        Signal.trap(signal) do
-          Thread.new { stop_all }.join
-          exit # rubocop:disable Rails/Exit
-        end
-      end
+    def agent_attributes(agent)
+      OTEL_ATTRS.merge(
+        'agent.id' => agent.id,
+        'agent.name' => agent.name,
+        'agent.homeserver' => agent.homeserver,
+        'agent.bot_class' => agent.bot_class
+      )
     end
   end
 end

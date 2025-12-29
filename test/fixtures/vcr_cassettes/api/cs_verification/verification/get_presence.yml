@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/presence/@<TEST_USER>:arena.seuros.net/status"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/presence/@<TEST_USER>:<MATRIX_DOMAIN>/status"
     body:
       encoding: US-ASCII
       string: ''
@@ -14,31 +14,28 @@ http_interactions:
       User-Agent:
       - Ruby Matrix SDK v0.0.6
       Authorization:
-      - Bearer XviOnc0M5HFP8X0EXcG0zqMhaJ1I1s4NwWC0XULz6LM
+      - Bearer <ACCESS_TOKEN>
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.18.0 (Ubuntu)
-      Date:
-      - Fri, 04 Jul 2025 17:15:26 GMT
       Content-Type:
       - application/json
-      Content-Length:
-      - '94'
-      Connection:
-      - keep-alive
-      Access-Control-Allow-Headers:
-      - Origin, X-Requested-With, Content-Type, Accept, Authorization
-      Access-Control-Allow-Methods:
-      - GET, POST, PUT, DELETE, OPTIONS
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
       Access-Control-Allow-Origin:
       - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:14:59 GMT
+      Transfer-Encoding:
+      - chunked
     body:
-      encoding: UTF-8
-      string: '{"currently_active":true,"last_active_ago":123,"presence":"online","status_msg":"Testing
-        VCR"}'
-  recorded_at: Fri, 04 Jul 2025 17:15:26 GMT
+      encoding: ASCII-8BIT
+      string: '{"status_msg":"Testing VCR","currently_active":true,"last_active_ago":1767032096949,"presence":"online"}'
+  recorded_at: Mon, 29 Dec 2025 18:14:59 GMT
 recorded_with: VCR 6.3.1

@@ -93,31 +93,12 @@ class MultiAgentTest < ActiveSupport::TestCase
   def test_global_memory
     global = ActiveMatrix::Memory::GlobalMemory.instance
 
-    # Since we don't have ActiveRecord in tests, test the interface
-    # In a real Rails app, this would work with the database
-    if defined?(::GlobalMemory)
-      # Set and get
-      global.set('global_key', 'global_value')
-
-      assert_equal 'global_value', global.get('global_key')
-
-      # Test categories
-      global.set('cat_key1', 'value1', category: 'test_cat')
-      global.set('cat_key2', 'value2', category: 'test_cat')
-
-      values = global.by_category('test_cat')
-
-      assert_equal 2, values.size
-      assert_equal 'value1', values['cat_key1']
-      assert_equal 'value2', values['cat_key2']
-    else
-      # Just test that the methods exist
-      assert_respond_to global, :get
-      assert_respond_to global, :set
-      assert_respond_to global, :exists?
-      assert_respond_to global, :delete
-      assert_respond_to global, :by_category
-    end
+    # Test that the methods exist (full integration tested with Rails/PG)
+    assert_respond_to global, :get
+    assert_respond_to global, :set
+    assert_respond_to global, :exists?
+    assert_respond_to global, :delete
+    assert_respond_to global, :by_category
   end
 
   def test_bot_multi_instance_base

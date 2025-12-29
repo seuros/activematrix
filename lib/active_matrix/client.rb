@@ -18,7 +18,7 @@ module ActiveMatrix
     # @!attribute sync_filter [rw] The global sync filter
     #   @return [Hash,String] A filter definition, either as defined by the
     #           Matrix spec, or as an identifier returned by a filter creation request
-    attr_reader :api
+    attr_reader :api, :sync_thread
     attr_accessor :cache, :sync_filter, :next_batch
 
     events :error, :event, :account_data, :presence_event, :invite_event, :leave_event, :ephemeral_event, :state_event
@@ -499,11 +499,7 @@ module ActiveMatrix
     def stop_listener_thread
       return unless @sync_thread
 
-      if @should_listen.is_a? Hash
-        @should_listen[:run] = false
-      else
-        @should_listen = false
-      end
+      stop_listener
 
       if @sync_thread.alive?
         ret = @sync_thread.join(0.1)
@@ -512,9 +508,28 @@ module ActiveMatrix
       @sync_thread = nil
     end
 
+    # Signal the listener to stop (works for both thread and async modes)
+    def stop_listener
+      if @should_listen.is_a? Hash
+        @should_listen[:run] = false
+      else
+        @should_listen = false
+      end
+    end
+
+    # Start listening without spawning a thread (for use with async)
+    def start_listener
+      @should_listen = true
+    end
+
     # Check if there's a thread listening for events
     def listening?
       @sync_thread&.alive? == true
+    end
+
+    # Check if listening is enabled (may or may not have active thread)
+    def listening_enabled?
+      @should_listen == true
     end
 
     # Run a message sync round, triggering events as necessary

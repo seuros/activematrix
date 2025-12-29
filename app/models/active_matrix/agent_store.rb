@@ -1,5 +1,34 @@
 # frozen_string_literal: true
 
+# <rails-lens:schema:begin>
+# table = "active_matrix_agent_stores"
+# database_dialect = "PostgreSQL"
+#
+# columns = [
+#   { name = "id", type = "integer", pk = true, null = false },
+#   { name = "agent_id", type = "integer", null = false },
+#   { name = "key", type = "string", null = false },
+#   { name = "value", type = "json" },
+#   { name = "expires_at", type = "datetime" },
+#   { name = "created_at", type = "datetime", null = false },
+#   { name = "updated_at", type = "datetime", null = false }
+# ]
+#
+# indexes = [
+#   { name = "index_active_matrix_agent_stores_on_agent_id", columns = ["agent_id"] },
+#   { name = "index_active_matrix_agent_stores_on_agent_id_and_key", columns = ["agent_id", "key"], unique = true },
+#   { name = "index_active_matrix_agent_stores_on_expires_at", columns = ["expires_at"] }
+# ]
+#
+# foreign_keys = [
+#   { column = "agent_id", references_table = "active_matrix_agents", references_column = "id", name = "fk_rails_59b3dc556f" }
+# ]
+#
+# [callbacks]
+# after_commit = [{ method = "schedule_cleanup", if = ["expires_at?"] }]
+#
+# notes = ["agent:INVERSE_OF", "value:NOT_NULL", "key:LIMIT"]
+# <rails-lens:schema:end>
 module ActiveMatrix
   class AgentStore < ApplicationRecord
     self.table_name = 'active_matrix_agent_stores'

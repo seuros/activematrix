@@ -21,18 +21,22 @@ Gem::Specification.new do |spec|
   spec.license          = 'MIT'
 
   spec.extra_rdoc_files = %w[CHANGELOG.md LICENSE.txt README.md]
-  spec.files            = Dir['lib/**/*', 'app/**/*'] + spec.extra_rdoc_files
+  spec.files            = Dir['lib/**/*', 'app/**/*', 'exe/*'] + spec.extra_rdoc_files
+  spec.bindir           = 'exe'
+  spec.executables      = ['activematrix']
 
-  spec.add_development_dependency 'maxitest'
+  spec.add_development_dependency 'maxitest', '~> 6.0'
+  spec.add_development_dependency 'opentelemetry-sdk'
   spec.add_development_dependency 'mocha'
+  spec.add_development_dependency 'state_machines-mermaid'
   spec.add_development_dependency 'ostruct'
+  spec.add_development_dependency 'rails_lens'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'rubocop-minitest'
   spec.add_development_dependency 'rubocop-performance'
   spec.add_development_dependency 'rubocop-rails'
   spec.add_development_dependency 'simplecov'
-  spec.add_development_dependency 'sqlite3', '~> 2.0'
   spec.add_development_dependency 'syslog'
   spec.add_development_dependency 'test-unit'
   spec.add_development_dependency 'vcr', '~> 6.2'
@@ -42,10 +46,13 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activejob', '>= 8.0', '< 9'
   spec.add_dependency 'activerecord', '>= 8.0', '< 9'
+  spec.add_dependency 'async', '>= 2.21'
+  spec.add_dependency 'async-http', '>= 0.86'
   spec.add_dependency 'bcrypt', '~> 3.1'
-  spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'railties', '>= 8.0', '< 9'
-  spec.add_dependency 'state_machines-activerecord', '<= 0.100.0'
+  spec.add_dependency 'pg', '>= 1.6'
+  spec.add_dependency 'state_machines-activerecord', '>= 0.100.0'
+  spec.add_dependency 'thor', '>= 1.0'
   spec.add_dependency 'zeitwerk', '~> 2.6'
 
   spec.metadata = {

@@ -1,26 +1,36 @@
 # frozen_string_literal: true
 
 require 'singleton'
-require 'concurrent'
+require 'async'
+require 'async/semaphore'
+require 'async/condition'
 
 module ActiveMatrix
-  # Manages a pool of Matrix client connections for efficiency
+  # Manages Matrix client connections per homeserver with rate limiting.
+  #
+  # NOTE: Despite the name, this is not a traditional connection pool.
+  # Each agent gets a dedicated long-lived client. The "pool" provides:
+  # - Semaphore-based rate limiting on client creation per homeserver
+  # - Tracking of active clients for health monitoring
+  #
+  # Clients are NOT returned to the pool after use - they remain active
+  # for the agent's lifetime. The semaphore prevents too many agents
+  # from connecting to a single homeserver simultaneously.
+  #
   class ClientPool
     include Singleton
     include ActiveMatrix::Logging
 
     def initialize
-      @pools = Concurrent::Hash.new
+      @pools = {}
       @config = ActiveMatrix.config
       @mutex = Mutex.new
     end
 
     # Get or create a client for a homeserver
     def get_client(homeserver, **)
-      @mutex.synchronize do
-        pool = get_or_create_pool(homeserver)
-        pool.checkout(**)
-      end
+      pool = @mutex.synchronize { get_or_create_pool(homeserver) }
+      pool.checkout(**)
     end
 
     # Return a client to the pool
@@ -78,32 +88,37 @@ module ActiveMatrix
         @available = []
         @in_use = {}
         @mutex = Mutex.new
-        @condition = ConditionVariable.new
+        @semaphore = Async::Semaphore.new(max_size)
       end
 
       def checkout(**)
-        @mutex.synchronize do
+        # Acquire semaphore temporarily to rate-limit client creation
+        @semaphore.acquire
+
+        client = @mutex.synchronize do
           # Try to find an available client
-          client = find_available_client
+          existing = find_available_client
 
-          # Create new client if needed and pool not full
-          client = create_client(**) if client.nil? && @in_use.size < @max_size
-
-          # Wait for a client if pool is full
-          while client.nil?
-            @condition.wait(@mutex, 1)
-            client = find_available_client
+          if existing
+            @available.delete(existing)
+            existing
+          else
+            create_client(**)
           end
+        end
 
-          # Mark as in use
-          @available.delete(client)
+        # Track as in use
+        @mutex.synchronize do
           @in_use[client.object_id] = {
             client: client,
             checked_out_at: Time.current
           }
-
-          client
         end
+
+        client
+      ensure
+        # Release immediately - semaphore only rate-limits creation, not usage
+        @semaphore.release
       end
 
       def checkin(client)
@@ -115,12 +130,8 @@ module ActiveMatrix
           if client_valid?(client)
             @available << client
           else
-            # Client is no longer valid, don't return to pool
             logger.debug "Discarding invalid client for #{@homeserver}"
           end
-
-          # Signal waiting threads
-          @condition.signal
         end
       end
 
@@ -140,7 +151,7 @@ module ActiveMatrix
         @mutex.synchronize do
           # Stop all clients
           (@available + @in_use.values.map { |e| e[:client] }).each do |client|
-            client.stop_listener_thread if client.listening?
+            client.stop_listener if client.listening?
             client.logout if client.logged_in?
           rescue StandardError => e
             logger.error "Error cleaning up client: #{e.message}"
@@ -158,7 +169,7 @@ module ActiveMatrix
         @available.select! { |client| client_valid?(client) }
 
         # Return first available
-        @available.first
+        @available.shift
       end
 
       def create_client(**)

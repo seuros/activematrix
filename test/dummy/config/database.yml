@@ -1,13 +1,16 @@
 default: &default
-  adapter: sqlite3
-  pool: 5
-  timeout: 5000
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("PGHOST") { "localhost" } %>
+  username: <%= ENV.fetch("PGUSER") { "ubuntu" } %>
+  password: <%= ENV.fetch("PGPASSWORD") { "ubuntu" } %>
 
 development:
   <<: *default
-  database: db/development.sqlite3
+  database: activematrix_development
 
 test:
   <<: *default
-  database: db/test.sqlite3
+  database: activematrix_test
 
