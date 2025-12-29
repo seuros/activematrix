@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.bindir           = 'exe'
   spec.executables      = ['activematrix']
 
-  spec.add_development_dependency 'maxitest'
+  spec.add_development_dependency 'maxitest', '~> 6.0'
   spec.add_development_dependency 'opentelemetry-sdk'
   spec.add_development_dependency 'mocha'
   spec.add_development_dependency 'state_machines-mermaid'
