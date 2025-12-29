@@ -49,9 +49,11 @@ jobs:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
     - name: Setup test database
+      env:
+        DISABLE_DATABASE_ENVIRONMENT_CHECK: 1
       run: |
         cd test/dummy
-        bundle exec rails db:prepare RAILS_ENV=test
+        bundle exec rails db:drop db:create db:migrate RAILS_ENV=test
     - name: Rubocop
       run: bundle exec rubocop lib/
     - name: Run tests
