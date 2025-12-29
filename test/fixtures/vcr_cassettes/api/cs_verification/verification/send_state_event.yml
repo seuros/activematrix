@@ -1,48 +1,6 @@
 ---
 http_interactions:
 - request:
-    method: post
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/createRoom"
-    body:
-      encoding: UTF-8
-      string: '{"visibility":"public","name":"State Event Test Room"}'
-    headers:
-      Accept-Encoding:
-      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
-      Accept:
-      - application/json
-      User-Agent:
-      - Ruby Matrix SDK v0.0.6
-      Content-Type:
-      - application/json
-      Content-Length:
-      - '54'
-      Authorization:
-      - Bearer <ACCESS_TOKEN>
-  response:
-    status:
-      code: 200
-      message: OK
-    headers:
-      Content-Type:
-      - application/json
-      Vary:
-      - accept-encoding
-      - origin, access-control-request-method, access-control-request-headers
-      - origin, access-control-request-method, access-control-request-headers
-      Access-Control-Allow-Origin:
-      - "*"
-      Access-Control-Expose-Headers:
-      - "*"
-      Date:
-      - Wed, 10 Dec 2025 17:56:44 GMT
-      Transfer-Encoding:
-      - chunked
-    body:
-      encoding: ASCII-8BIT
-      string: '{"room_id":"!019b0968-8ac1-7bc2-97c8-06da47ad46a4:<MATRIX_DOMAIN>"}'
-  recorded_at: Wed, 10 Dec 2025 17:56:44 GMT
-- request:
     method: put
     uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!019b0968-8ac1-7bc2-97c8-06da47ad46a4:<MATRIX_DOMAIN>/state/m.room.topic"
     body:
@@ -121,4 +79,125 @@ http_interactions:
       encoding: UTF-8
       string: "{}"
   recorded_at: Wed, 10 Dec 2025 17:56:44 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/createRoom"
+    body:
+      encoding: UTF-8
+      string: '{"visibility":"public","name":"State Event Test Room"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '54'
+      Authorization:
+      - Bearer <ACCESS_TOKEN>
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:15:02 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>"}'
+  recorded_at: Mon, 29 Dec 2025 18:15:02 GMT
+- request:
+    method: put
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>/state/m.room.topic"
+    body:
+      encoding: UTF-8
+      string: '{"topic":"New topic set by VCR test"}'
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '37'
+      Authorization:
+      - Bearer <ACCESS_TOKEN>
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - accept-encoding
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Date:
+      - Mon, 29 Dec 2025 18:15:02 GMT
+      Transfer-Encoding:
+      - chunked
+    body:
+      encoding: ASCII-8BIT
+      string: '{"event_id":"$019b6b52-1d76-7ff2-a372-7cc31e00972c:<MATRIX_DOMAIN>"}'
+  recorded_at: Mon, 29 Dec 2025 18:15:02 GMT
+- request:
+    method: post
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/rooms/!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>/leave"
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - application/json
+      User-Agent:
+      - Ruby Matrix SDK v0.0.6
+      Authorization:
+      - Bearer <ACCESS_TOKEN>
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Vary:
+      - origin, access-control-request-method, access-control-request-headers
+      - origin, access-control-request-method, access-control-request-headers
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Expose-Headers:
+      - "*"
+      Content-Length:
+      - '2'
+      Date:
+      - Mon, 29 Dec 2025 18:15:02 GMT
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Mon, 29 Dec 2025 18:15:02 GMT
 recorded_with: VCR 6.3.1

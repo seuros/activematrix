@@ -76,7 +76,7 @@ module ActiveMatrix
       end
 
       after_transition to: :online_idle do |agent|
-        agent.update(last_active_at: Time.current)
+        agent.update_column(:last_active_at, Time.current)
       end
 
       event :start_processing do

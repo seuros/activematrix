@@ -16,16 +16,20 @@ module ActiveMatrix
   # - Monitor worker health and restart on crash
   #
   class Daemon
-    attr_reader :workers_count, :probe_port, :probe_host, :agent_names, :worker_pids, :start_time
+    attr_reader :workers_count, :probe_port, :probe_host, :agent_names, :start_time
 
     def initialize(workers: 1, probe_port: 3042, probe_host: '127.0.0.1', agent_names: nil)
       @workers_count = workers
       @probe_port = probe_port
       @probe_host = probe_host
       @agent_names = agent_names
-      @worker_pids = []
+      @workers = {} # { pid => { index:, agent_ids: } }
       @running = false
       @start_time = nil
+    end
+
+    def worker_pids
+      @workers.keys
     end
 
     def run
@@ -64,7 +68,7 @@ module ActiveMatrix
       {
         status: @running ? 'ok' : 'stopping',
         uptime: @start_time ? (Time.zone.now - @start_time).to_i : 0,
-        workers: worker_pids.size,
+        workers: @workers.size,
         agents: aggregate_agent_status
       }
     end
@@ -101,7 +105,7 @@ module ActiveMatrix
         next if agent_ids.empty?
 
         pid = fork_worker(index, agent_ids)
-        worker_pids << pid
+        @workers[pid] = { index: index, agent_ids: agent_ids }
         logger.info "Started worker #{index} (PID: #{pid}) with #{agent_ids.size} agents"
       end
     end
@@ -125,7 +129,7 @@ module ActiveMatrix
       timeout = ActiveMatrix.config.shutdown_timeout || 30
 
       # Send TERM to all workers
-      worker_pids.each do |pid|
+      @workers.each_key do |pid|
         Process.kill('TERM', pid)
       rescue Errno::ESRCH
         # Already dead
@@ -133,17 +137,17 @@ module ActiveMatrix
 
       # Wait for graceful shutdown
       deadline = Time.zone.now + timeout
-      while worker_pids.any? && Time.zone.now < deadline
-        worker_pids.reject! do |pid|
+      while @workers.any? && Time.zone.now < deadline
+        @workers.reject! do |pid, _|
           Process.waitpid(pid, Process::WNOHANG)
         rescue Errno::ECHILD
           true
         end
-        sleep 0.5 if worker_pids.any?
+        sleep 0.5 if @workers.any?
       end
 
       # Force kill remaining
-      worker_pids.each do |pid|
+      @workers.each_key do |pid|
         logger.warn "Force killing worker #{pid}"
         Process.kill('KILL', pid)
         Process.waitpid(pid)
@@ -151,7 +155,7 @@ module ActiveMatrix
         # Already dead
       end
 
-      worker_pids.clear
+      @workers.clear
     end
 
     def monitor_loop
@@ -167,13 +171,16 @@ module ActiveMatrix
     end
 
     def reap_workers
+      @crashed_workers = []
+
       loop do
         pid = Process.waitpid(-1, Process::WNOHANG)
         break unless pid
 
-        if worker_pids.include?(pid)
-          logger.warn "Worker #{pid} exited"
-          worker_pids.delete(pid)
+        if @workers.key?(pid)
+          worker_info = @workers.delete(pid)
+          logger.warn "Worker #{worker_info[:index]} (PID: #{pid}) exited"
+          @crashed_workers << worker_info
         end
       rescue Errno::ECHILD
         break
@@ -181,22 +188,18 @@ module ActiveMatrix
     end
 
     def restart_crashed_workers
-      return if worker_pids.size >= workers_count
+      return if @crashed_workers.blank?
 
-      # Determine which agents are orphaned
-      worker_pids.size * (load_agents.size / workers_count.to_f).ceil
-      # For simplicity, just spawn new workers to fill the gap
-      while worker_pids.size < workers_count && @running
-        agents = load_agents
-        agent_groups = distribute_agents(agents, workers_count)
-        index = worker_pids.size
+      @crashed_workers.each do |worker_info|
+        break unless @running
 
-        next if agent_groups[index].blank?
-
-        pid = fork_worker(index, agent_groups[index])
-        worker_pids << pid
-        logger.info "Restarted worker #{index} (PID: #{pid})"
+        # Restart with same agent assignment
+        pid = fork_worker(worker_info[:index], worker_info[:agent_ids])
+        @workers[pid] = worker_info.merge(pid: pid)
+        logger.info "Restarted worker #{worker_info[:index]} (PID: #{pid}) with #{worker_info[:agent_ids].size} agents"
       end
+
+      @crashed_workers.clear
     end
 
     def load_agents

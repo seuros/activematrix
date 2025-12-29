@@ -29,13 +29,13 @@ http_interactions:
       Access-Control-Expose-Headers:
       - "*"
       Date:
-      - Wed, 10 Dec 2025 17:56:51 GMT
+      - Mon, 29 Dec 2025 18:23:48 GMT
       Transfer-Encoding:
       - chunked
     body:
       encoding: ASCII-8BIT
-      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.16"]}'
-  recorded_at: Wed, 10 Dec 2025 17:56:51 GMT
+      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.17"]}'
+  recorded_at: Mon, 29 Dec 2025 18:23:48 GMT
 - request:
     method: post
     uri: "<MATRIX_SERVER>/_matrix/client/v3/login"
@@ -70,11 +70,11 @@ http_interactions:
       Access-Control-Expose-Headers:
       - "*"
       Date:
-      - Wed, 10 Dec 2025 17:56:51 GMT
+      - Mon, 29 Dec 2025 18:23:48 GMT
       Transfer-Encoding:
       - chunked
     body:
       encoding: ASCII-8BIT
-      string: '{"access_token":"<ACCESS_TOKEN>","device_id":"DEVICE_019b0968-a43f-7912-80b1-3a14d8904518","expires_in_ms":86400000,"refresh_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJAdGVzdGJvdDM6ZGFnLm1hIiwiaWF0IjoxNzY1Mzg5NDExLCJleHAiOjE3Njc5ODE0MTEsImRldmljZV9pZCI6IkRFVklDRV8wMTliMDk2OC1hNDNmLTc5MTItODBiMS0zYTE0ZDg5MDQ1MTgifQ.OKCMquAPthP8fC4Sb3RSsIajpCQS9nue2WT-04U5EQA","user_id":"@<TEST_USER>:<MATRIX_DOMAIN>"}'
-  recorded_at: Wed, 10 Dec 2025 17:56:51 GMT
+      string: '{"access_token":"<ACCESS_TOKEN>","device_id":"DEVICE_019b6b5a-26af-7892-b07d-d0310c3a719e","expires_in_ms":86400000,"refresh_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJAdGVzdGJvdDM6ZGFnLm1hIiwiaWF0IjoxNzY3MDMyNjI4LCJleHAiOjE3Njk2MjQ2MjgsImRldmljZV9pZCI6IkRFVklDRV8wMTliNmI1YS0yNmFmLTc4OTItYjA3ZC1kMDMxMGMzYTcxOWUifQ.H5bQTl_KVIEtwPqMYfWGqF1JVRNg4F0AFSM6jaO4Kck","user_id":"@<TEST_USER>:<MATRIX_DOMAIN>"}'
+  recorded_at: Mon, 29 Dec 2025 18:23:48 GMT
 recorded_with: VCR 6.3.1

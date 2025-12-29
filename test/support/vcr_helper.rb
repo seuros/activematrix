@@ -128,8 +128,8 @@ module VCRHelper
       path = cassette_path || vcr_cassette_path
       cassette_name = "#{path}/#{test_name}"
 
-      # For login-related tests, ignore body in matching to handle device name variations
-      match_on = if test_name.include?('login') || test_name.include?('logout')
+      # For auth-related tests, ignore body in matching to handle password filtering
+      match_on = if test_name.include?('login') || test_name.include?('logout') || test_name.include?('register')
                    %i[method uri_without_param]
                  else
                    %i[method uri_without_param body]
@@ -211,8 +211,15 @@ module VCRHelper
 
     # Match URI without specific parameters
     c.register_request_matcher :uri_without_param do |request1, request2|
-      uri1 = URI(request1.uri)
-      uri2 = URI(request2.uri)
+      # Expand VCR placeholders before comparison
+      server = ENV.fetch('MATRIX_TEST_SERVER', 'https://matrix.test.local:8443')
+      domain = ENV.fetch('MATRIX_TEST_DOMAIN', 'matrix.test.local')
+
+      uri1_str = request1.uri.gsub('<MATRIX_SERVER>', server).gsub('<MATRIX_DOMAIN>', domain)
+      uri2_str = request2.uri.gsub('<MATRIX_SERVER>', server).gsub('<MATRIX_DOMAIN>', domain)
+
+      uri1 = URI(uri1_str)
+      uri2 = URI(uri2_str)
 
       # Remove access_token and txn_id from comparison
       params_to_ignore = %w[access_token txn_id]

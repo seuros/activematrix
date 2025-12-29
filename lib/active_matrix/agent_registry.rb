@@ -11,40 +11,33 @@ module ActiveMatrix
 
     def initialize
       @agents = Concurrent::Hash.new
-      @mutex = Mutex.new
     end
 
     # Register a running agent
     def register(agent_record, bot_instance)
-      @mutex.synchronize do
-        raise AgentAlreadyRunningError, "Agent #{agent_record.name} is already running" if @agents.key?(agent_record.id)
+      raise AgentAlreadyRunningError, "Agent #{agent_record.name} is already running" if @agents.key?(agent_record.id)
 
-        @agents[agent_record.id] = {
-          record: agent_record,
-          instance: bot_instance,
-          task: nil,
-          started_at: Time.current
-        }
+      @agents[agent_record.id] = {
+        record: agent_record,
+        instance: bot_instance,
+        task: nil,
+        started_at: Time.current
+      }
 
-        logger.info "Registered agent: #{agent_record.name} (#{agent_record.id})"
-      end
+      logger.info "Registered agent: #{agent_record.name} (#{agent_record.id})"
     end
 
     # Register an async task for an agent
     def register_task(agent_record, task)
-      @mutex.synchronize do
-        entry = @agents[agent_record.id]
-        entry[:task] = task if entry
-      end
+      entry = @agents[agent_record.id]
+      entry[:task] = task if entry
     end
 
     # Unregister an agent
     def unregister(agent_record)
-      @mutex.synchronize do
-        entry = @agents.delete(agent_record.id)
-        logger.info "Unregistered agent: #{agent_record.name} (#{agent_record.id})" if entry
-        entry
-      end
+      entry = @agents.delete(agent_record.id)
+      logger.info "Unregistered agent: #{agent_record.name} (#{agent_record.id})" if entry
+      entry
     end
 
     # Get a running agent by ID
@@ -131,9 +124,7 @@ module ActiveMatrix
 
     # Clear all agents (used for testing)
     def clear!
-      @mutex.synchronize do
-        @agents.clear
-      end
+      @agents.clear
     end
 
     # Get health status of all agents

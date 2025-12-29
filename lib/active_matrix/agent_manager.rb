@@ -58,6 +58,9 @@ module ActiveMatrix
       Sync do
         @barrier = Async::Barrier.new
 
+        # Start the event router for routing Matrix events
+        EventRouter.instance.start
+
         startup_delay = config.agent_startup_delay || 2
 
         agents_array.each_with_index do |agent, index|
@@ -141,6 +144,9 @@ module ActiveMatrix
 
       # Stop monitor task
       @monitor_task&.stop
+
+      # Stop event router
+      EventRouter.instance.stop
 
       # Stop all agent tasks via barrier
       @barrier&.stop

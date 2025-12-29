@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: "<MATRIX_SERVER>/_matrix/client/v3/sync?filter=%7B%22room%22:%7B%22timeline%22:%7B%22limit%22:1%7D%7D%7D&timeout=0"
+    uri: "<MATRIX_SERVER>/_matrix/client/v3/sync"
     body:
       encoding: US-ASCII
       string: ''
@@ -31,7 +31,7 @@ http_interactions:
       Access-Control-Expose-Headers:
       - "*"
       Date:
-      - Mon, 29 Dec 2025 18:15:04 GMT
+      - Mon, 29 Dec 2025 18:15:07 GMT
       Transfer-Encoding:
       - chunked
     body:
@@ -1758,5 +1758,5 @@ http_interactions:
         Test Room"},"event_id":"$019b6b52-14d5-74e3-b211-295356a748cd:<MATRIX_DOMAIN>","origin_server_ts":1767032100053,"room_id":"!019b6b52-14ce-7263-a0dd-9cc2015f6d36:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.name"},{"content":{"ban":50,"events":{"m.room.avatar":50,"m.room.canonical_alias":50,"m.room.encryption":100,"m.room.history_visibility":100,"m.room.name":50,"m.room.power_levels":100,"m.room.server_acl":100,"m.room.tombstone":100},"events_default":0,"invite":0,"kick":50,"redact":50,"state_default":50,"users":{"@<TEST_USER>:<MATRIX_DOMAIN>":100},"users_default":0},"event_id":"$019b6b52-14d3-7592-bb87-86577a156c6a:<MATRIX_DOMAIN>","origin_server_ts":1767032100051,"room_id":"!019b6b52-14ce-7263-a0dd-9cc2015f6d36:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.power_levels"}]}},"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>":{"state":{"events":[{"content":{"creator":"@<TEST_USER>:<MATRIX_DOMAIN>","m.federate":true,"room_version":"12"},"event_id":"$019b6b52-1d64-700b-ad73-a815e82160a7:<MATRIX_DOMAIN>","origin_server_ts":1767032102244,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.create"},{"content":{"guest_access":"forbidden"},"event_id":"$019b6b52-1d67-7ca7-9695-5b8c39b8a0db:<MATRIX_DOMAIN>","origin_server_ts":1767032102248,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.guest_access"},{"content":{"history_visibility":"world_readable"},"event_id":"$019b6b52-1d67-75c8-8ab2-a4205fafbbd1:<MATRIX_DOMAIN>","origin_server_ts":1767032102247,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.history_visibility"},{"content":{"join_rule":"public"},"event_id":"$019b6b52-1d66-7d68-ab8c-876a27efb44a:<MATRIX_DOMAIN>","origin_server_ts":1767032102247,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.join_rules"},{"content":{"avatar_url":null,"displayname":null,"membership":"leave","reason":null},"event_id":"$019b6b52-1d82-7943-bca0-d0386fb44f60:<MATRIX_DOMAIN>","origin_server_ts":1767032102275,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"@<TEST_USER>:<MATRIX_DOMAIN>","type":"m.room.member"},{"content":{"name":"State
         Event Test Room"},"event_id":"$019b6b52-1d68-7dfa-a3ff-3e633bb475a3:<MATRIX_DOMAIN>","origin_server_ts":1767032102249,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.name"},{"content":{"ban":50,"events":{"m.room.avatar":50,"m.room.canonical_alias":50,"m.room.encryption":100,"m.room.history_visibility":100,"m.room.name":50,"m.room.power_levels":100,"m.room.server_acl":100,"m.room.tombstone":100},"events_default":0,"invite":0,"kick":50,"redact":50,"state_default":50,"users":{"@<TEST_USER>:<MATRIX_DOMAIN>":100},"users_default":0},"event_id":"$019b6b52-1d66-7515-bd3c-eb2aba4ddd39:<MATRIX_DOMAIN>","origin_server_ts":1767032102246,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.power_levels"},{"content":{"topic":"New
         topic set by VCR test"},"event_id":"$019b6b52-1d76-7ff2-a372-7cc31e00972c:<MATRIX_DOMAIN>","origin_server_ts":1767032102262,"room_id":"!019b6b52-1d5f-7470-9d65-b1b5271bcfc2:<MATRIX_DOMAIN>","sender":"@<TEST_USER>:<MATRIX_DOMAIN>","state_key":"","type":"m.room.topic"}]}}}},"presence":{"events":[]},"account_data":{"events":[]},"to_device":{"events":[]},"device_lists":{"changed":[],"left":[]},"device_one_time_keys_count":{}}'
-  recorded_at: Mon, 29 Dec 2025 18:15:04 GMT
+  recorded_at: Mon, 29 Dec 2025 18:15:07 GMT
 recorded_with: VCR 6.3.1

@@ -95,8 +95,8 @@ class ApiCSVerificationVCRTest < ActiveSupport::TestCase
     with_protocol_vcr('verification/register_new_user') do
       api = ActiveMatrix::Api.new(matrix_test_server, protocols: :CS)
 
-      # Generate unique username for test (use fixed name for VCR reproducibility)
-      username = "vcr_test_user"
+      # Fixed username for VCR reproducibility
+      username = "vault_dweller_111"
 
       response = api.register(
         username: username,

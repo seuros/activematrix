@@ -29,19 +29,19 @@ http_interactions:
       Access-Control-Expose-Headers:
       - "*"
       Date:
-      - Wed, 10 Dec 2025 17:56:49 GMT
+      - Mon, 29 Dec 2025 18:23:48 GMT
       Transfer-Encoding:
       - chunked
     body:
       encoding: ASCII-8BIT
-      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.16"]}'
-  recorded_at: Wed, 10 Dec 2025 17:56:48 GMT
+      string: '{"server":{"homeserver":"<MATRIX_DOMAIN>","name":"DAGMA","room_version_default":"12","room_versions_supported":["11","12"],"version":"0.60.0"},"unstable_features":{},"versions":["v1.11","v1.12","v1.13","v1.14","v1.15","v1.17"]}'
+  recorded_at: Mon, 29 Dec 2025 18:23:48 GMT
 - request:
     method: post
     uri: "<MATRIX_SERVER>/_matrix/client/v3/register?kind=user"
     body:
       encoding: UTF-8
-      string: '{"username":"vcr_test_user","password":"<PASSWORD>","auth":{"type":"m.login.dummy"}}'
+      string: '{"username":"vault_dweller_111","password":"<PASSWORD>","auth":{"type":"m.login.dummy"}}'
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -52,7 +52,7 @@ http_interactions:
       Content-Type:
       - application/json
       Content-Length:
-      - '93'
+      - '97'
   response:
     status:
       code: 200
@@ -69,11 +69,11 @@ http_interactions:
       Access-Control-Expose-Headers:
       - "*"
       Date:
-      - Wed, 10 Dec 2025 17:56:49 GMT
+      - Mon, 29 Dec 2025 18:23:49 GMT
       Transfer-Encoding:
       - chunked
     body:
       encoding: ASCII-8BIT
-      string: '{"access_token":"<ACCESS_TOKEN>","user_id":"@vcr_test_user:<MATRIX_DOMAIN>","device_id":"DEVICE_019b0968-9c28-7a12-b36b-e3a5dd065544"}'
-  recorded_at: Wed, 10 Dec 2025 17:56:49 GMT
+      string: '{"access_token":"<ACCESS_TOKEN>","user_id":"@vault_dweller_111:<MATRIX_DOMAIN>","device_id":"DEVICE_019b6b5a-27fd-7450-958e-70513075dcf7"}'
+  recorded_at: Mon, 29 Dec 2025 18:23:49 GMT
 recorded_with: VCR 6.3.1
