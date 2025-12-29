@@ -4,13 +4,13 @@ require 'rails/engine'
 
 module ActiveMatrix
   class Engine < Rails::Engine
-    engine_name 'activematrix'
+    engine_name 'active_matrix'
 
-    initializer 'activematrix.configure_logger' do
+    initializer 'active_matrix.configure_logger' do
       ActiveMatrix.logger = Rails.logger
     end
 
-    initializer 'activematrix.initialize_metrics', after: 'activematrix.configure_logger' do
+    initializer 'active_matrix.initialize_metrics', after: 'active_matrix.configure_logger' do
       # Eagerly initialize Metrics singleton to subscribe to notifications
       ActiveMatrix::Metrics.instance
     end
