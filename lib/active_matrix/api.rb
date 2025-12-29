@@ -287,7 +287,7 @@ module ActiveMatrix
       end
 
       failures = 0
-      loop do
+      loop do # rubocop:disable Metrics/BlockLength
         raise MatrixConnectionError, "Server still too busy to handle request after #{failures} attempts, try again later" if failures >= 10
 
         req_id = ('A'..'Z').to_a.sample(4).join
@@ -345,7 +345,7 @@ module ActiveMatrix
 
         # For 4xx errors without JSON body, construct a synthetic error
         if response.code.to_i >= 400 && response.code.to_i < 500
-          synthetic_error = { errcode: "M_UNKNOWN", error: "HTTP #{response.code} #{response.message}" }
+          synthetic_error = { errcode: 'M_UNKNOWN', error: "HTTP #{response.code} #{response.message}" }
           raise MatrixRequestError.new_by_code(synthetic_error, response.code)
         end
 

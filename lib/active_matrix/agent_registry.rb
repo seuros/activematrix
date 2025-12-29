@@ -142,8 +142,8 @@ module ActiveMatrix
     end
 
     # Iterate through all agents
-    def find_each(&block)
-      @agents.values.each(&block)
+    def find_each(&)
+      @agents.values.each(&)
     end
 
     private

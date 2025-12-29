@@ -52,9 +52,7 @@ module ActiveMatrix
             ]
 
             # Add application version if available
-            if defined?(Rails) && Rails.application.respond_to?(:version)
-              response_parts << "Application: #{Rails.application.version}"
-            end
+            response_parts << "Application: #{Rails.application.version}" if defined?(Rails) && Rails.application.respond_to?(:version)
 
             room.send_notice(response_parts.join("\n"))
           end
@@ -67,7 +65,7 @@ module ActiveMatrix
             response_parts = [
               '**Bot Status**',
               '',
-              "State: Online",
+              'State: Online',
               "Uptime: #{format_uptime}",
               "User ID: #{client.mxid}",
               "Homeserver: #{client.api.homeserver}"
@@ -117,7 +115,7 @@ module ActiveMatrix
             unix_timestamp = time.to_i
 
             response_parts = [
-              "**Current Time**",
+              '**Current Time**',
               '',
               formatted,
               "Unix timestamp: #{unix_timestamp}"

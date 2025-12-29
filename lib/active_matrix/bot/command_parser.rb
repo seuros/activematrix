@@ -50,7 +50,7 @@ module ActiveMatrix
       #
       # @return [Hash] Hash with :flags and :args keys
       def parse_flags
-        @parsed_flags ||= begin
+        @parse_flags ||= begin
           flags = {}
           positional = []
 

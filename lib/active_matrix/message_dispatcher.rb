@@ -149,20 +149,18 @@ module ActiveMatrix
       attempts = 0
 
       instrument_operation(:send_message, room_id: @room_id) do
-        begin
-          @api.send_message_event(@room_id, 'm.room.message', content)
-        rescue ActiveMatrix::MatrixRequestError => e
-          attempts += 1
+        @api.send_message_event(@room_id, 'm.room.message', content)
+      rescue ActiveMatrix::MatrixRequestError => e
+        attempts += 1
 
-          if attempts <= @retry_count && retryable_error?(e)
-            delay = calculate_backoff(attempts)
-            ActiveMatrix.logger.warn("Message send failed (attempt #{attempts}/#{@retry_count}), retrying in #{delay}s: #{e.message}")
-            sleep(delay)
-            retry
-          end
-
-          raise
+        if attempts <= @retry_count && retryable_error?(e)
+          delay = calculate_backoff(attempts)
+          ActiveMatrix.logger.warn("Message send failed (attempt #{attempts}/#{@retry_count}), retrying in #{delay}s: #{e.message}")
+          sleep(delay)
+          retry
         end
+
+        raise
       end
     end
 
@@ -188,11 +186,11 @@ module ActiveMatrix
       # Simple HTML stripping - remove tags and decode entities
       text = html.gsub(/<br\s*\/?>/i, "\n")
       text = text.gsub(/<\/?[^>]+>/, '')
-      text = text.gsub(/&nbsp;/, ' ')
-      text = text.gsub(/&lt;/, '<')
-      text = text.gsub(/&gt;/, '>')
-      text = text.gsub(/&amp;/, '&')
-      text = text.gsub(/&quot;/, '"')
+      text = text.gsub('&nbsp;', ' ')
+      text = text.gsub('&lt;', '<')
+      text = text.gsub('&gt;', '>')
+      text = text.gsub('&amp;', '&')
+      text = text.gsub('&quot;', '"')
       text.strip
     end
   end

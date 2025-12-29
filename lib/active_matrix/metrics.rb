@@ -33,6 +33,7 @@ module ActiveMatrix
     # @param duration_ms [Float] Operation duration in milliseconds
     # @param error_class [String, nil] Error class name if status is 'error'
     # @param metadata [Hash] Additional metadata (user_id, room_id, etc.)
+    # rubocop:disable Metrics/ParameterLists
     def record_operation(operation, component:, agent_id:, status:, duration_ms:, error_class: nil, **metadata)
       component_key = "#{agent_id}:#{component}"
       operation_key = "#{component_key}:#{operation}"
@@ -75,6 +76,7 @@ module ActiveMatrix
       # Keep only last 100 operations
       metric[:recent_operations].shift if metric[:recent_operations].size > 100
     end
+    # rubocop:enable Metrics/ParameterLists
 
     # Get metrics for a specific agent instance
     #
