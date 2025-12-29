@@ -51,7 +51,7 @@ jobs:
     - name: Setup test database
       run: |
         cd test/dummy
-        bundle exec rails db:create db:migrate RAILS_ENV=test
+        bundle exec rails db:prepare RAILS_ENV=test
     - name: Rubocop
       run: bundle exec rubocop lib/
     - name: Run tests
