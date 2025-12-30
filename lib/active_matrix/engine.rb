@@ -11,8 +11,14 @@ module ActiveMatrix
     end
 
     initializer 'active_matrix.initialize_metrics', after: 'active_matrix.configure_logger' do
-      # Eagerly initialize Metrics singleton to subscribe to notifications
       ActiveMatrix::Metrics.instance
+    end
+
+    config.after_initialize do
+      config_path = Rails.root.join('config/active_matrix.yml')
+      if File.exist?(config_path)
+        ActiveMatrix::ConnectionRegistry.instance.load!(config_path)
+      end
     end
   end
 end
