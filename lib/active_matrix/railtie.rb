@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails/railtie'
+require_relative 'connection_registry'
 
 module ActiveMatrix
   class Railtie < Rails::Railtie
