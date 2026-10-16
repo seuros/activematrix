@@ -1,5 +1,8 @@
 //! The built binary, end to end.
 
+// A test-only crate: a panic is a failed test, which is what unwrap is for.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use std::process::Command;
 
 #[test]

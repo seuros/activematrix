@@ -1,5 +1,8 @@
 //! The Matrix client against the fake homeserver, over real HTTP.
 
+// A test-only crate: a panic is a failed test, which is what unwrap is for.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use std::time::Duration;
 
 use activematrix_fakehs::{FakeHomeserver, Fault, batch};
