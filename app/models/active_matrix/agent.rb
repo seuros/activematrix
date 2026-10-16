@@ -34,6 +34,7 @@ module ActiveMatrix
     validates :bot_class, presence: true, format: { with: /\A(::)?[A-Z]\w*(::[A-Z]\w*)*\z/ }
     validates :homeserver_url, presence: true, format: { with: %r{\Ahttps?://[^\s/]+(/\S*)?\z} }
     validate :settings_is_an_object
+    validate :bot_class_is_a_bot
 
     scope :enabled, -> { where(enabled: true) }
 
@@ -45,6 +46,15 @@ module ActiveMatrix
     def memory = Memory::Store.new(agent: self)
 
     private
+
+    def bot_class_is_a_bot
+      return if bot_class.blank?
+
+      klass = bot_class.safe_constantize
+      return if klass.is_a?(Class) && klass < Bot::Base
+
+      errors.add(:bot_class, 'must be an ActiveMatrix::Bot::Base subclass')
+    end
 
     def settings_is_an_object
       errors.add(:settings, 'must be a JSON object') unless settings.is_a?(Hash)

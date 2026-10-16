@@ -17,9 +17,11 @@ class AgentTest < ActiveSupport::TestCase
     ['Captain', '-bot', 'my bot', ''].each { assert_not build(name: it).valid?, it.inspect }
   end
 
-  test 'bot_class must look like a constant and homeserver_url like an http URL' do
+  test 'bot_class must name a bot and homeserver_url be an http URL' do
+    assert_predicate build(bot_class: 'EchoBot'), :valid?
     assert_not build(bot_class: 'echo bot').valid?
-    assert_predicate build(bot_class: 'Bots::EchoBot'), :valid?
+    assert_not build(bot_class: 'Bots::Missing').valid?
+    assert_not build(bot_class: 'String').valid?, 'not a bot'
     assert_not build(homeserver_url: 'matrix.test').valid?
     assert_predicate build(homeserver_url: 'http://localhost:8008'), :valid?
   end

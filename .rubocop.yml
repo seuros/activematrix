@@ -1,10 +1,3 @@
-inherit_from: .rubocop_todo.yml
-
-# Exclude lists here add to the todo's instead of replacing them.
-inherit_mode:
-  merge:
-    - Exclude
-
 plugins:
   - rubocop-rails
   - rubocop-performance
@@ -38,15 +31,6 @@ Metrics/BlockLength:
   Exclude:
     - '*.gemspec'
 
-# Migrations are linear DDL scripts; method size says nothing about them.
-Metrics/AbcSize:
-  Exclude:
-    - 'db/migrate/*.rb'
-
-Metrics/MethodLength:
-  Exclude:
-    - 'db/migrate/*.rb'
-
 # Tests assert one scenario end to end.
 Minitest/MultipleAssertions:
   Max: 8
@@ -55,3 +39,30 @@ Minitest/MultipleAssertions:
 Rails/SkipsModelValidations:
   Exclude:
     - 'test/**/*'
+    - 'lib/active_matrix/testing.rb'
+
+# The defaults suit app code; a DSL class and its dispatch read better whole.
+# Migrations are linear DDL scripts; method size says nothing about them.
+Metrics/MethodLength:
+  Max: 16
+  Exclude:
+    - 'db/migrate/*.rb'
+Metrics/AbcSize:
+  Max: 25
+  Exclude:
+    - 'db/migrate/*.rb'
+Metrics/ClassLength:
+  Max: 200
+  Exclude:
+    - 'test/**/*'
+Metrics/CyclomaticComplexity:
+  Max: 10
+Metrics/PerceivedComplexity:
+  Max: 10
+# Keyword arguments name themselves; the DSL takes several.
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+# RuboCop's short names, plus the DSL's dm:.
+Naming/MethodParameterName:
+  AllowedNames: ['as', 'at', 'by', 'cc', 'db', 'dm', 'id', 'if', 'in', 'io', 'ip', 'of', 'on', 'os', 'pp', 'to']

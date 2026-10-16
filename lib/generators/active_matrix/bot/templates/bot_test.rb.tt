@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+require 'active_matrix/testing'
+
+class <%= bot_class_name %>Test < ActiveSupport::TestCase
+  include ActiveMatrix::Testing
+
+  setup do
+    @agent = ActiveMatrix::Agent.create!(name: '<%= bot_name.dasherize %>', bot_class: '<%= bot_class_name %>',
+                                         homeserver_url: 'https://matrix.test')
+  end
+<% command_names.each do |command| -%>
+
+  test '!<%= command %> answers' do
+    deliver_message(@agent, '!<%= command %>')
+
+    assert_replied @agent, '<%= command == 'ping' ? 'pong' : command %>'
+  end
+<% end -%>
+end

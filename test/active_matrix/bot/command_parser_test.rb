@@ -3,128 +3,39 @@
 require 'test_helper'
 
 class CommandParserTest < ActiveSupport::TestCase
-  test 'recognizes command with ! prefix' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!help')
+  def parse(text, **) = ActiveMatrix::Bot::CommandParser.parse(text, **)
 
-    assert_predicate parser, :command?
-    assert_equal 'help', parser.command_name
-    assert_equal '!', parser.prefix
+  test 'a command is a prefix, a name and its arguments' do
+    command = parse('!Deploy api eu')
+
+    assert_equal ['!', 'deploy', %w[api eu], {}, 'api eu'], command.to_h.values_at(:prefix, :name, :args, :flags, :rest)
   end
 
-  test 'recognizes command with / prefix' do
-    parser = ActiveMatrix::Bot::CommandParser.new('/ping')
-
-    assert_predicate parser, :command?
-    assert_equal 'ping', parser.command_name
-    assert_equal '/', parser.prefix
+  test 'quotes group words only when they open an argument' do
+    assert_equal ['release notes', 'x'], parse('!say "release notes" x').args
+    assert_equal %w[don't stop], parse("!say don't stop").args
+    assert_equal ["it's done"], parse(%(!say "it's done")).args
   end
 
-  test 'does not recognize non-command messages' do
-    parser = ActiveMatrix::Bot::CommandParser.new('hello world')
+  test 'flags take values, dashes become underscores, and -- ends them' do
+    command = parse('!deploy api --force --region=eu --dry-run -- --not-a-flag')
 
-    assert_not parser.command?
-    assert_nil parser.command_name
+    assert_equal %w[api --not-a-flag], command.args
+    assert_equal({ 'force' => true, 'region' => 'eu', 'dry_run' => true }, command.flags)
   end
 
-  test 'parses simple arguments' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!search foo bar')
-
-    assert_equal 'search', parser.command_name
-    assert_equal %w[foo bar], parser.args
-    assert_equal 'foo bar', parser.raw_args
+  test 'rest keeps the text as typed' do
+    assert_equal 'hello   wide  world', parse('!echo   hello   wide  world').rest
   end
 
-  test 'parses quoted arguments' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!search "hello world" test')
-
-    assert_equal ['hello world', 'test'], parser.args
+  test 'not commands' do
+    ['hello', '! deploy', '!', '', nil, 'say !deploy', '!dep/loy'].each do |text|
+      assert_nil parse(text), text.inspect
+    end
   end
 
-  test 'parses single-quoted arguments' do
-    parser = ActiveMatrix::Bot::CommandParser.new("!search 'hello world' test")
-
-    assert_equal ['hello world', 'test'], parser.args
-  end
-
-  test 'parses flags with --key=value format' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!greet --name=Alice --formal')
-
-    flags = parser.flags
-
-    assert_equal 'Alice', flags['name']
-    assert_equal true, flags['formal']
-  end
-
-  test 'parses short flags' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!test -v -abc')
-
-    flags = parser.flags
-
-    assert_equal true, flags['v']
-    assert_equal true, flags['a']
-    assert_equal true, flags['b']
-    assert_equal true, flags['c']
-  end
-
-  test 'separates positional args from flags' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!cmd arg1 --flag arg2 --key=val')
-
-    assert_equal %w[arg1 arg2], parser.positional_args
-    assert_equal({ 'flag' => true, 'key' => 'val' }, parser.flags)
-  end
-
-  test 'flag? checks for flag presence' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!test --verbose')
-
-    assert parser.flag?('verbose')
-    assert_not parser.flag?('quiet')
-  end
-
-  test 'flag returns value or default' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!test --count=5')
-
-    assert_equal '5', parser.flag('count')
-    assert_equal 'default', parser.flag('missing', 'default')
-  end
-
-  test 'formatted_command returns full command string' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!help search')
-
-    assert_equal 'help search', parser.formatted_command
-  end
-
-  test 'handles empty input' do
-    parser = ActiveMatrix::Bot::CommandParser.new('')
-
-    assert_not parser.command?
-    assert_empty parser.args
-  end
-
-  test 'handles prefix-only input' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!')
-
-    assert_not parser.command?
-    assert_nil parser.command_name
-  end
-
-  test 'command name is lowercased' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!HELP')
-
-    assert_equal 'help', parser.command_name
-  end
-
-  test 'custom prefixes can be specified' do
-    parser = ActiveMatrix::Bot::CommandParser.new('.help', prefixes: ['.'])
-
-    assert_predicate parser, :command?
-    assert_equal 'help', parser.command_name
-    assert_equal '.', parser.prefix
-  end
-
-  test 'handles mixed quotes in arguments' do
-    parser = ActiveMatrix::Bot::CommandParser.new('!cmd "he said \'hello\'" test')
-
-    # Inner quotes are preserved
-    assert_equal ["he said 'hello'", 'test'], parser.args
+  test 'prefixes are configurable' do
+    assert_equal 'ping', parse('/ping', prefixes: ['/', '!']).name
+    assert_nil parse('/ping')
   end
 end

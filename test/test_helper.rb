@@ -13,6 +13,7 @@ require_relative 'dummy/config/environment'
 require 'rails/test_help'
 require 'mocha/minitest'
 require 'webmock/minitest'
+require 'active_matrix/testing'
 
 WebMock.disable_net_connect!(allow_localhost: true)
 
