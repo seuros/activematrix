@@ -1,0 +1,38 @@
+[workspace]
+resolver = "3"
+members = ["crates/activematrixd"]
+
+[workspace.package]
+# No version here: each crate carries a literal one, because release-please's
+# rust strategy cannot rewrite an inherited `version.workspace = true`.
+edition = "2024"
+rust-version = "1.99"
+license = "MIT"
+repository = "https://github.com/seuros/activematrix"
+authors = ["Abdelkader Boudih"]
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+usage-rs = "7.0.1"
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+unused_must_use = "warn"
+# dead_code_pub_in_binary is omitted: the lib test harness counts as a binary
+# and would flag every public item only the bin uses.
+
+[workspace.lints.clippy]
+# Groups at priority -1 so a single lint can still be overridden below them.
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+# The docs name products and Matrix concepts in prose (ActiveMatrix, Synapse);
+# backticking them reads as code, not as names.
+doc_markdown = "allow"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

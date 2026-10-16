@@ -182,7 +182,10 @@ module ActiveMatrix
     def valid_connection_config?
       if matrix_connection.present?
         # Validate connection exists in YAML
-        errors.add(:matrix_connection, "connection '#{matrix_connection}' not found in config/active_matrix.yml") unless ActiveMatrix.connection_exists?(matrix_connection)
+        unless ActiveMatrix.connection_exists?(matrix_connection)
+          errors.add(:matrix_connection,
+                     "connection '#{matrix_connection}' not found in config/active_matrix.yml")
+        end
       elsif homeserver.blank?
         # Require inline credentials when no matrix_connection
         errors.add(:homeserver, "can't be blank without matrix_connection")

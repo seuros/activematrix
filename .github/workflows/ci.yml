@@ -1,0 +1,117 @@
+name: ci
+
+on:
+  push: { branches: [master] }
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # mise owns the toolchain versions, from mise.toml: the same file used
+      # locally decides which Ruby and which Rust.
+      - uses: jdx/mise-action@v4
+      - run: bundle install --jobs 4
+      - run: bundle exec rubocop
+
+  ruby:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # 18, not latest: the schema uses uuidv7().
+        image: postgres:18
+        env:
+          POSTGRES_USER: activematrix
+          POSTGRES_PASSWORD: activematrix
+          POSTGRES_DB: activematrix_test
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 20
+        ports: ["5432:5432"]
+    env:
+      DATABASE_URL: postgresql://activematrix:activematrix@localhost:5432
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bundle install --jobs 4
+      - name: Prepare the dummy app's database
+        working-directory: test/dummy
+        run: bin/rails db:prepare
+      - name: Test
+        run: bundle exec padded_cell --isolation test --coverage --junit tmp/junit.xml
+      - name: Coverage summary
+        if: always()
+        run: test -f coverage/coverage.md && cat coverage/coverage.md >> "$GITHUB_STEP_SUMMARY" || true
+
+  rust:
+    runs-on: ubuntu-latest
+    env:
+      # Cargo's own warning gate rather than RUSTFLAGS=-Dwarnings, which would
+      # rebuild every dependency and split the cache from local builds.
+      CARGO_BUILD_WARNINGS: deny
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      # First: it needs no compile, so a formatting slip fails in seconds.
+      - run: cargo fmt --all --check
+      - name: Set up mbx
+        uses: jdx/mr-boxington-action@v1
+        with:
+          backend: github
+          github-cache-mode: target
+          cache-generation: activematrix-ci-${{ hashFiles('Cargo.lock') }}
+      - run: mbx clippy --all-targets --locked
+      - run: mbx test --workspace --locked
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: bundle install --jobs 4
+      - name: Build the x86_64-linux-gnu gem and the platformless gem
+        run: |
+          bundle exec rake 'package[x86_64-linux-gnu]'
+          rm -rf libexec
+          bundle exec rake package_generic
+      # A file packaged 0600 cannot be read by a non-root container user; that
+      # shipped once, in 0.0.13.
+      - name: Every packaged file is world-readable
+        run: |
+          set -euo pipefail
+          for gem in pkg/*.gem; do
+            tar -xOf "$gem" data.tar.gz | tar -tvz | awk -v gem="$gem" \
+              'substr($1, 8, 1) != "r" { print gem ": " $0; bad = 1 } END { exit bad }'
+          done
+      - name: The installed launcher runs the bundled daemon
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          # Before leaving the checkout: mise resolves Ruby from mise.toml.
+          gemdir="$(ruby -e 'print Gem.dir')"
+          gem install --local --ignore-dependencies --no-document --install-dir "$home" \
+            pkg/activematrix-*-x86_64-linux-gnu.gem
+          cd "$(mktemp -d)"
+          GEM_HOME="$home" GEM_PATH="$home:$gemdir" "$home/bin/activematrix" version
+      - name: The platformless launcher says how to get a binary
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          gemdir="$(ruby -e 'print Gem.dir')"
+          version="$(ruby -r ./lib/active_matrix/version -e 'print ActiveMatrix::VERSION')"
+          gem install --local --ignore-dependencies --no-document --install-dir "$home" \
+            "pkg/activematrix-${version}.gem"
+          cd "$(mktemp -d)"
+          if GEM_HOME="$home" GEM_PATH="$home:$gemdir" "$home/bin/activematrix" version 2> err; then
+            echo "expected the platformless launcher to fail"; exit 1
+          fi
+          grep -q ACTIVEMATRIX_INSTALL_DIR err

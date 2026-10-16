@@ -1,10 +1,12 @@
+# Postgres 18 from docker-compose.yml (port 5440) unless DATABASE_URL is set.
+# gssencmode: libpq's GSSAPI negotiation crashes forked processes on macOS,
+# and padded_cell forks every test.
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: <%= ENV.fetch("PGHOST") { "localhost" } %>
-  username: <%= ENV.fetch("PGUSER") { "ubuntu" } %>
-  password: <%= ENV.fetch("PGPASSWORD") { "ubuntu" } %>
+  url: <%= ENV.fetch('DATABASE_URL', 'postgresql://activematrix:activematrix@127.0.0.1:5440') %>
+  gssencmode: disable
+  pool: 10
 
 development:
   <<: *default
@@ -13,4 +15,3 @@ development:
 test:
   <<: *default
   database: activematrix_test
-

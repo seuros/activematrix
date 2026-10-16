@@ -6,7 +6,7 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'recognizes command with ! prefix' do
     parser = ActiveMatrix::Bot::CommandParser.new('!help')
 
-    assert parser.command?
+    assert_predicate parser, :command?
     assert_equal 'help', parser.command_name
     assert_equal '!', parser.prefix
   end
@@ -14,7 +14,7 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'recognizes command with / prefix' do
     parser = ActiveMatrix::Bot::CommandParser.new('/ping')
 
-    assert parser.command?
+    assert_predicate parser, :command?
     assert_equal 'ping', parser.command_name
     assert_equal '/', parser.prefix
   end
@@ -22,7 +22,7 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'does not recognize non-command messages' do
     parser = ActiveMatrix::Bot::CommandParser.new('hello world')
 
-    refute parser.command?
+    assert_not parser.command?
     assert_nil parser.command_name
   end
 
@@ -30,7 +30,7 @@ class CommandParserTest < ActiveSupport::TestCase
     parser = ActiveMatrix::Bot::CommandParser.new('!search foo bar')
 
     assert_equal 'search', parser.command_name
-    assert_equal ['foo', 'bar'], parser.args
+    assert_equal %w[foo bar], parser.args
     assert_equal 'foo bar', parser.raw_args
   end
 
@@ -69,7 +69,7 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'separates positional args from flags' do
     parser = ActiveMatrix::Bot::CommandParser.new('!cmd arg1 --flag arg2 --key=val')
 
-    assert_equal ['arg1', 'arg2'], parser.positional_args
+    assert_equal %w[arg1 arg2], parser.positional_args
     assert_equal({ 'flag' => true, 'key' => 'val' }, parser.flags)
   end
 
@@ -77,7 +77,7 @@ class CommandParserTest < ActiveSupport::TestCase
     parser = ActiveMatrix::Bot::CommandParser.new('!test --verbose')
 
     assert parser.flag?('verbose')
-    refute parser.flag?('quiet')
+    assert_not parser.flag?('quiet')
   end
 
   test 'flag returns value or default' do
@@ -96,14 +96,14 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'handles empty input' do
     parser = ActiveMatrix::Bot::CommandParser.new('')
 
-    refute parser.command?
+    assert_not parser.command?
     assert_empty parser.args
   end
 
   test 'handles prefix-only input' do
     parser = ActiveMatrix::Bot::CommandParser.new('!')
 
-    refute parser.command?
+    assert_not parser.command?
     assert_nil parser.command_name
   end
 
@@ -116,7 +116,7 @@ class CommandParserTest < ActiveSupport::TestCase
   test 'custom prefixes can be specified' do
     parser = ActiveMatrix::Bot::CommandParser.new('.help', prefixes: ['.'])
 
-    assert parser.command?
+    assert_predicate parser, :command?
     assert_equal 'help', parser.command_name
     assert_equal '.', parser.prefix
   end

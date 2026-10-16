@@ -2,17 +2,18 @@
 
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in matrix-sdk.gemspec
 gemspec
 
-# Allow testing against different Rails versions via ENV
-rails_version = ENV['RAILS_VERSION'] || '~> 8.0'
-gem 'activejob', rails_version
-gem 'activerecord', rails_version
-gem 'railties', rails_version
+gem 'rake'
 
-# PostgreSQL 18 required
-gem 'pg', '>= 1.6'
-
-# Lock minitest 5.x until Rails 8.1.2+ is released (minitest 6 incompatibility)
-gem 'minitest', '~> 5.25'
+group :development, :test do
+  gem 'minitest', '~> 6.0'
+  gem 'mocha', '~> 3.0', require: false
+  gem 'padded_cell', require: false
+  gem 'rails_lens', require: false
+  gem 'rubocop', require: false
+  gem 'rubocop-minitest', require: false
+  gem 'rubocop-performance', require: false
+  gem 'rubocop-rails', require: false
+  gem 'webmock', require: false
+end

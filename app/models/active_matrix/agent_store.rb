@@ -74,7 +74,9 @@ module ActiveMatrix
     private
 
     def schedule_cleanup
-      ActiveMatrix::Agent::Jobs::MemoryReaper.set(wait_until: expires_at).perform_later if defined?(ActiveMatrix::Agent::Jobs::MemoryReaper)
+      return unless defined?(ActiveMatrix::Agent::Jobs::MemoryReaper)
+
+      ActiveMatrix::Agent::Jobs::MemoryReaper.set(wait_until: expires_at).perform_later
     end
   end
 end
