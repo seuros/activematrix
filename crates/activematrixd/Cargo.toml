@@ -2,7 +2,7 @@
 name = "activematrixd"
 description = "The Matrix side of ActiveMatrix: syncs agents, mirrors room state into Postgres, sends the outbox"
 # A literal version: release-please keeps it in step with the Ruby gem.
-version = "0.0.15"
+version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

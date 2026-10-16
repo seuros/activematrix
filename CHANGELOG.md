@@ -5,6 +5,35 @@
 - Fixes Client#sync_token usage
 - Improves caching of state events in rooms
 
+## [0.1.0](https://github.com/seuros/activematrix/compare/v0.0.15...v0.1.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* the bot API is new; MultiInstanceBase and the old DSL are gone, and MXID no longer accepts group ids.
+* agent_stores, knowledge_bases and the chat session context and history columns are gone; agents must run `activematrix login` after upgrading.
+* the Ruby Matrix client, the in-process agent runtime and the activematrix Thor CLI are removed.
+
+### Features
+
+* **daemon:** configuration, sealed access tokens, keygen and check ([3aca69a](https://github.com/seuros/activematrix/commit/3aca69a48c5118c79358b05f49f35392859cd408))
+* **daemon:** leases and exactly-once ingest ([d340441](https://github.com/seuros/activematrix/commit/d340441dd2e12b4fac86c5b10071cb498e3532e4))
+* **daemon:** Matrix client and a fake homeserver to test it against ([4a2ef48](https://github.com/seuros/activematrix/commit/4a2ef4877943f5b027547079e07b3bc0ed96a10a))
+* scaffold the activematrixd Rust workspace ([55438f1](https://github.com/seuros/activematrix/commit/55438f1320693602249d18d6500bc1ec6bf5b209))
+* system tests, the Synapse contract tier, and the release pipeline ([eff57b1](https://github.com/seuros/activematrix/commit/eff57b126da99346867f0d07b615cfe6f152f08a))
+* the database contract between the daemon and Rails ([66c3be7](https://github.com/seuros/activematrix/commit/66c3be760a30b307fb3ba272b5cf32916a586e62))
+* the Rails side: delivery endpoint, ordered drain jobs and the bot DSL ([535db3d](https://github.com/seuros/activematrix/commit/535db3d3c5b7a8331b92177fe010839067d05d01))
+
+
+### Bug Fixes
+
+* **daemon:** ACTIVEMATRIX_MAX_AGENTS overrides max_agents ([448af39](https://github.com/seuros/activematrix/commit/448af395c86d9736d6bba7141eeaceccc4e60237))
+
+
+### Code Refactoring
+
+* replace the Ruby SDK and runtime with an engine skeleton and daemon launcher ([1aa9e70](https://github.com/seuros/activematrix/commit/1aa9e701719b6ea24a98183734e760f14bb64cab))
+
 ## 2.7.0 - 2022-08-12
 
 - Adds a bot subsystem + DSL
