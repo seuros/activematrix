@@ -21,7 +21,7 @@ module ActiveMatrix
 
     # Counts a message atomically, so concurrent handlers do not lose updates.
     def record_message!(at: Time.current)
-      self.class.where(id:).update_all(['message_count = message_count + 1, last_message_at = ?', at]) # rubocop:disable Rails/SkipsModelValidations -- atomic counter
+      self.class.where(id:).update_all(['message_count = message_count + 1, last_message_at = ?', at])
       reload
     end
 

@@ -79,23 +79,13 @@ impl Shared {
         self.agents()
             .iter()
             .map(|(id, handle)| {
-                (
-                    *id,
-                    handle
-                        .report
-                        .lock()
-                        .unwrap_or_else(PoisonError::into_inner)
-                        .clone(),
-                )
+                (*id, handle.report.lock().unwrap_or_else(PoisonError::into_inner).clone())
             })
             .collect()
     }
 
     fn healthy(&self) -> bool {
-        let last = *self
-            .last_heartbeat
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
+        let last = *self.last_heartbeat.lock().unwrap_or_else(PoisonError::into_inner);
         last.is_some_and(|at| at.elapsed() < self.heartbeat * 3)
     }
 }
@@ -131,12 +121,7 @@ pub async fn start(
         .map_err(|error| StartError::Probe(error.to_string()))?;
 
     let (delivery_tx, delivery_rx) = mpsc::unbounded_channel();
-    let env = Env {
-        db: pool.clone(),
-        node: config.node_id.clone(),
-        key,
-        delivery: delivery_tx,
-    };
+    let env = Env { db: pool.clone(), node: config.node_id.clone(), key, delivery: delivery_tx };
     let delivery = tokio::spawn(delivery::run(
         pusher,
         pool.clone(),
@@ -189,10 +174,8 @@ async fn supervise(
 
 /// Reaps finished agents, renews leases, claims new agents.
 async fn heartbeat(env: &Env, settings: Settings, shared: &Arc<Shared>) {
-    let finished: Vec<(Uuid, Handle)> = shared
-        .agents()
-        .extract_if(|_, handle| handle.task.is_finished())
-        .collect();
+    let finished: Vec<(Uuid, Handle)> =
+        shared.agents().extract_if(|_, handle| handle.task.is_finished()).collect();
     for (id, handle) in finished {
         match handle.task.await {
             Ok(ending) => tracing::info!(agent = %id, ?ending, "agent stopped"),
@@ -205,9 +188,8 @@ async fn heartbeat(env: &Env, settings: Settings, shared: &Arc<Shared>) {
         Ok(renewed) => {
             let renewed: HashMap<Uuid, bool> = renewed.into_iter().collect();
             for (id, handle) in shared.agents().iter() {
-                let (lease_held, enabled) = renewed
-                    .get(id)
-                    .map_or((false, true), |enabled| (true, *enabled));
+                let (lease_held, enabled) =
+                    renewed.get(id).map_or((false, true), |enabled| (true, *enabled));
                 handle.control.send_if_modified(|control| {
                     let changed = control.lease_held != lease_held || control.enabled != enabled;
                     control.lease_held = lease_held;
@@ -215,10 +197,8 @@ async fn heartbeat(env: &Env, settings: Settings, shared: &Arc<Shared>) {
                     changed
                 });
             }
-            *shared
-                .last_heartbeat
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner) = Some(Instant::now());
+            *shared.last_heartbeat.lock().unwrap_or_else(PoisonError::into_inner) =
+                Some(Instant::now());
         }
         // Leases outlive a few missed heartbeats; if the database stays away,
         // another daemon takes the agents and fencing stops these ones.
@@ -251,11 +231,8 @@ async fn heartbeat(env: &Env, settings: Settings, shared: &Arc<Shared>) {
 fn spawn_agent(env: &Env, shared: &Shared, agent: Agent) {
     let id = agent.id;
     tracing::info!(agent = %agent.name, "claimed");
-    let (control, receiver) = watch::channel(Control {
-        lease_held: true,
-        enabled: agent.enabled,
-        stopping: false,
-    });
+    let (control, receiver) =
+        watch::channel(Control { lease_held: true, enabled: agent.enabled, stopping: false });
     let outbox_wake = Arc::new(Notify::new());
     let report = Arc::new(Mutex::new(Report {
         name: agent.name.clone(),
@@ -269,15 +246,7 @@ fn spawn_agent(env: &Env, shared: &Shared, agent: Agent) {
         Arc::clone(&outbox_wake),
         Arc::clone(&report),
     ));
-    shared.agents().insert(
-        id,
-        Handle {
-            control,
-            outbox_wake,
-            report,
-            task,
-        },
-    );
+    shared.agents().insert(id, Handle { control, outbox_wake, report, task });
 }
 
 /// Tells every agent to stop, waits for them up to the shutdown timeout,
@@ -287,9 +256,7 @@ async fn drain(env: &Env, settings: Settings, shared: &Arc<Shared>) {
     let handles: Vec<(Uuid, Handle)> = shared.agents().drain().collect();
     tracing::info!(agents = handles.len(), "draining");
     for (_, handle) in &handles {
-        handle
-            .control
-            .send_modify(|control| control.stopping = true);
+        handle.control.send_modify(|control| control.stopping = true);
     }
     let deadline = Instant::now() + settings.shutdown_timeout;
     let mut stragglers = Vec::new();
@@ -300,10 +267,7 @@ async fn drain(env: &Env, settings: Settings, shared: &Arc<Shared>) {
         }
     }
     if !stragglers.is_empty() {
-        tracing::warn!(
-            count = stragglers.len(),
-            "agents did not stop in time; releasing them"
-        );
+        tracing::warn!(count = stragglers.len(), "agents did not stop in time; releasing them");
         if let Err(error) = agents::release(&env.db, &env.node, &stragglers, false).await {
             tracing::warn!(%error, "could not release leases");
         }

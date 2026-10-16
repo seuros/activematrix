@@ -4,10 +4,8 @@ use std::io::Write as _;
 use super::*;
 
 fn env(vars: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> + use<> {
-    let vars: HashMap<String, String> = vars
-        .iter()
-        .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-        .collect();
+    let vars: HashMap<String, String> =
+        vars.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
     move |name| vars.get(name).cloned()
 }
 
@@ -19,10 +17,7 @@ fn secret() -> String {
 fn defaults_need_nothing_set() {
     let config = Config::build(File::default(), &env(&[])).unwrap();
 
-    assert_eq!(
-        config.probe_bind,
-        "127.0.0.1:3042".parse::<SocketAddr>().unwrap()
-    );
+    assert_eq!(config.probe_bind, "127.0.0.1:3042".parse::<SocketAddr>().unwrap());
     assert_eq!(config.lease_ttl, Duration::from_secs(30));
     assert_eq!(config.heartbeat, Duration::from_secs(10));
     assert_eq!(config.max_agents, 100);
@@ -37,17 +32,11 @@ fn the_environment_overrides_the_file() {
     .unwrap();
     let config = Config::build(
         file,
-        &env(&[
-            ("ACTIVEMATRIX_NODE_ID", "from-env"),
-            ("ACTIVEMATRIX_MAX_AGENTS", "7"),
-        ]),
+        &env(&[("ACTIVEMATRIX_NODE_ID", "from-env"), ("ACTIVEMATRIX_MAX_AGENTS", "7")]),
     )
     .unwrap();
 
-    assert_eq!(
-        config.probe_bind,
-        "0.0.0.0:9000".parse::<SocketAddr>().unwrap()
-    );
+    assert_eq!(config.probe_bind, "0.0.0.0:9000".parse::<SocketAddr>().unwrap());
     assert_eq!(config.lease_ttl, Duration::from_secs(60));
     assert_eq!(config.node_id, "from-env");
     assert_eq!(config.max_agents, 7);
@@ -66,16 +55,8 @@ fn every_missing_secret_is_reported_at_once() {
     let problems: Vec<String> = config.problems().iter().map(ToString::to_string).collect();
 
     assert_eq!(problems.len(), 3, "{problems:?}");
-    assert!(
-        problems
-            .iter()
-            .any(|p| p.contains("ACTIVEMATRIX_MASTER_KEY"))
-    );
-    assert!(
-        problems
-            .iter()
-            .any(|p| p.contains("ACTIVEMATRIX_DELIVERY_URL"))
-    );
+    assert!(problems.iter().any(|p| p.contains("ACTIVEMATRIX_MASTER_KEY")));
+    assert!(problems.iter().any(|p| p.contains("ACTIVEMATRIX_DELIVERY_URL")));
 }
 
 #[test]
@@ -87,10 +68,7 @@ fn a_complete_environment_has_no_problems() {
         &env(&[
             ("DATABASE_URL", "postgres://localhost/app"),
             ("ACTIVEMATRIX_MASTER_KEY", &key),
-            (
-                "ACTIVEMATRIX_DELIVERY_URL",
-                "http://web:3000/active_matrix/deliveries",
-            ),
+            ("ACTIVEMATRIX_DELIVERY_URL", "http://web:3000/active_matrix/deliveries"),
             ("ACTIVEMATRIX_DELIVERY_SECRET", &secret),
         ]),
     )
@@ -110,10 +88,7 @@ fn rejects_bad_values() {
         ("ACTIVEMATRIX_MAX_AGENTS", "many"),
     ];
     for (name, value) in invalid {
-        assert!(
-            Config::build(File::default(), &env(&[(name, value)])).is_err(),
-            "{name}={value}"
-        );
+        assert!(Config::build(File::default(), &env(&[(name, value)])).is_err(), "{name}={value}");
     }
 
     let config = Config::build(
@@ -169,8 +144,5 @@ fn the_generated_config_file_parses() {
     let config = Config::build(file, &env(&[])).unwrap();
 
     assert_eq!(config.lease_ttl, Duration::from_secs(30));
-    assert_eq!(
-        config.probe_bind,
-        "127.0.0.1:3042".parse::<SocketAddr>().unwrap()
-    );
+    assert_eq!(config.probe_bind, "127.0.0.1:3042".parse::<SocketAddr>().unwrap());
 }

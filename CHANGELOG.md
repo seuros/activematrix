@@ -7,7 +7,7 @@
 
 ## 2.7.0 - 2022-08-12
 
-- Adds a bot subsystem + DSL 
+- Adds a bot subsystem + DSL
   - [An example](examples/bot_api.rb) can be found in the examples folder
 - Adds additional useful helpers for Room and User
 - Fixes Client.new_for_domain
@@ -92,7 +92,7 @@
 
 ## 2.0.0 - 2020-02-14
 
-**NB**, this release includes backwards-incompatible changes;  
+**NB**, this release includes backwards-incompatible changes;
 - Changes room state lookup to separate specific state lookups from full state retrieval.
   This will require changes in client code where `#get_room_state` is called to retrieve
   all state, as it now requires a state key. For retrieving full room state,

@@ -151,7 +151,7 @@ module ActiveMatrix
       delegate :memory, to: :agent
       # Not `delegate`: its generated method would not resolve Memory to
       # ActiveMatrix::Memory.
-      def global = Memory.global # rubocop:disable Rails/Delegate
+      def global = Memory.global
       def session = @session ||= ChatSession.for(agent:, room_id:, user_id: sender)
       def conversation = session.memory
 

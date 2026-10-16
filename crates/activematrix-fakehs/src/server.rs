@@ -19,15 +19,9 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
     let method = request.method().as_str().to_owned();
     // Encoded forms: segments are decoded one by one, so an encoded `/`
     // inside a room id cannot split it.
-    let path = request
-        .uri()
-        .path()
-        .map_or_else(|| "/".to_owned(), |p| p.as_encoded_str().into_owned());
-    let query = request
-        .uri()
-        .query()
-        .map(|q| q.as_encoded_str().into_owned())
-        .unwrap_or_default();
+    let path =
+        request.uri().path().map_or_else(|| "/".to_owned(), |p| p.as_encoded_str().into_owned());
+    let query = request.uri().query().map(|q| q.as_encoded_str().into_owned()).unwrap_or_default();
     let token = request
         .headers()
         .get("authorization")
@@ -35,11 +29,7 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
         .and_then(|value| value.strip_prefix("Bearer "))
         .map(str::to_owned);
     let Ok(collected) = request.into_body().collect().await else {
-        return Ok(error(
-            StatusCode::BAD_REQUEST,
-            "M_BAD_JSON",
-            "unreadable body",
-        ));
+        return Ok(error(StatusCode::BAD_REQUEST, "M_BAD_JSON", "unreadable body"));
     };
     let bytes = collected.to_bytes();
     let is_upload = path.starts_with("/_matrix/media/");
@@ -51,11 +41,7 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
         match serde_json::from_slice(&bytes) {
             Ok(body) => body,
             Err(_) => {
-                return Ok(error(
-                    StatusCode::BAD_REQUEST,
-                    "M_NOT_JSON",
-                    "body is not JSON",
-                ));
+                return Ok(error(StatusCode::BAD_REQUEST, "M_NOT_JSON", "body is not JSON"));
             }
         }
     };
@@ -74,11 +60,8 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
         }
     }
 
-    let segments: Vec<String> = path
-        .trim_start_matches('/')
-        .split('/')
-        .map(percent_decode)
-        .collect();
+    let segments: Vec<String> =
+        path.trim_start_matches('/').split('/').map(percent_decode).collect();
     let segments: Vec<&str> = segments.iter().map(String::as_str).collect();
     let params = Query::parse(&query);
 
@@ -89,16 +72,12 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
         ("POST", ["_matrix", "client", "v3", "login"]) => login(&shared, &body),
         (_, ["_fake", rest @ ..]) => admin(&shared, &method, rest, body),
         (_, ["_matrix", ..]) => match shared.session(token.as_deref()) {
-            Err(AuthError::Missing) => error(
-                StatusCode::UNAUTHORIZED,
-                "M_MISSING_TOKEN",
-                "missing access token",
-            ),
-            Err(AuthError::Unknown) => error(
-                StatusCode::UNAUTHORIZED,
-                "M_UNKNOWN_TOKEN",
-                "unknown access token",
-            ),
+            Err(AuthError::Missing) => {
+                error(StatusCode::UNAUTHORIZED, "M_MISSING_TOKEN", "missing access token")
+            }
+            Err(AuthError::Unknown) => {
+                error(StatusCode::UNAUTHORIZED, "M_UNKNOWN_TOKEN", "unknown access token")
+            }
             Ok(session) => {
                 let token = token.unwrap_or_default();
                 authenticated(&shared, &token, &session, &method, &segments, &params, body).await
@@ -123,19 +102,13 @@ async fn authenticated(
                 state_key: Option<&str>,
                 txn: Option<&str>,
                 content: Value| {
-        let event = NewEvent {
-            room_id: room,
-            event_type,
-            state_key,
-            txn_id: txn,
-            content,
-        };
+        let event = NewEvent { room_id: room, event_type, state_key, txn_id: txn, content };
         ok(&json!({ "event_id": shared.send(token, session, event) }))
     };
     match (method, segments) {
-        ("GET", [_, "client", "v3", "account", "whoami"]) => ok(
-            &json!({ "user_id": session.user_id, "device_id": session.device_id, "is_guest": false }),
-        ),
+        ("GET", [_, "client", "v3", "account", "whoami"]) => ok(&json!({
+            "user_id": session.user_id, "device_id": session.device_id, "is_guest": false,
+        })),
         ("GET", [_, "client", "v3", "sync"]) => sync(shared, session, params).await,
         ("PUT", [_, "client", "v3", "rooms", room, "send", event_type, txn]) => {
             send(room, event_type, None, Some(txn), body)
@@ -143,19 +116,9 @@ async fn authenticated(
         ("PUT", [_, "client", "v3", "rooms", room, "state", event_type]) => {
             send(room, event_type, Some(""), None, body)
         }
-        (
-            "PUT",
-            [
-                _,
-                "client",
-                "v3",
-                "rooms",
-                room,
-                "state",
-                event_type,
-                state_key,
-            ],
-        ) => send(room, event_type, Some(state_key), None, body),
+        ("PUT", [_, "client", "v3", "rooms", room, "state", event_type, state_key]) => {
+            send(room, event_type, Some(state_key), None, body)
+        }
         ("PUT", [_, "client", "v3", "rooms", room, "redact", event_id, txn]) => {
             let mut content = body;
             if let Value::Object(fields) = &mut content {
@@ -164,11 +127,8 @@ async fn authenticated(
             send(room, "m.room.redaction", None, Some(txn), content)
         }
         ("POST", [_, "client", "v3", "join", room]) => {
-            let room_id = if room.starts_with('!') {
-                (*room).to_owned()
-            } else {
-                shared.new_id("!joined")
-            };
+            let room_id =
+                if room.starts_with('!') { (*room).to_owned() } else { shared.new_id("!joined") };
             ok(&json!({ "room_id": room_id }))
         }
         (
@@ -190,9 +150,9 @@ async fn authenticated(
         ("POST", [_, "client", "v3", "createRoom"]) => {
             ok(&json!({ "room_id": shared.new_id("!created") }))
         }
-        ("POST", ["_matrix", "media", "v3", "upload"]) => ok(
-            &json!({ "content_uri": format!("mxc://{}", shared.new_id("media").replace(':', "/")) }),
-        ),
+        ("POST", ["_matrix", "media", "v3", "upload"]) => {
+            ok(&json!({ "content_uri": mxc(shared) }))
+        }
         _ => not_found(),
     }
 }
@@ -224,23 +184,14 @@ async fn sync(shared: &Shared, session: &Session, params: &Query) -> Response {
 }
 
 fn login(shared: &Shared, body: &Value) -> Response {
-    let user = body
-        .pointer("/identifier/user")
-        .or_else(|| body.get("user"))
-        .and_then(Value::as_str);
+    let user =
+        body.pointer("/identifier/user").or_else(|| body.get("user")).and_then(Value::as_str);
     let password = body.get("password").and_then(Value::as_str);
-    match user
-        .zip(password)
-        .and_then(|(user, password)| shared.login(user, password))
-    {
+    match user.zip(password).and_then(|(user, password)| shared.login(user, password)) {
         Some((user_id, access_token, device_id)) => {
             ok(&json!({ "user_id": user_id, "access_token": access_token, "device_id": device_id }))
         }
-        None => error(
-            StatusCode::FORBIDDEN,
-            "M_FORBIDDEN",
-            "invalid username or password",
-        ),
+        None => error(StatusCode::FORBIDDEN, "M_FORBIDDEN", "invalid username or password"),
     }
 }
 
@@ -252,9 +203,10 @@ fn admin(shared: &Shared, method: &str, segments: &[&str], body: Value) -> Respo
                 return error(StatusCode::BAD_REQUEST, "M_MISSING_PARAM", "localpart");
             };
             let token = shared.add_user(localpart, body.get("password").and_then(Value::as_str));
-            ok(
-                &json!({ "user_id": format!("@{localpart}:{}", crate::SERVER_NAME), "access_token": token }),
-            )
+            ok(&json!({
+                "user_id": format!("@{localpart}:{}", crate::SERVER_NAME),
+                "access_token": token,
+            }))
         }
         ("POST", ["sync", user_id]) => {
             shared.push_sync(user_id, body);
@@ -264,15 +216,8 @@ fn admin(shared: &Shared, method: &str, segments: &[&str], body: Value) -> Respo
         ("GET", ["requests"]) => ok(&serde_json::to_value(shared.requests()).unwrap_or_default()),
         ("GET", ["since", user_id]) => ok(&json!({ "since": shared.last_since(user_id) })),
         ("POST", ["faults"]) => {
-            let method = body
-                .get("method")
-                .and_then(Value::as_str)
-                .map(str::to_owned);
-            let prefix = body
-                .get("path_prefix")
-                .and_then(Value::as_str)
-                .unwrap_or("/")
-                .to_owned();
+            let method = body.get("method").and_then(Value::as_str).map(str::to_owned);
+            let prefix = body.get("path_prefix").and_then(Value::as_str).unwrap_or("/").to_owned();
             match serde_json::from_value::<Fault>(body) {
                 Ok(fault) => {
                     shared.inject(method.as_deref(), &prefix, fault);
@@ -291,24 +236,21 @@ fn admin(shared: &Shared, method: &str, segments: &[&str], body: Value) -> Respo
     }
 }
 
+/// A fresh `mxc://` URI for an upload.
+fn mxc(shared: &Shared) -> String {
+    format!("mxc://{}", shared.new_id("media").replace(':', "/"))
+}
+
 fn ok(body: &Value) -> Response {
     respond(StatusCode::OK, body, None)
 }
 
 fn not_found() -> Response {
-    error(
-        StatusCode::NOT_FOUND,
-        "M_UNRECOGNIZED",
-        "unrecognized request",
-    )
+    error(StatusCode::NOT_FOUND, "M_UNRECOGNIZED", "unrecognized request")
 }
 
 fn error(status: StatusCode, errcode: &str, message: &str) -> Response {
-    respond(
-        status,
-        &json!({ "errcode": errcode, "error": message }),
-        None,
-    )
+    respond(status, &json!({ "errcode": errcode, "error": message }), None)
 }
 
 fn fault_response(fault: &Fault) -> Response {
@@ -324,9 +266,7 @@ fn fault_response(fault: &Fault) -> Response {
 }
 
 fn respond(status: StatusCode, body: &Value, retry_after_secs: Option<u64>) -> Response {
-    let mut builder = Response::builder()
-        .status(status)
-        .header("content-type", "application/json");
+    let mut builder = Response::builder().status(status).header("content-type", "application/json");
     if let Some(secs) = retry_after_secs {
         builder = builder.header("retry-after", secs.to_string());
     }
@@ -356,10 +296,7 @@ impl Query {
     }
 
     fn get(&self, key: &str) -> Option<&str> {
-        self.0
-            .iter()
-            .find(|(k, _)| k == key)
-            .map(|(_, v)| v.as_str())
+        self.0.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
     }
 }
 

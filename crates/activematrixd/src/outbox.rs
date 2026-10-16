@@ -62,18 +62,8 @@ pub async fn execute(client: &Client, command: &Command) -> Result<Value, Comman
     };
     let field = |name: &str| command.payload.get(name).and_then(Value::as_str);
     let require = |name: &str| field(name).ok_or_else(|| invalid(&format!("{name} is required")));
-    let content = || {
-        command
-            .payload
-            .get("content")
-            .ok_or_else(|| invalid("content is required"))
-    };
-    let room = || {
-        command
-            .room_id
-            .as_deref()
-            .ok_or_else(|| invalid("room_id is required"))
-    };
+    let content = || command.payload.get("content").ok_or_else(|| invalid("content is required"));
+    let room = || command.room_id.as_deref().ok_or_else(|| invalid("room_id is required"));
 
     let result = match command.kind.as_str() {
         "send" => {
@@ -96,40 +86,25 @@ pub async fn execute(client: &Client, command: &Command) -> Result<Value, Comman
             json!({ "room_id": client.join(target).await? })
         }
         "leave" => {
-            client
-                .membership(room()?, "leave", None, field("reason"))
-                .await?;
+            client.membership(room()?, "leave", None, field("reason")).await?;
             json!({})
         }
         "invite" | "kick" | "ban" | "unban" => {
             let user_id = require("user_id")?;
-            client
-                .membership(room()?, &command.kind, Some(user_id), field("reason"))
-                .await?;
+            client.membership(room()?, &command.kind, Some(user_id), field("reason")).await?;
             json!({})
         }
         "create_room" => json!({ "room_id": client.create_room(&command.payload).await? }),
         "typing" => {
-            let typing = command
-                .payload
-                .get("typing")
-                .and_then(Value::as_bool)
-                .unwrap_or(true);
-            let timeout = command
-                .payload
-                .get("timeout_ms")
-                .and_then(Value::as_u64)
-                .unwrap_or(30_000);
-            client
-                .typing(room()?, typing, Duration::from_millis(timeout))
-                .await?;
+            let typing = command.payload.get("typing").and_then(Value::as_bool).unwrap_or(true);
+            let timeout =
+                command.payload.get("timeout_ms").and_then(Value::as_u64).unwrap_or(30_000);
+            client.typing(room()?, typing, Duration::from_millis(timeout)).await?;
             json!({})
         }
         "receipt" => {
             let event_id = require("event_id")?;
-            client
-                .receipt(room()?, event_id, field("receipt_type").unwrap_or("m.read"))
-                .await?;
+            client.receipt(room()?, event_id, field("receipt_type").unwrap_or("m.read")).await?;
             json!({})
         }
         "profile" => {
@@ -142,10 +117,7 @@ pub async fn execute(client: &Client, command: &Command) -> Result<Value, Comman
         }
         "upload" => {
             let content_type = require("content_type")?;
-            let bytes = command
-                .blob
-                .clone()
-                .ok_or_else(|| invalid("blob is required"))?;
+            let bytes = command.blob.clone().ok_or_else(|| invalid("blob is required"))?;
             json!({ "content_uri": client.upload(content_type, field("filename"), bytes).await? })
         }
         other => return Err(invalid(&format!("unknown kind {other:?}"))),
@@ -159,7 +131,8 @@ pub async fn recover(pool: &PgPool, node: &str, agent_id: Uuid) -> Result<u64, s
     sqlx::query(
         "UPDATE active_matrix_outbox o SET status = 'pending', updated_at = now()
          FROM active_matrix_agents a
-         WHERE o.agent_id = $1 AND o.status = 'sending' AND a.id = o.agent_id AND a.claimed_by = $2",
+         WHERE o.agent_id = $1 AND o.status = 'sending'
+           AND a.id = o.agent_id AND a.claimed_by = $2",
     )
     .bind(agent_id)
     .bind(node)
@@ -193,7 +166,8 @@ pub async fn claim(
         return Ok(Vec::new());
     }
     let mut commands: Vec<Command> = sqlx::query_as(
-        "UPDATE active_matrix_outbox SET status = 'sending', attempts = attempts + 1, updated_at = now()
+        "UPDATE active_matrix_outbox SET status = 'sending', attempts = attempts + 1,
+         updated_at = now()
          WHERE id = ANY ($1) RETURNING id, kind, room_id, payload, blob, attempts",
     )
     .bind(&ids)
@@ -210,7 +184,8 @@ pub async fn unclaim(pool: &PgPool, ids: &[Uuid]) -> Result<(), sqlx::Error> {
         return Ok(());
     }
     sqlx::query(
-        "UPDATE active_matrix_outbox SET status = 'pending', attempts = greatest(attempts - 1, 0), updated_at = now()
+        "UPDATE active_matrix_outbox SET status = 'pending', attempts = greatest(attempts - 1, 0),
+         updated_at = now()
          WHERE id = ANY ($1) AND status = 'sending'",
     )
     .bind(ids)
@@ -232,8 +207,8 @@ pub async fn complete(pool: &PgPool, id: Uuid, outcome: &Outcome) -> Result<(), 
     match outcome {
         Outcome::Sent(result) => {
             sqlx::query(
-                "UPDATE active_matrix_outbox SET status = 'sent', result = $2, last_error = NULL, sent_at = now(),
-                 updated_at = now() WHERE id = $1",
+                "UPDATE active_matrix_outbox SET status = 'sent', result = $2, last_error = NULL,
+                 sent_at = now(), updated_at = now() WHERE id = $1",
             )
             .bind(id)
             .bind(sqlx::types::Json(result))
@@ -241,17 +216,16 @@ pub async fn complete(pool: &PgPool, id: Uuid, outcome: &Outcome) -> Result<(), 
             .await?;
         }
         Outcome::Failed(error) | Outcome::Retry(error) => {
-            let status = if matches!(outcome, Outcome::Failed(_)) {
-                "failed"
-            } else {
-                "pending"
-            };
-            sqlx::query("UPDATE active_matrix_outbox SET status = $2, last_error = $3, updated_at = now() WHERE id = $1")
-                .bind(id)
-                .bind(status)
-                .bind(error)
-                .execute(&mut *tx)
-                .await?;
+            let status = if matches!(outcome, Outcome::Failed(_)) { "failed" } else { "pending" };
+            sqlx::query(
+                "UPDATE active_matrix_outbox SET status = $2, last_error = $3, updated_at = now()
+                 WHERE id = $1",
+            )
+            .bind(id)
+            .bind(status)
+            .bind(error)
+            .execute(&mut *tx)
+            .await?;
         }
     }
     if !matches!(outcome, Outcome::Retry(_)) {

@@ -41,24 +41,16 @@ pub async fn serve(
         std::future::ready(Ok::<_, Infallible>(answer(&shared, &request)))
     });
     tokio::spawn(async move {
-        listener
-            .serve(HttpServer::auto(executor).service(app))
-            .await;
+        listener.serve(HttpServer::auto(executor).service(app)).await;
     });
     tokio::spawn(async move {
-        let _ = graceful
-            .shutdown_with_limit(std::time::Duration::from_secs(5))
-            .await;
+        let _ = graceful.shutdown_with_limit(std::time::Duration::from_secs(5)).await;
     });
     Ok(bound)
 }
 
 fn answer(shared: &Shared, request: &Request) -> Response {
-    let path = request
-        .uri()
-        .path()
-        .map(|p| p.as_encoded_str().into_owned())
-        .unwrap_or_default();
+    let path = request.uri().path().map(|p| p.as_encoded_str().into_owned()).unwrap_or_default();
     let draining = shared.draining.load(Ordering::Relaxed);
     match path.as_str() {
         "/livez" => status_text(shared.healthy(), "ok", "heartbeat stalled"),
@@ -72,7 +64,10 @@ fn answer(shared: &Shared, request: &Request) -> Response {
                 .reports()
                 .into_iter()
                 .map(|(id, report)| {
-                    json!({ "id": id, "name": report.name, "state": report.state.as_str(), "error": report.error })
+                    json!({
+                        "id": id, "name": report.name,
+                        "state": report.state.as_str(), "error": report.error,
+                    })
                 })
                 .collect();
             let body = json!({
@@ -89,11 +84,7 @@ fn answer(shared: &Shared, request: &Request) -> Response {
                 *by_state.entry(report.state.as_str()).or_default() += 1;
             }
             let by_state: Vec<(&str, usize)> = by_state.into_iter().collect();
-            respond(
-                StatusCode::OK,
-                "text/plain; version=0.0.4",
-                metrics::render(&by_state),
-            )
+            respond(StatusCode::OK, "text/plain; version=0.0.4", metrics::render(&by_state))
         }
         _ => respond(StatusCode::NOT_FOUND, "text/plain", "not found\n".into()),
     }
@@ -103,11 +94,7 @@ fn status_text(ok: bool, yes: &str, no: &str) -> Response {
     if ok {
         respond(StatusCode::OK, "text/plain", format!("{yes}\n"))
     } else {
-        respond(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "text/plain",
-            format!("{no}\n"),
-        )
+        respond(StatusCode::SERVICE_UNAVAILABLE, "text/plain", format!("{no}\n"))
     }
 }
 

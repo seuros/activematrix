@@ -287,12 +287,18 @@ Active Record encryption, which the daemon cannot read), so run
 ## Development
 
 ```console
-$ docker compose up -d           # PostgreSQL 18 on port 5440
+$ mise install                    # Ruby 4.0 and Rust 1.99, from mise.toml
+$ docker compose up -d            # PostgreSQL 18 on port 5440
 $ bundle install
 $ (cd test/dummy && RAILS_ENV=test bin/rails db:prepare)
 $ bundle exec rake test           # the Ruby suite, under padded_cell
 $ cargo test --workspace          # the daemon, against the same PostgreSQL
+$ dictator lint .                 # line and file length, layout, whitespace
+$ cargo fmt --all && cargo clippy --all-targets
 ```
+
+- Style is checked by [dictator](https://github.com/seuros/dictator)
+  (`.dictate.toml`), rustfmt (`rustfmt.toml`) and clippy; there is no RuboCop.
 
 - The daemon's tests load `crates/activematrixd/tests/schema.sql`, a
   snapshot of the engine's tables. After changing a migration, run

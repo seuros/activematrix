@@ -41,10 +41,7 @@ pub struct Pusher {
 impl Pusher {
     pub fn new(target: Delivery) -> Self {
         crate::matrix::install_crypto_provider();
-        Self {
-            target,
-            http: DefaultHttpWebClient::default(),
-        }
+        Self { target, http: DefaultHttpWebClient::default() }
     }
 
     pub async fn push(&self, pairs: &BTreeSet<Pair>) -> Result<(), PushError> {
@@ -55,9 +52,7 @@ impl Pusher {
         let body = json!({ "rooms": rooms }).to_string();
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |since| {
-                i64::try_from(since.as_secs()).unwrap_or(i64::MAX)
-            });
+            .map_or(0, |since| i64::try_from(since.as_secs()).unwrap_or(i64::MAX));
         let signature = signature::sign(&self.target.secret, timestamp, body.as_bytes());
 
         let exchange = async {
@@ -79,11 +74,7 @@ impl Pusher {
         let status = tokio::time::timeout(Duration::from_secs(10), exchange)
             .await
             .map_err(|_| PushError::Transport("timed out".into()))??;
-        if (200..300).contains(&status) {
-            Ok(())
-        } else {
-            Err(PushError::Status(status))
-        }
+        if (200..300).contains(&status) { Ok(()) } else { Err(PushError::Status(status)) }
     }
 }
 

@@ -72,7 +72,13 @@ pub struct Events {
 }
 
 /// The filter the daemon syncs with: members lazy-loaded, no presence.
-pub const FILTER: &str = r#"{"room":{"state":{"lazy_load_members":true},"timeline":{"limit":50}},"presence":{"types":[]}}"#;
+pub const FILTER: &str = concat!(
+    r#"{"room":{"state":{"lazy_load_members":true},"timeline":{"limit":50}},"#,
+    r#""presence":{"types":[]}}"#
+);
 
 /// For the first sync: state only, so history is not replayed into the bots.
-pub const FIRST_SYNC_FILTER: &str = r#"{"room":{"state":{"lazy_load_members":true},"timeline":{"limit":0}},"presence":{"types":[]}}"#;
+pub const FIRST_SYNC_FILTER: &str = concat!(
+    r#"{"room":{"state":{"lazy_load_members":true},"timeline":{"limit":0}},"#,
+    r#""presence":{"types":[]}}"#
+);

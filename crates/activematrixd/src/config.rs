@@ -20,15 +20,9 @@ pub const DEFAULT_PATH: &str = "config/activematrixd.toml";
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("reading {path}: {source}")]
-    Read {
-        path: PathBuf,
-        source: std::io::Error,
-    },
+    Read { path: PathBuf, source: std::io::Error },
     #[error("parsing {path}: {source}")]
-    Parse {
-        path: PathBuf,
-        source: Box<toml::de::Error>,
-    },
+    Parse { path: PathBuf, source: Box<toml::de::Error> },
     #[error("{0} is not set")]
     Missing(&'static str),
     #[error("{name} is invalid: {reason}")]
@@ -49,17 +43,17 @@ struct File {
 }
 
 pub struct Config {
-    database_url: Option<String>,
-    master_key: Option<String>,
-    master_key_previous: Option<String>,
-    delivery_url: Option<String>,
-    delivery_secret: Option<String>,
     pub probe_bind: SocketAddr,
     pub node_id: String,
     pub max_agents: u32,
     pub lease_ttl: Duration,
     pub heartbeat: Duration,
     pub shutdown_timeout: Duration,
+    database_url: Option<String>,
+    master_key: Option<String>,
+    master_key_previous: Option<String>,
+    delivery_url: Option<String>,
+    delivery_secret: Option<String>,
 }
 
 /// Where the daemon pushes `(agent, room)` pairs, and the HMAC secret.
@@ -71,9 +65,7 @@ pub struct Delivery {
 
 impl fmt::Debug for Delivery {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Delivery")
-            .field("url", &self.url)
-            .finish_non_exhaustive()
+        f.debug_struct("Delivery").field("url", &self.url).finish_non_exhaustive()
     }
 }
 
@@ -84,9 +76,8 @@ impl Config {
         path: Option<&Path>,
         env: impl Fn(&str) -> Option<String>,
     ) -> Result<Self, ConfigError> {
-        let explicit = path
-            .map(Path::to_path_buf)
-            .or_else(|| env("ACTIVEMATRIX_CONFIG").map(PathBuf::from));
+        let explicit =
+            path.map(Path::to_path_buf).or_else(|| env("ACTIVEMATRIX_CONFIG").map(PathBuf::from));
         let file = match explicit {
             Some(path) => read(&path)?,
             None if Path::new(DEFAULT_PATH).exists() => read(Path::new(DEFAULT_PATH))?,
@@ -121,9 +112,7 @@ impl Config {
             delivery_url: env("ACTIVEMATRIX_DELIVERY_URL").or(file.delivery_url),
             delivery_secret: env("ACTIVEMATRIX_DELIVERY_SECRET"),
             probe_bind,
-            node_id: env("ACTIVEMATRIX_NODE_ID")
-                .or(file.node_id)
-                .unwrap_or_else(default_node_id),
+            node_id: env("ACTIVEMATRIX_NODE_ID").or(file.node_id).unwrap_or_else(default_node_id),
             max_agents: match env("ACTIVEMATRIX_MAX_AGENTS") {
                 Some(raw) => raw.parse().map_err(|_| ConfigError::Invalid {
                     name: "ACTIVEMATRIX_MAX_AGENTS",
@@ -159,29 +148,22 @@ impl Config {
     }
 
     pub fn database_url(&self) -> Result<&str, ConfigError> {
-        self.database_url.as_deref().ok_or(ConfigError::Missing(
-            "ACTIVEMATRIX_DATABASE_URL (or DATABASE_URL)",
-        ))
+        self.database_url
+            .as_deref()
+            .ok_or(ConfigError::Missing("ACTIVEMATRIX_DATABASE_URL (or DATABASE_URL)"))
     }
 
     pub fn master_key(&self) -> Result<MasterKey, ConfigError> {
-        let current = self
-            .master_key
-            .as_deref()
-            .ok_or(ConfigError::Missing("ACTIVEMATRIX_MASTER_KEY"))?;
+        let current =
+            self.master_key.as_deref().ok_or(ConfigError::Missing("ACTIVEMATRIX_MASTER_KEY"))?;
         MasterKey::from_base64(current, self.master_key_previous.as_deref()).map_err(|error| {
-            ConfigError::Invalid {
-                name: "ACTIVEMATRIX_MASTER_KEY",
-                reason: error.to_string(),
-            }
+            ConfigError::Invalid { name: "ACTIVEMATRIX_MASTER_KEY", reason: error.to_string() }
         })
     }
 
     pub fn delivery(&self) -> Result<Delivery, ConfigError> {
-        let url = self
-            .delivery_url
-            .clone()
-            .ok_or(ConfigError::Missing("ACTIVEMATRIX_DELIVERY_URL"))?;
+        let url =
+            self.delivery_url.clone().ok_or(ConfigError::Missing("ACTIVEMATRIX_DELIVERY_URL"))?;
         if !(url.starts_with("http://") || url.starts_with("https://")) {
             return Err(ConfigError::Invalid {
                 name: "ACTIVEMATRIX_DELIVERY_URL",
@@ -203,14 +185,10 @@ impl Config {
 
     /// Everything `start` needs that is missing or wrong, at once.
     pub fn problems(&self) -> Vec<ConfigError> {
-        [
-            self.database_url().err(),
-            self.master_key().err(),
-            self.delivery().err(),
-        ]
-        .into_iter()
-        .flatten()
-        .collect()
+        [self.database_url().err(), self.master_key().err(), self.delivery().err()]
+            .into_iter()
+            .flatten()
+            .collect()
     }
 }
 
@@ -229,22 +207,14 @@ impl fmt::Debug for Config {
 }
 
 fn read(path: &Path) -> Result<File, ConfigError> {
-    let text = std::fs::read_to_string(path).map_err(|source| ConfigError::Read {
-        path: path.into(),
-        source,
-    })?;
-    toml::from_str(&text).map_err(|source| ConfigError::Parse {
-        path: path.into(),
-        source: Box::new(source),
-    })
+    let text = std::fs::read_to_string(path)
+        .map_err(|source| ConfigError::Read { path: path.into(), source })?;
+    toml::from_str(&text)
+        .map_err(|source| ConfigError::Parse { path: path.into(), source: Box::new(source) })
 }
 
 fn default_node_id() -> String {
-    format!(
-        "{}:{}",
-        gethostname::gethostname().to_string_lossy(),
-        std::process::id()
-    )
+    format!("{}:{}", gethostname::gethostname().to_string_lossy(), std::process::id())
 }
 
 #[cfg(test)]

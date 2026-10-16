@@ -9,10 +9,8 @@ use tokio::io::AsyncReadExt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let addr: SocketAddr = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:0".into())
-        .parse()?;
+    let addr: SocketAddr =
+        std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:0".into()).parse()?;
     let server = FakeHomeserver::start_on(addr).await?;
     println!("{}", serde_json::json!({ "url": server.url() }));
 

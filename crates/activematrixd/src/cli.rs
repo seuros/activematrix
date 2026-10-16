@@ -25,12 +25,7 @@ use crate::config::Config;
 
 /// The Matrix daemon for ActiveMatrix
 #[derive(Cli, Debug)]
-#[usage(
-    bin = "activematrixd",
-    version,
-    unknown_flags = "error",
-    args_override_self = false
-)]
+#[usage(bin = "activematrixd", version, unknown_flags = "error", args_override_self = false)]
 pub struct Activematrixd {
     /// Config file [default: $ACTIVEMATRIX_CONFIG, else config/activematrixd.toml]
     #[usage(long, global, value_name = "PATH")]
@@ -60,9 +55,7 @@ pub struct Context {
 
 impl Context {
     pub fn config(&self) -> anyhow::Result<Config> {
-        Ok(Config::load(self.config_path.as_deref(), |name| {
-            std::env::var(name).ok()
-        })?)
+        Ok(Config::load(self.config_path.as_deref(), |name| std::env::var(name).ok())?)
     }
 }
 

@@ -45,21 +45,17 @@ impl Harness {
             .unwrap()
             .seal(agent, &AccessToken::new(token.clone()))
             .unwrap();
-        sqlx::query("UPDATE active_matrix_agents SET access_token_ciphertext = $2, user_id = $3 WHERE id = $1")
-            .bind(agent)
-            .bind(sealed)
-            .bind(BOT)
-            .execute(&db.pool)
-            .await
-            .unwrap();
-        Some(Self {
-            db,
-            homeserver,
-            sink: Sink::start().await,
-            key,
-            agent,
-            token,
-        })
+        sqlx::query(
+            "UPDATE active_matrix_agents SET access_token_ciphertext = $2, user_id = $3
+             WHERE id = $1",
+        )
+        .bind(agent)
+        .bind(sealed)
+        .bind(BOT)
+        .execute(&db.pool)
+        .await
+        .unwrap();
+        Some(Self { db, homeserver, sink: Sink::start().await, key, agent, token })
     }
 
     fn config(&self) -> Config {
@@ -111,7 +107,8 @@ impl Harness {
     async fn outbox(&self, kind: &str, payload: Value) -> Uuid {
         let mut tx = self.db.pool.begin().await.unwrap();
         let id: Uuid = sqlx::query_scalar(
-            "INSERT INTO active_matrix_outbox (agent_id, kind, room_id, payload, created_at, updated_at)
+            "INSERT INTO active_matrix_outbox (agent_id, kind, room_id, payload, created_at,
+             updated_at)
              VALUES ($1, $2, $3, $4, now(), now()) RETURNING id",
         )
         .bind(self.agent)
@@ -147,10 +144,7 @@ struct Daemon {
 impl Daemon {
     async fn shutdown(self) {
         self.stop.send(true).unwrap();
-        tokio::time::timeout(WAIT, self.running.task)
-            .await
-            .expect("drained in time")
-            .unwrap();
+        tokio::time::timeout(WAIT, self.running.task).await.expect("drained in time").unwrap();
     }
 
     async fn probe(&self, path: &str) -> (u16, String) {
@@ -181,33 +175,21 @@ async fn a_message_reaches_rails_and_the_reply_reaches_the_room() {
     let daemon = h.start().await;
     h.wait_for_state("online").await;
 
-    h.homeserver.push_sync(
-        BOT,
-        batch::message(ROOM, "@alice:matrix.test", "$ping", "!ping"),
-    );
-    eventually("the event in the inbox", WAIT, || async {
-        h.inbox_bodies().await == ["!ping"]
-    })
-    .await;
-    eventually("a delivery push", WAIT, || async {
-        !h.sink.pushes().is_empty()
-    })
-    .await;
+    h.homeserver.push_sync(BOT, batch::message(ROOM, "@alice:matrix.test", "$ping", "!ping"));
+    eventually("the event in the inbox", WAIT, || async { h.inbox_bodies().await == ["!ping"] })
+        .await;
+    eventually("a delivery push", WAIT, || async { !h.sink.pushes().is_empty() }).await;
     let push = h.sink.pushes().remove(0);
     let body: Value = serde_json::from_str(&push.body).unwrap();
     assert_eq!(body["rooms"][0]["room_id"], ROOM);
     assert_eq!(body["rooms"][0]["agent_id"], h.agent.to_string());
     let timestamp: i64 = push.timestamp.parse().unwrap();
-    assert_eq!(
-        push.signature,
-        signature::sign(SECRET, timestamp, push.body.as_bytes())
-    );
+    assert_eq!(push.signature, signature::sign(SECRET, timestamp, push.body.as_bytes()));
 
-    let command = h.outbox("send", json!({ "event_type": "m.room.message", "content": { "msgtype": "m.text", "body": "pong" } })).await;
-    let sent = h
-        .homeserver
-        .wait_for_sent(WAIT, |sent| !sent.is_empty())
-        .await;
+    let pong = json!({ "msgtype": "m.text", "body": "pong" });
+    let command =
+        h.outbox("send", json!({ "event_type": "m.room.message", "content": pong })).await;
+    let sent = h.homeserver.wait_for_sent(WAIT, |sent| !sent.is_empty()).await;
     assert_eq!(sent[0].content["body"], "pong");
     assert_eq!(
         sent[0].txn_id.as_deref(),
@@ -218,10 +200,7 @@ async fn a_message_reaches_rails_and_the_reply_reaches_the_room() {
         h.outbox_row(command).await.0 == "sent"
     })
     .await;
-    assert_eq!(
-        h.outbox_row(command).await.2.unwrap()["event_id"],
-        sent[0].event_id
-    );
+    assert_eq!(h.outbox_row(command).await.2.unwrap()["event_id"], sent[0].event_id);
 
     daemon.shutdown().await;
     assert_eq!(h.agent_column("state").await.as_deref(), Some("offline"));
@@ -234,14 +213,8 @@ async fn a_restart_resumes_where_it_stopped_without_replaying() {
     let h = harness!();
     let daemon = h.start().await;
     h.wait_for_state("online").await;
-    h.homeserver.push_sync(
-        BOT,
-        batch::message(ROOM, "@alice:matrix.test", "$1", "before"),
-    );
-    eventually("the first event", WAIT, || async {
-        h.inbox_bodies().await == ["before"]
-    })
-    .await;
+    h.homeserver.push_sync(BOT, batch::message(ROOM, "@alice:matrix.test", "$1", "before"));
+    eventually("the first event", WAIT, || async { h.inbox_bodies().await == ["before"] }).await;
     daemon.shutdown().await;
     let token = h.agent_column("sync_token").await.unwrap();
 
@@ -258,10 +231,7 @@ async fn a_restart_resumes_where_it_stopped_without_replaying() {
         "resumed from {token}: {}",
         first_sync.query
     );
-    h.homeserver.push_sync(
-        BOT,
-        batch::message(ROOM, "@alice:matrix.test", "$2", "after"),
-    );
+    h.homeserver.push_sync(BOT, batch::message(ROOM, "@alice:matrix.test", "$2", "after"));
     eventually("only the new event", WAIT, || async {
         h.inbox_bodies().await == ["before", "after"]
     })
@@ -298,18 +268,9 @@ async fn a_rejected_token_fails_the_agent_until_it_logs_in_again() {
     let daemon = h.start().await;
 
     h.wait_for_state("failed").await;
-    assert!(
-        h.agent_column("last_error")
-            .await
-            .unwrap()
-            .contains("activematrix login")
-    );
+    assert!(h.agent_column("last_error").await.unwrap().contains("activematrix login"));
     tokio::time::sleep(Duration::from_secs(3)).await;
-    assert_eq!(
-        h.agent_column("claimed_by").await,
-        None,
-        "a failed agent is not claimed again"
-    );
+    assert_eq!(h.agent_column("claimed_by").await, None, "a failed agent is not claimed again");
     assert_eq!(h.agent_column("state").await.as_deref(), Some("failed"));
 
     daemon.shutdown().await;
@@ -321,11 +282,7 @@ async fn a_rate_limited_send_is_retried_with_the_same_transaction_id() {
     let h = harness!();
     let daemon = h.start().await;
     h.wait_for_state("online").await;
-    h.homeserver.inject(
-        Some("PUT"),
-        "/_matrix/client/v3/rooms/",
-        Fault::rate_limited(1),
-    );
+    h.homeserver.inject(Some("PUT"), "/_matrix/client/v3/rooms/", Fault::rate_limited(1));
 
     let command = h
         .outbox(
@@ -334,15 +291,9 @@ async fn a_rate_limited_send_is_retried_with_the_same_transaction_id() {
         )
         .await;
 
-    eventually("the command sent", WAIT, || async {
-        h.outbox_row(command).await.0 == "sent"
-    })
-    .await;
-    assert_eq!(
-        h.outbox_row(command).await.1,
-        2,
-        "one rate-limited attempt, one that went through"
-    );
+    eventually("the command sent", WAIT, || async { h.outbox_row(command).await.0 == "sent" })
+        .await;
+    assert_eq!(h.outbox_row(command).await.1, 2, "one rate-limited attempt, one that went through");
     assert_eq!(h.homeserver.sent().len(), 1);
     daemon.shutdown().await;
     h.db.drop_schema().await;
@@ -354,20 +305,12 @@ async fn an_invalid_command_fails_without_blocking_the_next_one() {
     let daemon = h.start().await;
     h.wait_for_state("online").await;
 
-    let broken = h
-        .outbox("send", json!({ "content": { "body": "no event type" } }))
-        .await;
+    let broken = h.outbox("send", json!({ "content": { "body": "no event type" } })).await;
     let fine = h
-        .outbox(
-            "send",
-            json!({ "event_type": "m.room.message", "content": { "body": "fine" } }),
-        )
+        .outbox("send", json!({ "event_type": "m.room.message", "content": { "body": "fine" } }))
         .await;
 
-    eventually("both settled", WAIT, || async {
-        h.outbox_row(fine).await.0 == "sent"
-    })
-    .await;
+    eventually("both settled", WAIT, || async { h.outbox_row(fine).await.0 == "sent" }).await;
     assert_eq!(h.outbox_row(broken).await.0, "failed");
     daemon.shutdown().await;
     h.db.drop_schema().await;
@@ -379,10 +322,7 @@ async fn the_probes_answer_from_memory() {
     let daemon = h.start().await;
     h.wait_for_state("online").await;
 
-    eventually("live", WAIT, || async {
-        daemon.probe("/livez").await.0 == 200
-    })
-    .await;
+    eventually("live", WAIT, || async { daemon.probe("/livez").await.0 == 200 }).await;
     assert_eq!(daemon.probe("/readyz").await.0, 200);
     let (_, status) = daemon.probe("/status").await;
     let status: Value = serde_json::from_str(&status).unwrap();
@@ -393,14 +333,8 @@ async fn the_probes_answer_from_memory() {
     })
     .await;
     let (_, metrics) = daemon.probe("/metrics").await;
-    assert!(
-        metrics.contains("activematrixd_sync_batches_total"),
-        "{metrics}"
-    );
-    assert!(
-        metrics.contains("activematrixd_agents{state=\"online\"} 1"),
-        "{metrics}"
-    );
+    assert!(metrics.contains("activematrixd_sync_batches_total"), "{metrics}");
+    assert!(metrics.contains("activematrixd_agents{state=\"online\"} 1"), "{metrics}");
     assert_eq!(daemon.probe("/nope").await.0, 404);
 
     daemon.shutdown().await;

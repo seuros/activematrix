@@ -4,7 +4,11 @@ use super::*;
 /// sides cannot drift apart.
 #[test]
 fn matches_the_shared_vector() {
-    let body = br#"{"rooms":[{"agent_id":"0199e1a2-0000-7000-8000-000000000000","room_id":"!room:matrix.test"}]}"#;
+    let body = concat!(
+        r#"{"rooms":[{"agent_id":"0199e1a2-0000-7000-8000-000000000000","#,
+        r#""room_id":"!room:matrix.test"}]}"#
+    )
+    .as_bytes();
 
     assert_eq!(
         sign(&"s".repeat(32), 1_760_000_000, body),

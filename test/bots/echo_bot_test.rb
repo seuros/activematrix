@@ -116,7 +116,8 @@ class EchoBotTest < ActiveSupport::TestCase
   end
 
   test 'reactions and invites reach their handlers' do
-    deliver_event(@agent, event_type: 'm.reaction', content: { 'm.relates_to' => { 'event_id' => '$x', 'key' => '👍' } })
+    deliver_event(@agent, event_type: 'm.reaction',
+                          content: { 'm.relates_to' => { 'event_id' => '$x', 'key' => '👍' } })
     deliver_invite(@agent, room_id: '!new:matrix.test')
 
     reaction = @agent.outbox_commands.find_by(kind: 'send').payload

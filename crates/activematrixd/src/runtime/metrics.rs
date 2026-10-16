@@ -11,11 +11,7 @@ pub struct Counter {
 
 impl Counter {
     const fn new(name: &'static str, help: &'static str) -> Self {
-        Self {
-            name,
-            help,
-            value: AtomicU64::new(0),
-        }
+        Self { name, help, value: AtomicU64::new(0) }
     }
 
     pub fn add(&self, n: u64) {
@@ -29,30 +25,20 @@ impl Counter {
 
 pub static SYNC_BATCHES: Counter =
     Counter::new("activematrixd_sync_batches_total", "Sync batches ingested");
-pub static INBOX_EVENTS: Counter = Counter::new(
-    "activematrixd_inbox_events_total",
-    "Events queued for the bots",
-);
-pub static SYNC_ERRORS: Counter = Counter::new(
-    "activematrixd_sync_errors_total",
-    "Sync loops that ended in an error",
-);
+pub static INBOX_EVENTS: Counter =
+    Counter::new("activematrixd_inbox_events_total", "Events queued for the bots");
+pub static SYNC_ERRORS: Counter =
+    Counter::new("activematrixd_sync_errors_total", "Sync loops that ended in an error");
 pub static OUTBOX_SENT: Counter =
     Counter::new("activematrixd_outbox_sent_total", "Outbox commands sent");
-pub static OUTBOX_RETRIED: Counter = Counter::new(
-    "activematrixd_outbox_retried_total",
-    "Outbox commands put back to retry",
-);
-pub static OUTBOX_FAILED: Counter = Counter::new(
-    "activematrixd_outbox_failed_total",
-    "Outbox commands given up on",
-);
+pub static OUTBOX_RETRIED: Counter =
+    Counter::new("activematrixd_outbox_retried_total", "Outbox commands put back to retry");
+pub static OUTBOX_FAILED: Counter =
+    Counter::new("activematrixd_outbox_failed_total", "Outbox commands given up on");
 pub static DELIVERIES: Counter =
     Counter::new("activematrixd_deliveries_total", "Pushes accepted by Rails");
-pub static DELIVERY_FAILURES: Counter = Counter::new(
-    "activematrixd_delivery_failures_total",
-    "Pushes Rails did not accept",
-);
+pub static DELIVERY_FAILURES: Counter =
+    Counter::new("activematrixd_delivery_failures_total", "Pushes Rails did not accept");
 
 const COUNTERS: &[&Counter] = &[
     &SYNC_BATCHES,
@@ -82,7 +68,8 @@ pub fn render(agents_by_state: &[(&str, usize)]) -> String {
     }
     let _ = writeln!(
         out,
-        "# HELP activematrixd_agents Agents this daemon holds, by state\n# TYPE activematrixd_agents gauge"
+        "# HELP activematrixd_agents Agents this daemon holds, by state\n\
+         # TYPE activematrixd_agents gauge"
     );
     for (state, count) in agents_by_state {
         let _ = writeln!(out, "activematrixd_agents{{state=\"{state}\"}} {count}");

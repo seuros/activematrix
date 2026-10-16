@@ -69,10 +69,7 @@ pub struct MasterKey {
 impl MasterKey {
     /// Parses base64 keys, as `activematrixd keygen` prints them.
     pub fn from_base64(current: &str, previous: Option<&str>) -> Result<Self, CryptoError> {
-        Ok(Self {
-            current: cipher(current)?,
-            previous: previous.map(cipher).transpose()?,
-        })
+        Ok(Self { current: cipher(current)?, previous: previous.map(cipher).transpose()? })
     }
 
     /// A fresh random key, base64.
@@ -82,14 +79,8 @@ impl MasterKey {
 
     pub fn seal(&self, agent_id: Uuid, token: &AccessToken) -> Result<Vec<u8>, CryptoError> {
         let nonce = XNonce::generate();
-        let payload = Payload {
-            msg: token.expose().as_bytes(),
-            aad: agent_id.as_bytes(),
-        };
-        let ciphertext = self
-            .current
-            .encrypt(&nonce, payload)
-            .map_err(|_| CryptoError::Seal)?;
+        let payload = Payload { msg: token.expose().as_bytes(), aad: agent_id.as_bytes() };
+        let ciphertext = self.current.encrypt(&nonce, payload).map_err(|_| CryptoError::Seal)?;
 
         let mut sealed = Vec::with_capacity(1 + NONCE_LEN + ciphertext.len());
         sealed.push(FORMAT_V1);
@@ -102,37 +93,18 @@ impl MasterKey {
         let Some((&FORMAT_V1, rest)) = sealed.split_first() else {
             return Err(CryptoError::Malformed);
         };
-        let (nonce, ciphertext) = rest
-            .split_at_checked(NONCE_LEN)
-            .ok_or(CryptoError::Malformed)?;
+        let (nonce, ciphertext) = rest.split_at_checked(NONCE_LEN).ok_or(CryptoError::Malformed)?;
         let nonce = XNonce::try_from(nonce).map_err(|_| CryptoError::Malformed)?;
 
         let open = |cipher: &XChaCha20Poly1305| {
-            cipher
-                .decrypt(
-                    &nonce,
-                    Payload {
-                        msg: ciphertext,
-                        aad: agent_id.as_bytes(),
-                    },
-                )
-                .ok()
+            cipher.decrypt(&nonce, Payload { msg: ciphertext, aad: agent_id.as_bytes() }).ok()
         };
         let (plaintext, stale) = match open(&self.current) {
             Some(plaintext) => (plaintext, false),
-            None => (
-                self.previous
-                    .as_ref()
-                    .and_then(open)
-                    .ok_or(CryptoError::Unauthentic)?,
-                true,
-            ),
+            None => (self.previous.as_ref().and_then(open).ok_or(CryptoError::Unauthentic)?, true),
         };
         let token = String::from_utf8(plaintext).map_err(|_| CryptoError::Malformed)?;
-        Ok(Opened {
-            token: AccessToken::new(token),
-            stale,
-        })
+        Ok(Opened { token: AccessToken::new(token), stale })
     }
 }
 
@@ -145,9 +117,7 @@ impl fmt::Debug for MasterKey {
 }
 
 fn cipher(encoded: &str) -> Result<XChaCha20Poly1305, CryptoError> {
-    let bytes = STANDARD
-        .decode(encoded.trim())
-        .map_err(|_| CryptoError::KeyEncoding)?;
+    let bytes = STANDARD.decode(encoded.trim()).map_err(|_| CryptoError::KeyEncoding)?;
     XChaCha20Poly1305::new_from_slice(&bytes).map_err(|_| CryptoError::KeyLength(bytes.len()))
 }
 

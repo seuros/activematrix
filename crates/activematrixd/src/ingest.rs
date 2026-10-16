@@ -104,11 +104,8 @@ pub fn plan(response: SyncResponse, me: &str, deliver_timeline: bool) -> Batch {
     }
 
     for (room_id, invited) in response.rooms.invite {
-        let mut room = RoomRow {
-            room_id: room_id.clone(),
-            membership: "invite".into(),
-            ..RoomRow::default()
-        };
+        let mut room =
+            RoomRow { room_id: room_id.clone(), membership: "invite".into(), ..RoomRow::default() };
         for event in &invited.invite_state.events {
             planner.state(&mut room, event, me);
         }
@@ -118,11 +115,8 @@ pub fn plan(response: SyncResponse, me: &str, deliver_timeline: bool) -> Batch {
     }
 
     for (room_id, left) in response.rooms.leave {
-        let mut room = RoomRow {
-            room_id: room_id.clone(),
-            membership: "leave".into(),
-            ..RoomRow::default()
-        };
+        let mut room =
+            RoomRow { room_id: room_id.clone(), membership: "leave".into(), ..RoomRow::default() };
         for event in left.state.events.iter().chain(&left.timeline.events) {
             planner.state(&mut room, event, me);
         }
@@ -167,12 +161,7 @@ impl Planner {
             return;
         };
         let content = event.get("content").cloned().unwrap_or_else(|| json!({}));
-        let text = |field: &str| {
-            content
-                .get(field)
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        };
+        let text = |field: &str| content.get(field).and_then(Value::as_str).map(str::to_owned);
         match event_type {
             "m.room.name" => room.name = Some(text("name").unwrap_or_default()),
             "m.room.topic" => room.topic = Some(text("topic").unwrap_or_default()),
@@ -199,11 +188,7 @@ impl Planner {
             _ => {}
         }
         self.state.insert(
-            (
-                room.room_id.clone(),
-                event_type.to_owned(),
-                state_key.to_owned(),
-            ),
+            (room.room_id.clone(), event_type.to_owned(), state_key.to_owned()),
             StateRow {
                 room_id: room.room_id.clone(),
                 event_type: event_type.to_owned(),
@@ -217,11 +202,9 @@ impl Planner {
 
     /// Queues a timeline event for the bots, unless it is the agent's own.
     fn timeline(&mut self, room_id: &str, event: &Value, me: &str) {
-        let (Some(event_id), Some(event_type), Some(sender)) = (
-            str_at(event, "event_id"),
-            str_at(event, "type"),
-            str_at(event, "sender"),
-        ) else {
+        let (Some(event_id), Some(event_type), Some(sender)) =
+            (str_at(event, "event_id"), str_at(event, "type"), str_at(event, "sender"))
+        else {
             return;
         };
         if sender == me {
@@ -272,11 +255,7 @@ impl Planner {
     }
 
     fn push(&mut self, mut row: InboxRow) {
-        if self
-            .inbox
-            .iter()
-            .any(|queued| queued.event_id == row.event_id)
-        {
+        if self.inbox.iter().any(|queued| queued.event_id == row.event_id) {
             return;
         }
         row.seq = self.inbox.len();

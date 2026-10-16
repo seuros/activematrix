@@ -29,11 +29,7 @@ macro_rules! db {
 }
 
 fn batch(value: Value, deliver: bool) -> activematrixd::ingest::Batch {
-    plan(
-        serde_json::from_value::<SyncResponse>(value).unwrap(),
-        ME,
-        deliver,
-    )
+    plan(serde_json::from_value::<SyncResponse>(value).unwrap(), ME, deliver)
 }
 
 fn messages(next_batch: &str, room: &str, ids: &[&str]) -> Value {
@@ -44,7 +40,8 @@ fn messages(next_batch: &str, room: &str, ids: &[&str]) -> Value {
                           "content": { "msgtype": "m.text", "body": format!("body {id}") } })
         })
         .collect();
-    json!({ "next_batch": next_batch, "rooms": { "join": { room: { "timeline": { "events": events } } } } })
+    let timeline = json!({ "timeline": { "events": events } });
+    json!({ "next_batch": next_batch, "rooms": { "join": { room: timeline } } })
 }
 
 async fn inbox_count(db: &TestDb) -> i64 {
@@ -65,21 +62,16 @@ async fn claimed(db: &TestDb, name: &str) -> Uuid {
 async fn the_snapshot_has_every_column_the_daemon_needs() {
     let db = db!();
 
-    Db::from_pool(db.pool.clone())
-        .verify_schema()
-        .await
-        .unwrap();
+    Db::from_pool(db.pool.clone()).verify_schema().await.unwrap();
     sqlx::query("ALTER TABLE active_matrix_outbox DROP COLUMN attempts")
         .execute(&db.pool)
         .await
         .unwrap();
-    let error = Db::from_pool(db.pool.clone())
-        .verify_schema()
-        .await
-        .unwrap_err();
+    let error = Db::from_pool(db.pool.clone()).verify_schema().await.unwrap_err();
 
     assert!(
-        matches!(&error, SchemaError::Missing(missing) if missing == "active_matrix_outbox.attempts"),
+        matches!(&error,
+                 SchemaError::Missing(missing) if missing == "active_matrix_outbox.attempts"),
         "{error}"
     );
     db.drop_schema().await;
@@ -88,13 +80,9 @@ async fn the_snapshot_has_every_column_the_daemon_needs() {
 #[tokio::test]
 async fn only_enabled_logged_in_unheld_agents_are_claimed() {
     let db = db!();
-    let runnable = db
-        .agent("runnable", "https://matrix.test", Some(b"sealed"))
-        .await;
+    let runnable = db.agent("runnable", "https://matrix.test", Some(b"sealed")).await;
     db.agent("no-token", "https://matrix.test", None).await;
-    let disabled = db
-        .agent("disabled", "https://matrix.test", Some(b"sealed"))
-        .await;
+    let disabled = db.agent("disabled", "https://matrix.test", Some(b"sealed")).await;
     sqlx::query("UPDATE active_matrix_agents SET enabled = false WHERE id = $1")
         .bind(disabled)
         .execute(&db.pool)
@@ -105,10 +93,7 @@ async fn only_enabled_logged_in_unheld_agents_are_claimed() {
     let again = agents::claim(&db.pool, "node-b", TTL, 10).await.unwrap();
 
     assert_eq!(claimed.iter().map(|a| a.id).collect::<Vec<_>>(), [runnable]);
-    assert!(
-        again.is_empty(),
-        "a held lease is not claimed by another node"
-    );
+    assert!(again.is_empty(), "a held lease is not claimed by another node");
     let state: String = sqlx::query_scalar("SELECT state FROM active_matrix_agents WHERE id = $1")
         .bind(runnable)
         .fetch_one(&db.pool)
@@ -122,12 +107,7 @@ async fn only_enabled_logged_in_unheld_agents_are_claimed() {
 async fn concurrent_claims_never_share_an_agent() {
     let db = db!();
     for i in 0..20 {
-        db.agent(
-            &format!("agent-{i}"),
-            "https://matrix.test",
-            Some(b"sealed"),
-        )
-        .await;
+        db.agent(&format!("agent-{i}"), "https://matrix.test", Some(b"sealed")).await;
     }
 
     let (a, b) = tokio::join!(
@@ -146,10 +126,7 @@ async fn an_expired_lease_is_claimable_and_renewal_reports_losses() {
     let db = db!();
     let id = claimed(&db, "bot").await;
 
-    assert_eq!(
-        agents::renew(&db.pool, NODE, TTL, &[id]).await.unwrap(),
-        [(id, true)]
-    );
+    assert_eq!(agents::renew(&db.pool, NODE, TTL, &[id]).await.unwrap(), [(id, true)]);
     sqlx::query("UPDATE active_matrix_agents SET lease_expires_at = now() - interval '1 second'")
         .execute(&db.pool)
         .await
@@ -157,13 +134,7 @@ async fn an_expired_lease_is_claimable_and_renewal_reports_losses() {
     let stolen = agents::claim(&db.pool, "node-b", TTL, 10).await.unwrap();
 
     assert_eq!(stolen.len(), 1);
-    assert!(
-        agents::renew(&db.pool, NODE, TTL, &[id])
-            .await
-            .unwrap()
-            .is_empty(),
-        "node-a lost it"
-    );
+    assert!(agents::renew(&db.pool, NODE, TTL, &[id]).await.unwrap().is_empty(), "node-a lost it");
     db.drop_schema().await;
 }
 
@@ -174,13 +145,7 @@ async fn release_leaves_the_agent_offline_and_claimable() {
 
     agents::release(&db.pool, NODE, &[id], false).await.unwrap();
 
-    assert_eq!(
-        agents::claim(&db.pool, "node-b", TTL, 10)
-            .await
-            .unwrap()
-            .len(),
-        1
-    );
+    assert_eq!(agents::claim(&db.pool, "node-b", TTL, 10).await.unwrap().len(), 1);
     db.drop_schema().await;
 }
 
@@ -192,14 +157,17 @@ async fn ingest_mirrors_the_room_and_queues_events_in_order() {
         json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "summary": { "m.joined_member_count": 2 },
             "state": { "events": [
-                { "type": "m.room.name", "state_key": "", "event_id": "$n", "sender": "@alice:matrix.test",
-                  "content": { "name": "Ops" } },
+                { "type": "m.room.name", "state_key": "", "event_id": "$n",
+                  "sender": "@alice:matrix.test", "content": { "name": "Ops" } },
                 { "type": "m.room.member", "state_key": "@alice:matrix.test", "event_id": "$m",
-                  "sender": "@alice:matrix.test", "content": { "membership": "join", "displayname": "Alice" } },
+                  "sender": "@alice:matrix.test",
+                  "content": { "membership": "join", "displayname": "Alice" } },
             ] },
             "timeline": { "events": [
-                { "type": "m.room.message", "event_id": "$2", "sender": "@alice:matrix.test", "content": { "body": "first" } },
-                { "type": "m.room.message", "event_id": "$1", "sender": "@alice:matrix.test", "content": { "body": "second" } },
+                { "type": "m.room.message", "event_id": "$2", "sender": "@alice:matrix.test",
+                  "content": { "body": "first" } },
+                { "type": "m.room.message", "event_id": "$1", "sender": "@alice:matrix.test",
+                  "content": { "body": "second" } },
             ] },
         } } } }),
         true,
@@ -223,13 +191,10 @@ async fn ingest_mirrors_the_room_and_queues_events_in_order() {
     .fetch_all(&db.pool)
     .await
     .unwrap();
-    assert_eq!(
-        bodies,
-        ["first", "second"],
-        "inbox order is sync order, not event id order"
-    );
+    assert_eq!(bodies, ["first", "second"], "inbox order is sync order, not event id order");
     let display: Option<String> = sqlx::query_scalar(
-        "SELECT display_name FROM active_matrix_room_members WHERE agent_id = $1 AND user_id = '@alice:matrix.test'",
+        "SELECT display_name FROM active_matrix_room_members
+         WHERE agent_id = $1 AND user_id = '@alice:matrix.test'",
     )
     .bind(id)
     .fetch_one(&db.pool)
@@ -252,17 +217,8 @@ async fn applying_a_batch_twice_delivers_nothing_twice() {
     let id = claimed(&db, "bot").await;
     let batch = batch(messages("s1", "!r:matrix.test", &["$1", "$2"]), true);
 
-    assert_eq!(
-        ingest::apply(&db.pool, NODE, id, &batch)
-            .await
-            .unwrap()
-            .len(),
-        1
-    );
-    assert_eq!(
-        ingest::apply(&db.pool, NODE, id, &batch).await.unwrap(),
-        Vec::<String>::new()
-    );
+    assert_eq!(ingest::apply(&db.pool, NODE, id, &batch).await.unwrap().len(), 1);
+    assert_eq!(ingest::apply(&db.pool, NODE, id, &batch).await.unwrap(), Vec::<String>::new());
 
     let count = inbox_count(&db).await;
     assert_eq!(count, 2);
@@ -278,13 +234,9 @@ async fn a_lost_lease_writes_nothing() {
         .await
         .unwrap();
 
-    let result = ingest::apply(
-        &db.pool,
-        NODE,
-        id,
-        &batch(messages("s9", "!r:matrix.test", &["$1"]), true),
-    )
-    .await;
+    let result =
+        ingest::apply(&db.pool, NODE, id, &batch(messages("s9", "!r:matrix.test", &["$1"]), true))
+            .await;
 
     assert!(matches!(result, Err(ingest::IngestError::LeaseLost)));
     let count = inbox_count(&db).await;
@@ -298,19 +250,15 @@ async fn later_batches_keep_fields_they_do_not_mention() {
     let id = claimed(&db, "bot").await;
     let named = batch(
         json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": { "state": { "events": [
-            { "type": "m.room.name", "state_key": "", "event_id": "$n", "sender": "@a:m", "content": { "name": "Ops" } },
+            { "type": "m.room.name", "state_key": "", "event_id": "$n", "sender": "@a:m",
+              "content": { "name": "Ops" } },
         ] } } } } }),
         true,
     );
     ingest::apply(&db.pool, NODE, id, &named).await.unwrap();
-    ingest::apply(
-        &db.pool,
-        NODE,
-        id,
-        &batch(messages("s2", "!r:matrix.test", &["$1"]), true),
-    )
-    .await
-    .unwrap();
+    ingest::apply(&db.pool, NODE, id, &batch(messages("s2", "!r:matrix.test", &["$1"]), true))
+        .await
+        .unwrap();
 
     let name: Option<String> =
         sqlx::query_scalar("SELECT name FROM active_matrix_rooms WHERE agent_id = $1")
@@ -326,22 +274,12 @@ async fn later_batches_keep_fields_they_do_not_mention() {
 async fn m_direct_marks_direct_rooms() {
     let db = db!();
     let id = claimed(&db, "bot").await;
-    ingest::apply(
-        &db.pool,
-        NODE,
-        id,
-        &batch(messages("s1", "!dm:matrix.test", &["$1"]), true),
-    )
-    .await
-    .unwrap();
-    ingest::apply(
-        &db.pool,
-        NODE,
-        id,
-        &batch(messages("s2", "!group:matrix.test", &["$2"]), true),
-    )
-    .await
-    .unwrap();
+    ingest::apply(&db.pool, NODE, id, &batch(messages("s1", "!dm:matrix.test", &["$1"]), true))
+        .await
+        .unwrap();
+    ingest::apply(&db.pool, NODE, id, &batch(messages("s2", "!group:matrix.test", &["$2"]), true))
+        .await
+        .unwrap();
 
     let direct = batch(
         json!({ "next_batch": "s3", "account_data": { "events": [
@@ -360,10 +298,7 @@ async fn m_direct_marks_direct_rooms() {
     .unwrap();
     assert_eq!(
         rows,
-        [
-            ("!dm:matrix.test".to_owned(), true),
-            ("!group:matrix.test".to_owned(), false)
-        ]
+        [("!dm:matrix.test".to_owned(), true), ("!group:matrix.test".to_owned(), false)]
     );
     db.drop_schema().await;
 }

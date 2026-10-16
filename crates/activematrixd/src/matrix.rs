@@ -54,14 +54,7 @@ pub async fn login(
         "initial_device_display_name": device_name,
     });
     let response: Response = homeserver
-        .json(
-            Method::POST,
-            "/_matrix/client/v3/login",
-            &[],
-            None,
-            Some(&body),
-            REQUEST_TIMEOUT,
-        )
+        .json(Method::POST, "/_matrix/client/v3/login", &[], None, Some(&body), REQUEST_TIMEOUT)
         .await?;
     Ok(Login {
         user_id: response.user_id,
@@ -80,11 +73,7 @@ pub struct Client {
 
 impl Client {
     pub const fn new(homeserver: Homeserver, token: AccessToken, user_id: String) -> Self {
-        Self {
-            homeserver,
-            token,
-            user_id,
-        }
+        Self { homeserver, token, user_id }
     }
 
     pub fn user_id(&self) -> &str {
@@ -102,21 +91,11 @@ impl Client {
         query: &[(&str, &str)],
         body: Option<&Value>,
     ) -> Result<T, MatrixError> {
-        self.homeserver
-            .json(
-                method,
-                path,
-                query,
-                Some(&self.token),
-                body,
-                REQUEST_TIMEOUT,
-            )
-            .await
+        self.homeserver.json(method, path, query, Some(&self.token), body, REQUEST_TIMEOUT).await
     }
 
     pub async fn whoami(&self) -> Result<WhoAmI, MatrixError> {
-        self.call(Method::GET, "/_matrix/client/v3/account/whoami", &[], None)
-            .await
+        self.call(Method::GET, "/_matrix/client/v3/account/whoami", &[], None).await
     }
 
     /// Long-polls `/sync` for up to `timeout`.
@@ -225,21 +204,13 @@ impl Client {
             body["reason"] = json!(reason);
         }
         let path = format!("/_matrix/client/v3/rooms/{}/{}", seg(room_id), seg(action));
-        self.call::<Value>(Method::POST, &path, &[], Some(&body))
-            .await
-            .map(drop)
+        self.call::<Value>(Method::POST, &path, &[], Some(&body)).await.map(drop)
     }
 
     /// `body` is a `/createRoom` request as the spec defines it.
     pub async fn create_room(&self, body: &Value) -> Result<String, MatrixError> {
-        let response: Value = self
-            .call(
-                Method::POST,
-                "/_matrix/client/v3/createRoom",
-                &[],
-                Some(body),
-            )
-            .await?;
+        let response: Value =
+            self.call(Method::POST, "/_matrix/client/v3/createRoom", &[], Some(body)).await?;
         string_field(&response, "room_id")
     }
 
@@ -249,19 +220,15 @@ impl Client {
         typing: bool,
         timeout: Duration,
     ) -> Result<(), MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/rooms/{}/typing/{}",
-            seg(room_id),
-            seg(&self.user_id)
-        );
+        let path =
+            format!("/_matrix/client/v3/rooms/{}/typing/{}", seg(room_id), seg(&self.user_id));
         let body = if typing {
-            json!({ "typing": true, "timeout": u64::try_from(timeout.as_millis()).unwrap_or(u64::MAX) })
+            let timeout = u64::try_from(timeout.as_millis()).unwrap_or(u64::MAX);
+            json!({ "typing": true, "timeout": timeout })
         } else {
             json!({ "typing": false })
         };
-        self.call::<Value>(Method::PUT, &path, &[], Some(&body))
-            .await
-            .map(drop)
+        self.call::<Value>(Method::PUT, &path, &[], Some(&body)).await.map(drop)
     }
 
     pub async fn receipt(
@@ -276,21 +243,13 @@ impl Client {
             seg(receipt_type),
             seg(event_id)
         );
-        self.call::<Value>(Method::POST, &path, &[], Some(&json!({})))
-            .await
-            .map(drop)
+        self.call::<Value>(Method::POST, &path, &[], Some(&json!({}))).await.map(drop)
     }
 
     /// `field` is `displayname` or `avatar_url`.
     pub async fn set_profile(&self, field: &str, value: &str) -> Result<(), MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/profile/{}/{}",
-            seg(&self.user_id),
-            seg(field)
-        );
-        self.call::<Value>(Method::PUT, &path, &[], Some(&json!({ field: value })))
-            .await
-            .map(drop)
+        let path = format!("/_matrix/client/v3/profile/{}/{}", seg(&self.user_id), seg(field));
+        self.call::<Value>(Method::PUT, &path, &[], Some(&json!({ field: value }))).await.map(drop)
     }
 
     /// Uploads media; returns its `mxc://` URI.
@@ -300,9 +259,8 @@ impl Client {
         filename: Option<&str>,
         bytes: Vec<u8>,
     ) -> Result<String, MatrixError> {
-        let query: Vec<(&str, &str)> = filename
-            .map(|name| vec![("filename", name)])
-            .unwrap_or_default();
+        let query: Vec<(&str, &str)> =
+            filename.map(|name| vec![("filename", name)]).unwrap_or_default();
         let response: Value = self
             .homeserver
             .upload(

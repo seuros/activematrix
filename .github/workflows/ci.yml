@@ -16,11 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # mise owns the toolchain versions, from mise.toml: the same file used
-      # locally decides which Ruby and which Rust.
-      - uses: jdx/mise-action@v4
-      - run: bundle install --jobs 4
-      - run: bundle exec rubocop
+      # Structure only (line length, file length, visibility order, whitespace);
+      # rustfmt and clippy run in the rust job, which has the build cache.
+      - uses: seuros/dictator-setup@v1
+      - run: dictator lint .
 
   ruby:
     runs-on: ubuntu-latest
@@ -41,6 +40,8 @@ jobs:
       RAILS_ENV: test
     steps:
       - uses: actions/checkout@v7
+      # mise owns the toolchain versions, from mise.toml: the same file used
+      # locally decides which Ruby and which Rust.
       - uses: jdx/mise-action@v4
       - run: bundle install --jobs 4
       - name: Prepare the dummy app's database

@@ -11,8 +11,6 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let cli = Activematrixd::parse();
-    let context = Context {
-        config_path: cli.config,
-    };
+    let context = Context { config_path: cli.config };
     cli.command.run_async_with(&context).await
 }

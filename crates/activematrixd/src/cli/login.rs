@@ -39,21 +39,16 @@ impl RunAsyncWith<&Context> for Login {
     async fn run_async_with(self, context: &Context) -> Self::Output {
         let config = context.config()?;
         let key = config.master_key()?;
-        let db = Db::connect(config.database_url()?, 2)
-            .await
-            .context("connecting to the database")?;
-        let agent = agents::find_by_name(db.pool(), &self.agent)
-            .await?
-            .with_context(|| {
-                format!("no agent named {:?}; create it in Rails first", self.agent)
-            })?;
+        let db =
+            Db::connect(config.database_url()?, 2).await.context("connecting to the database")?;
+        let agent = agents::find_by_name(db.pool(), &self.agent).await?.with_context(|| {
+            format!("no agent named {:?}; create it in Rails first", self.agent)
+        })?;
         let homeserver = Homeserver::new(&agent.homeserver_url);
 
         let (user_id, device_id, token) = if self.token_stdin {
             let token = AccessToken::new(read_stdin().await?);
-            let whoami = Client::new(homeserver, token.clone(), String::new())
-                .whoami()
-                .await?;
+            let whoami = Client::new(homeserver, token.clone(), String::new()).whoami().await?;
             let device_id = whoami
                 .device_id
                 .context("the homeserver did not say which device this token is")?;
@@ -76,10 +71,7 @@ impl RunAsyncWith<&Context> for Login {
 
         let sealed = key.seal(agent.id, &token)?;
         agents::store_credentials(db.pool(), agent.id, &user_id, &device_id, &sealed).await?;
-        println!(
-            "✓ {} is logged in as {user_id} (device {device_id})",
-            agent.name
-        );
+        println!("✓ {} is logged in as {user_id} (device {device_id})", agent.name);
         Ok(())
     }
 }

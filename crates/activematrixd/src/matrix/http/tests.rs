@@ -16,10 +16,7 @@ fn success_is_json() {
         interpret(200, &headers(None), br#"{"a":1}"#).unwrap(),
         serde_json::json!({ "a": 1 })
     );
-    assert!(matches!(
-        interpret(200, &headers(None), b"<html>"),
-        Err(MatrixError::Decode(_))
-    ));
+    assert!(matches!(interpret(200, &headers(None), b"<html>"), Err(MatrixError::Decode(_))));
 }
 
 #[test]
@@ -37,24 +34,9 @@ fn errors_follow_the_matrix_conventions() {
             br#"{"errcode":"M_LIMIT_EXCEEDED","retry_after_ms":1500}"#,
             MatrixError::RateLimited(Duration::from_millis(1500)),
         ),
-        (
-            429,
-            None,
-            b"",
-            MatrixError::RateLimited(Duration::from_secs(1)),
-        ),
-        (
-            401,
-            None,
-            br#"{"errcode":"M_UNKNOWN_TOKEN","error":"gone"}"#,
-            MatrixError::UnknownToken,
-        ),
-        (
-            502,
-            None,
-            b"<html>bad gateway</html>",
-            MatrixError::Server(502),
-        ),
+        (429, None, b"", MatrixError::RateLimited(Duration::from_secs(1))),
+        (401, None, br#"{"errcode":"M_UNKNOWN_TOKEN","error":"gone"}"#, MatrixError::UnknownToken),
+        (502, None, b"<html>bad gateway</html>", MatrixError::Server(502)),
         (
             403,
             None,
@@ -82,11 +64,7 @@ fn only_transient_errors_are_retryable() {
     assert!(MatrixError::RateLimited(Duration::ZERO).is_retryable());
     assert!(!MatrixError::UnknownToken.is_retryable());
     assert!(
-        !MatrixError::Rejected {
-            status: 400,
-            errcode: String::new(),
-            message: String::new()
-        }
-        .is_retryable()
+        !MatrixError::Rejected { status: 400, errcode: String::new(), message: String::new() }
+            .is_retryable()
     );
 }

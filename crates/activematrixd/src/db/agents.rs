@@ -23,7 +23,10 @@ pub struct Agent {
     pub settings: Value,
 }
 
-const COLUMNS: &str = "id, name, homeserver_url, user_id, device_id, access_token_ciphertext, sync_token, enabled, settings";
+const COLUMNS: &str = concat!(
+    "id, name, homeserver_url, user_id, device_id, access_token_ciphertext, sync_token, ",
+    "enabled, settings"
+);
 
 /// Runtime states, as the `active_matrix_agents_state` constraint allows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,7 +68,8 @@ pub async fn store_credentials(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE active_matrix_agents SET user_id = $2, device_id = $3, access_token_ciphertext = $4,
-         state = CASE WHEN state = 'failed' THEN 'offline' ELSE state END, last_error = NULL, updated_at = now()
+         state = CASE WHEN state = 'failed' THEN 'offline' ELSE state END, last_error = NULL,
+         updated_at = now()
          WHERE id = $1",
     )
     .bind(id)
@@ -85,13 +89,16 @@ pub async fn reseal(
     id: Uuid,
     ciphertext: &[u8],
 ) -> Result<(), sqlx::Error> {
-    sqlx::query("UPDATE active_matrix_agents SET access_token_ciphertext = $3 WHERE id = $1 AND claimed_by = $2")
-        .bind(id)
-        .bind(node)
-        .bind(ciphertext)
-        .execute(pool)
-        .await
-        .map(drop)
+    sqlx::query(
+        "UPDATE active_matrix_agents SET access_token_ciphertext = $3
+         WHERE id = $1 AND claimed_by = $2",
+    )
+    .bind(id)
+    .bind(node)
+    .bind(ciphertext)
+    .execute(pool)
+    .await
+    .map(drop)
 }
 
 /// Claims up to `limit` runnable agents nobody holds (or whose lease
@@ -105,8 +112,8 @@ pub async fn claim(
 ) -> Result<Vec<Agent>, sqlx::Error> {
     sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "UPDATE active_matrix_agents SET claimed_by = $1,
-           lease_expires_at = now() + make_interval(secs => $2), heartbeat_at = now(), state = 'starting',
-           last_error = NULL, updated_at = now()
+           lease_expires_at = now() + make_interval(secs => $2), heartbeat_at = now(),
+           state = 'starting', last_error = NULL, updated_at = now()
          WHERE id IN (
            SELECT id FROM active_matrix_agents
            WHERE enabled AND access_token_ciphertext IS NOT NULL AND state <> 'failed'
@@ -130,7 +137,8 @@ pub async fn renew(
     ids: &[Uuid],
 ) -> Result<Vec<(Uuid, bool)>, sqlx::Error> {
     sqlx::query_as(
-        "UPDATE active_matrix_agents SET lease_expires_at = now() + make_interval(secs => $3), heartbeat_at = now()
+        "UPDATE active_matrix_agents SET lease_expires_at = now() + make_interval(secs => $3),
+         heartbeat_at = now()
          WHERE id = ANY ($1) AND claimed_by = $2
          RETURNING id, enabled",
     )
@@ -173,7 +181,8 @@ pub async fn set_state(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE active_matrix_agents SET state = $3, last_error = $4,
-         last_error_at = CASE WHEN $4::text IS NULL THEN last_error_at ELSE now() END, updated_at = now()
+         last_error_at = CASE WHEN $4::text IS NULL THEN last_error_at ELSE now() END,
+         updated_at = now()
          WHERE id = $1 AND claimed_by = $2",
     )
     .bind(id)

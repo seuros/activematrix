@@ -57,12 +57,15 @@ pub async fn apply(
     }
     let mut touched = insert_inbox(&mut tx, agent_id, batch).await?;
 
-    sqlx::query("UPDATE active_matrix_agents SET sync_token = $3, updated_at = now() WHERE id = $1 AND claimed_by = $2")
-        .bind(agent_id)
-        .bind(node)
-        .bind(&batch.next_batch)
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query(
+        "UPDATE active_matrix_agents SET sync_token = $3, updated_at = now()
+         WHERE id = $1 AND claimed_by = $2",
+    )
+    .bind(agent_id)
+    .bind(node)
+    .bind(&batch.next_batch)
+    .execute(&mut *tx)
+    .await?;
     tx.commit().await?;
 
     touched.sort();
@@ -84,7 +87,8 @@ async fn upsert_rooms(
     let rooms = Json(&batch.rooms);
     sqlx::query(
         "INSERT INTO active_matrix_rooms (agent_id, room_id, membership)
-         SELECT $1, r.room_id, r.membership FROM jsonb_to_recordset($2::jsonb) AS r(room_id text, membership text)
+         SELECT $1, r.room_id, r.membership
+         FROM jsonb_to_recordset($2::jsonb) AS r(room_id text, membership text)
          ON CONFLICT (agent_id, room_id) DO NOTHING",
     )
     .bind(agent_id)
@@ -104,8 +108,9 @@ async fn upsert_rooms(
            invited_member_count = COALESCE(r.invited_member_count, room.invited_member_count),
            updated_at = now()
          FROM jsonb_to_recordset($2::jsonb) AS r(
-           room_id text, membership text, name text, topic text, canonical_alias text, avatar_url text,
-           room_type text, encrypted boolean, joined_member_count integer, invited_member_count integer)
+           room_id text, membership text, name text, topic text, canonical_alias text,
+           avatar_url text, room_type text, encrypted boolean, joined_member_count integer,
+           invited_member_count integer)
          WHERE room.agent_id = $1 AND room.room_id = r.room_id",
     )
     .bind(agent_id)
@@ -124,12 +129,14 @@ async fn upsert_state(
         return Ok(());
     }
     sqlx::query(
-        "INSERT INTO active_matrix_room_state (agent_id, room_id, event_type, state_key, event_id, sender, content)
+        "INSERT INTO active_matrix_room_state (agent_id, room_id, event_type, state_key, event_id,
+         sender, content)
          SELECT $1, s.room_id, s.event_type, s.state_key, s.event_id, s.sender, s.content
          FROM jsonb_to_recordset($2::jsonb) AS s(
            room_id text, event_type text, state_key text, event_id text, sender text, content jsonb)
          ON CONFLICT (agent_id, room_id, event_type, state_key) DO UPDATE SET
-           event_id = EXCLUDED.event_id, sender = EXCLUDED.sender, content = EXCLUDED.content, updated_at = now()",
+           event_id = EXCLUDED.event_id, sender = EXCLUDED.sender, content = EXCLUDED.content,
+           updated_at = now()",
     )
     .bind(agent_id)
     .bind(Json(&batch.state))
@@ -147,7 +154,8 @@ async fn upsert_members(
         return Ok(());
     }
     sqlx::query(
-        "INSERT INTO active_matrix_room_members (agent_id, room_id, user_id, membership, display_name, avatar_url)
+        "INSERT INTO active_matrix_room_members (agent_id, room_id, user_id, membership,
+         display_name, avatar_url)
          SELECT $1, m.room_id, m.user_id, m.membership, m.display_name, m.avatar_url
          FROM jsonb_to_recordset($2::jsonb) AS m(
            room_id text, user_id text, membership text, display_name text, avatar_url text)
@@ -173,12 +181,13 @@ async fn insert_inbox(
     }
     sqlx::query_scalar(
         "INSERT INTO active_matrix_inbox
-           (agent_id, room_id, event_id, kind, event_type, sender, state_key, content, raw, origin_server_ts)
-         SELECT $1, i.room_id, i.event_id, i.kind, i.event_type, i.sender, i.state_key, i.content, i.raw,
-                i.origin_server_ts
+           (agent_id, room_id, event_id, kind, event_type, sender, state_key, content, raw,
+            origin_server_ts)
+         SELECT $1, i.room_id, i.event_id, i.kind, i.event_type, i.sender, i.state_key,
+                i.content, i.raw, i.origin_server_ts
          FROM jsonb_to_recordset($2::jsonb) AS i(
-           seq integer, room_id text, event_id text, kind text, event_type text, sender text, state_key text,
-           content jsonb, raw jsonb, origin_server_ts bigint)
+           seq integer, room_id text, event_id text, kind text, event_type text, sender text,
+           state_key text, content jsonb, raw jsonb, origin_server_ts bigint)
          ORDER BY i.seq
          ON CONFLICT (agent_id, event_id) DO NOTHING
          RETURNING room_id",

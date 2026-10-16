@@ -34,21 +34,11 @@ impl Fault {
     }
 
     pub const fn server_error() -> Self {
-        Self {
-            status: 500,
-            errcode: None,
-            retry_after_secs: None,
-            retry_after_ms: None,
-        }
+        Self { status: 500, errcode: None, retry_after_secs: None, retry_after_ms: None }
     }
 
     pub fn status(status: u16, errcode: &str) -> Self {
-        Self {
-            status,
-            errcode: Some(errcode.into()),
-            retry_after_secs: None,
-            retry_after_ms: None,
-        }
+        Self { status, errcode: Some(errcode.into()), retry_after_secs: None, retry_after_ms: None }
     }
 }
 
@@ -97,8 +87,8 @@ pub enum AuthError {
 
 #[derive(Default)]
 pub struct Shared {
-    inner: Mutex<Inner>,
     pub sync_wake: Notify,
+    inner: Mutex<Inner>,
 }
 
 #[derive(Default)]
@@ -127,10 +117,7 @@ impl Inner {
         let device_id = format!("FAKEDEV{n}");
         self.sessions.insert(
             token.clone(),
-            Session {
-                user_id: user_id.to_owned(),
-                device_id: device_id.clone(),
-            },
+            Session { user_id: user_id.to_owned(), device_id: device_id.clone() },
         );
         (token, device_id)
     }
@@ -154,11 +141,8 @@ impl Shared {
 
     /// `user` is a localpart or a full user id. Returns (user_id, token, device_id).
     pub fn login(&self, user: &str, password: &str) -> Option<(String, String, String)> {
-        let user_id = if user.starts_with('@') {
-            user.to_owned()
-        } else {
-            format!("@{user}:{SERVER_NAME}")
-        };
+        let user_id =
+            if user.starts_with('@') { user.to_owned() } else { format!("@{user}:{SERVER_NAME}") };
         let mut inner = self.lock();
         if inner.passwords.get(&user_id).map(String::as_str) != Some(password) {
             return None;
@@ -182,11 +166,7 @@ impl Shared {
     }
 
     pub fn push_sync(&self, user_id: &str, batch: Value) {
-        self.lock()
-            .syncs
-            .entry(user_id.to_owned())
-            .or_default()
-            .push_back(batch);
+        self.lock().syncs.entry(user_id.to_owned()).or_default().push_back(batch);
         self.sync_wake.notify_waiters();
     }
 
@@ -208,9 +188,7 @@ impl Shared {
 
     pub fn note_since(&self, user_id: &str, since: Option<&str>) {
         if let Some(since) = since {
-            self.lock()
-                .last_since
-                .insert(user_id.to_owned(), since.to_owned());
+            self.lock().last_since.insert(user_id.to_owned(), since.to_owned());
         }
     }
 
@@ -254,9 +232,7 @@ impl Shared {
     }
 
     pub fn inject(&self, method: Option<&str>, path_prefix: &str, fault: Fault) {
-        self.lock()
-            .faults
-            .push((method.map(str::to_owned), path_prefix.to_owned(), fault));
+        self.lock().faults.push((method.map(str::to_owned), path_prefix.to_owned(), fault));
     }
 
     /// Removes and returns the first fault matching this request.

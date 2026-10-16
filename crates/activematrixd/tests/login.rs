@@ -27,12 +27,7 @@ fn login(db: &TestDb, key: &str, args: &[&str], stdin: &str) -> std::process::Ou
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(stdin.as_bytes())
-        .unwrap();
+    child.stdin.take().unwrap().write_all(stdin.as_bytes()).unwrap();
     child.wait_with_output().unwrap()
 }
 
@@ -40,11 +35,14 @@ async fn credentials(
     db: &TestDb,
     agent: Uuid,
 ) -> (Option<String>, Option<String>, Option<Vec<u8>>) {
-    sqlx::query_as("SELECT user_id, device_id, access_token_ciphertext FROM active_matrix_agents WHERE id = $1")
-        .bind(agent)
-        .fetch_one(&db.pool)
-        .await
-        .unwrap()
+    sqlx::query_as(
+        "SELECT user_id, device_id, access_token_ciphertext FROM active_matrix_agents
+         WHERE id = $1",
+    )
+    .bind(agent)
+    .fetch_one(&db.pool)
+    .await
+    .unwrap()
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -59,24 +57,13 @@ async fn a_token_from_stdin_is_checked_and_sealed() {
 
     let out = login(&db, &key, &["bot", "--token-stdin"], &format!("{token}\n"));
 
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
     assert!(String::from_utf8_lossy(&out.stdout).contains("@bot:matrix.test"));
     let (user_id, device_id, sealed) = credentials(&db, agent).await;
     assert_eq!(user_id.as_deref(), Some("@bot:matrix.test"));
     assert!(device_id.is_some());
-    let opened = MasterKey::from_base64(&key, None)
-        .unwrap()
-        .open(agent, &sealed.unwrap())
-        .unwrap();
-    assert_eq!(
-        opened.token.expose(),
-        token,
-        "sealed for this agent with this key"
-    );
+    let opened = MasterKey::from_base64(&key, None).unwrap().open(agent, &sealed.unwrap()).unwrap();
+    assert_eq!(opened.token.expose(), token, "sealed for this agent with this key");
     db.drop_schema().await;
 }
 
@@ -89,18 +76,9 @@ async fn a_password_from_stdin_logs_in() {
     homeserver.add_user("bot", Some("hunter2"));
     let agent = db.agent("bot", &homeserver.url(), None).await;
 
-    let out = login(
-        &db,
-        &MasterKey::generate(),
-        &["bot", "--password-stdin"],
-        "hunter2\n",
-    );
+    let out = login(&db, &MasterKey::generate(), &["bot", "--password-stdin"], "hunter2\n");
 
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
     assert!(credentials(&db, agent).await.2.is_some());
     db.drop_schema().await;
 }

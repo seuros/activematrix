@@ -10,10 +10,7 @@ fn keygen_prints_a_usable_master_key() {
     let out = usage_rs::test::command!("activematrixd", "keygen").assert_success();
     let key = out.stdout_text().trim();
 
-    assert!(
-        activematrixd::crypto::MasterKey::from_base64(key, None).is_ok(),
-        "{key}"
-    );
+    assert!(activematrixd::crypto::MasterKey::from_base64(key, None).is_ok(), "{key}");
 }
 
 #[test]
@@ -29,11 +26,7 @@ fn check_lists_every_missing_secret() {
     let stdout = String::from_utf8(out.stdout).unwrap();
 
     assert!(!out.status.success());
-    for name in [
-        "DATABASE_URL",
-        "ACTIVEMATRIX_MASTER_KEY",
-        "ACTIVEMATRIX_DELIVERY_URL",
-    ] {
+    for name in ["DATABASE_URL", "ACTIVEMATRIX_MASTER_KEY", "ACTIVEMATRIX_DELIVERY_URL"] {
         assert!(stdout.contains(name), "{name} missing from:\n{stdout}");
     }
 }

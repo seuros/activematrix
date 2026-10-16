@@ -40,8 +40,9 @@ module ActiveMatrix
       end
 
       # expires_in: seconds (or a Duration) until the value reads as missing.
+      # One upsert statement, so there is no read-then-write race.
       def write(key, value, expires_in: nil)
-        Memory.upsert( # rubocop:disable Rails/SkipsModelValidations -- one statement, no read-then-write race
+        Memory.upsert(
           { agent_id: @agent_id, chat_session_id: @chat_session_id, key: key.to_s, value:,
             expires_at: expires_in && (Time.current + expires_in) },
           unique_by: UNIQUE_INDEX

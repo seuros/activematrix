@@ -1,10 +1,12 @@
 //! Shared by the integration tests. (`mod.rs`, not `common.rs`: as a file
 //! of its own under tests/ it would build as a test binary.)
 
+// Each test binary uses a different part.
 #![allow(dead_code)]
-// each test binary uses a different part
 // Test support: a panic here is a failed test, which is what unwrap is for.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+pub mod sink;
 
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
@@ -47,11 +49,9 @@ impl TestDb {
             .after_connect(move |conn, _| {
                 let search_path = search_path.clone();
                 Box::pin(async move {
-                    sqlx::query(sqlx::AssertSqlSafe(format!(
-                        "SET search_path TO {search_path}"
-                    )))
-                    .execute(conn)
-                    .await?;
+                    sqlx::query(sqlx::AssertSqlSafe(format!("SET search_path TO {search_path}")))
+                        .execute(conn)
+                        .await?;
                     Ok(())
                 })
             })
@@ -61,15 +61,9 @@ impl TestDb {
         // The snapshot qualifies every name with `public.` and clears the
         // search path; point both at this test's schema instead.
         let sql = SCHEMA_SQL
-            .replace(
-                "SELECT pg_catalog.set_config('search_path', '', false);",
-                "",
-            )
+            .replace("SELECT pg_catalog.set_config('search_path', '', false);", "")
             .replace("public.", &format!("{schema}."));
-        sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
-            .execute(&pool)
-            .await
-            .unwrap();
+        sqlx::raw_sql(sqlx::AssertSqlSafe(sql)).execute(&pool).await.unwrap();
         Some(Self { pool, schema, url })
     }
 
@@ -85,7 +79,8 @@ impl TestDb {
     /// claimable. Returns its id.
     pub async fn agent(&self, name: &str, homeserver_url: &str, ciphertext: Option<&[u8]>) -> Uuid {
         sqlx::query_scalar(
-            "INSERT INTO active_matrix_agents (name, bot_class, homeserver_url, access_token_ciphertext, created_at, updated_at)
+            "INSERT INTO active_matrix_agents (name, bot_class, homeserver_url,
+             access_token_ciphertext, created_at, updated_at)
              VALUES ($1, 'EchoBot', $2, $3, now(), now()) RETURNING id",
         )
         .bind(name)
@@ -112,10 +107,7 @@ impl TestDb {
 /// after a few seconds rather than the pool's 30.
 async fn connect_creating(url: &str) -> Result<PgPool, sqlx::Error> {
     let connect = |url: String| async move {
-        PgPoolOptions::new()
-            .acquire_timeout(std::time::Duration::from_secs(5))
-            .connect(&url)
-            .await
+        PgPoolOptions::new().acquire_timeout(std::time::Duration::from_secs(5)).connect(&url).await
     };
     match connect(url.to_owned()).await {
         Err(sqlx::Error::Database(error)) if error.code().as_deref() == Some("3D000") => {
@@ -141,10 +133,7 @@ impl TestDb {
     /// A URL whose connections land in this test's schema, for the daemon.
     pub fn scoped_url(&self) -> String {
         let separator = if self.url.contains('?') { '&' } else { '?' };
-        format!(
-            "{}{separator}options=-c%20search_path%3D{}",
-            self.url, self.schema
-        )
+        format!("{}{separator}options=-c%20search_path%3D{}", self.url, self.schema)
     }
 }
 
@@ -156,104 +145,7 @@ where
 {
     let deadline = tokio::time::Instant::now() + timeout;
     while !check().await {
-        assert!(
-            tokio::time::Instant::now() < deadline,
-            "timed out waiting for {what}"
-        );
+        assert!(tokio::time::Instant::now() < deadline, "timed out waiting for {what}");
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-    }
-}
-
-/// Stands in for the Rails delivery endpoint: records every push.
-pub mod sink {
-    use std::convert::Infallible;
-    use std::sync::{Arc, Mutex};
-
-    use rama::graceful::Shutdown;
-    use rama::http::body::util::BodyExt;
-    use rama::http::server::HttpServer;
-    use rama::http::{Body, Request, Response, StatusCode};
-    use rama::rt::Executor;
-    use rama::service::service_fn;
-    use rama::tcp::server::TcpListener;
-
-    #[derive(Debug, Clone)]
-    pub struct Push {
-        pub timestamp: String,
-        pub signature: String,
-        pub body: String,
-    }
-
-    pub struct Sink {
-        pub url: String,
-        pushes: Arc<Mutex<Vec<Push>>>,
-        _stop: tokio::sync::oneshot::Sender<()>,
-    }
-
-    impl Sink {
-        pub async fn start() -> Self {
-            let pushes = Arc::new(Mutex::new(Vec::new()));
-            let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
-            let graceful = Shutdown::new(async move {
-                let _ = stopped.await;
-            });
-            let executor = Executor::graceful(graceful.guard());
-            let listener = TcpListener::bind_address("127.0.0.1:0", executor.clone())
-                .await
-                .unwrap();
-            let url = format!(
-                "http://{}/active_matrix/deliveries",
-                listener.local_addr().unwrap()
-            );
-            let recorded = Arc::clone(&pushes);
-            let app = service_fn(move |request: Request| {
-                let recorded = Arc::clone(&recorded);
-                async move {
-                    let header = |name: &str| {
-                        request
-                            .headers()
-                            .get(name)
-                            .and_then(|v| v.to_str().ok())
-                            .unwrap_or_default()
-                            .to_owned()
-                    };
-                    let (timestamp, signature) = (
-                        header("x-activematrix-timestamp"),
-                        header("x-activematrix-signature"),
-                    );
-                    let body = request
-                        .into_body()
-                        .collect()
-                        .await
-                        .map(rama::http::body::util::Collected::to_bytes)
-                        .unwrap_or_default();
-                    recorded.lock().unwrap().push(Push {
-                        timestamp,
-                        signature,
-                        body: String::from_utf8_lossy(&body).into_owned(),
-                    });
-                    Ok::<_, Infallible>(
-                        Response::builder()
-                            .status(StatusCode::ACCEPTED)
-                            .body(Body::empty())
-                            .unwrap(),
-                    )
-                }
-            });
-            tokio::spawn(async move {
-                listener
-                    .serve(HttpServer::auto(executor).service(app))
-                    .await;
-            });
-            Self {
-                url,
-                pushes,
-                _stop: stop,
-            }
-        }
-
-        pub fn pushes(&self) -> Vec<Push> {
-            self.pushes.lock().unwrap().clone()
-        }
     }
 }

@@ -55,26 +55,11 @@ pub const REQUIRED: &[(&str, &[&str])] = &[
     ),
     (
         "active_matrix_room_members",
-        &[
-            "agent_id",
-            "room_id",
-            "user_id",
-            "membership",
-            "display_name",
-            "avatar_url",
-        ],
+        &["agent_id", "room_id", "user_id", "membership", "display_name", "avatar_url"],
     ),
     (
         "active_matrix_room_state",
-        &[
-            "agent_id",
-            "room_id",
-            "event_type",
-            "state_key",
-            "event_id",
-            "sender",
-            "content",
-        ],
+        &["agent_id", "room_id", "event_type", "state_key", "event_id", "sender", "content"],
     ),
     (
         "active_matrix_inbox",
@@ -117,7 +102,8 @@ pub const REQUIRED: &[(&str, &[&str])] = &[
 #[derive(Debug, thiserror::Error)]
 pub enum SchemaError {
     #[error(
-        "the database is missing ActiveMatrix tables or columns ({0}); run `bin/rails active_matrix:install:migrations db:migrate`"
+        "the database is missing ActiveMatrix tables or columns ({0}); run \
+         `bin/rails active_matrix:install:migrations db:migrate`"
     )]
     Missing(String),
     #[error(transparent)]
@@ -167,10 +153,6 @@ impl Db {
             })
             .map(|(table, column)| format!("{table}.{column}"))
             .collect();
-        if missing.is_empty() {
-            Ok(())
-        } else {
-            Err(SchemaError::Missing(missing.join(", ")))
-        }
+        if missing.is_empty() { Ok(()) } else { Err(SchemaError::Missing(missing.join(", "))) }
     }
 }

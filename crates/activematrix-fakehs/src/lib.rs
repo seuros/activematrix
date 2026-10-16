@@ -65,19 +65,13 @@ impl FakeHomeserver {
         let app_state = Arc::clone(&shared);
         let app = service_fn(move |request| server::handle(Arc::clone(&app_state), request));
         tokio::spawn(async move {
-            listener
-                .serve(HttpServer::auto(executor).service(app))
-                .await;
+            listener.serve(HttpServer::auto(executor).service(app)).await;
         });
         tokio::spawn(async move {
             // The limit only bounds open long-polls at shutdown.
             let _ = graceful.shutdown_with_limit(Duration::from_secs(5)).await;
         });
-        Ok(Self {
-            addr,
-            shared,
-            stop: Some(stop),
-        })
+        Ok(Self { addr, shared, stop: Some(stop) })
     }
 
     pub fn url(&self) -> String {
@@ -175,8 +169,10 @@ pub mod batch {
     /// An invite to `room_id` from `inviter`, as stripped state.
     pub fn invite(room_id: &str, inviter: &str, target: &str) -> Value {
         json!({ "rooms": { "invite": { room_id: { "invite_state": { "events": [
-            { "type": "m.room.name", "state_key": "", "sender": inviter, "content": { "name": "Invited" } },
-            { "type": "m.room.member", "state_key": target, "sender": inviter, "content": { "membership": "invite" } },
+            { "type": "m.room.name", "state_key": "", "sender": inviter,
+              "content": { "name": "Invited" } },
+            { "type": "m.room.member", "state_key": target, "sender": inviter,
+              "content": { "membership": "invite" } },
         ] } } } } })
     }
 }
