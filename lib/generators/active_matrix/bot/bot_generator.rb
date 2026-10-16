@@ -4,45 +4,31 @@ require 'rails/generators'
 
 module ActiveMatrix
   module Generators
+    # A bot and its test: rails g active_matrix:bot greeter ping status
     class BotGenerator < Rails::Generators::NamedBase
       source_root File.expand_path('templates', __dir__)
 
-      desc 'Creates a new ActiveMatrix bot'
+      desc 'Creates a bot in app/bots and its test in test/bots'
 
-      argument :commands, type: :array, default: [], banner: 'command1 command2'
+      argument :commands, type: :array, default: [], banner: 'command command'
 
       check_class_collision suffix: 'Bot'
 
-      def create_bot_file
-        template 'bot.rb.erb', "app/bots/#{file_name}_bot.rb"
+      def create_bot
+        template 'bot.rb.tt', "app/bots/#{bot_file_name}.rb"
       end
 
-      def create_bot_test
-        template 'bot_test.rb.erb', "test/bots/#{file_name}_bot_test.rb"
-      end
-
-      def display_usage
-        say "\nBot created! To use your bot:\n\n"
-        say '1. Create an agent in Rails console:'
-        say '   agent = ActiveMatrix::Agent.create!('
-        say "     name: '#{file_name.dasherize}',"
-        say "     matrix_connection: 'primary',"
-        say "     bot_class: '#{class_name}Bot'"
-        say '   )'
-        say "\n2. Start the daemon:"
-        say '   bundle exec activematrix start'
-        say "\n"
+      def create_test
+        template 'bot_test.rb.tt', "test/bots/#{bot_file_name}_test.rb"
       end
 
       private
 
-      def file_name
-        @_file_name ||= remove_possible_suffix(super)
-      end
-
-      def remove_possible_suffix(name)
-        name.sub(/_?bot$/i, '')
-      end
+      # `greeter`, `greeter_bot` and `GreeterBot` all make GreeterBot.
+      def bot_name = file_name.delete_suffix('_bot')
+      def bot_file_name = "#{bot_name}_bot"
+      def bot_class_name = "#{bot_name.camelize}Bot"
+      def command_names = commands.presence || ['ping']
     end
   end
 end

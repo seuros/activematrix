@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+class <%= bot_class_name %> < ApplicationBot
+<% command_names.each_with_index do |command, index| -%>
+<% if index.positive? -%>
+
+<% end -%>
+  command :<%= command %>, '<%= command.humanize %>' do
+    reply '<%= command == 'ping' ? 'pong' : command %>'
+  end
+<% end -%>
+end

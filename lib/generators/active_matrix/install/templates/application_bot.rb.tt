@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+# What every bot in this app shares. Bots are ActiveMatrix::Bot::Base
+# subclasses; each event runs one instance, in a job.
+class ApplicationBot < ActiveMatrix::Bot::Base
+end

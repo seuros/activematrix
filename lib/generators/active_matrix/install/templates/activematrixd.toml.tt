@@ -1,0 +1,25 @@
+# activematrixd's settings. Secrets never go here: the daemon reads them from
+# the environment.
+#
+#   ACTIVEMATRIX_DATABASE_URL       (or DATABASE_URL) this app's database
+#   ACTIVEMATRIX_MASTER_KEY         seals access tokens; `activematrix keygen`
+#   ACTIVEMATRIX_DELIVERY_SECRET    signs deliveries; also set for Rails
+#
+# Every setting below can be overridden with ACTIVEMATRIX_<NAME> (upper case).
+
+# Where the daemon pushes new events: this app's mounted engine.
+delivery_url = "http://localhost:3000/active_matrix/deliveries"
+
+# Probes (/livez, /readyz, /status, /metrics). Bind 0.0.0.0 in containers.
+probe_bind = "127.0.0.1:3042"
+
+# Agents one daemon process runs; run more processes or replicas to scale.
+max_agents = 100
+
+# Leases: a daemon renews its agents every heartbeat; another daemon takes
+# over agents whose lease ran out. The lease must be at least 3 heartbeats.
+heartbeat_secs = 10
+lease_ttl_secs = 30
+
+# How long a drain on SIGTERM waits for agents before releasing them.
+shutdown_timeout_secs = 30

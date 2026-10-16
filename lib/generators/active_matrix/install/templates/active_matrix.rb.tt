@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+ActiveMatrix.configure do |config|
+  # activematrixd signs the events it pushes to /active_matrix/deliveries
+  # with this secret: the same value as its ACTIVEMATRIX_DELIVERY_SECRET.
+  config.delivery_secret = Rails.application.credentials.dig(:active_matrix, :delivery_secret) ||
+                           ENV.fetch('ACTIVEMATRIX_DELIVERY_SECRET', nil)
+
+  # How long handled events (the bots' message history) and sent commands
+  # are kept before ActiveMatrix::MemoryReaperJob deletes them.
+  # config.inbox_retention = 30.days.to_i
+  # config.outbox_retention = 7.days.to_i
+end

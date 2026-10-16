@@ -148,3 +148,20 @@ fn loads_an_explicit_file() {
         Err(ConfigError::Read { .. })
     ));
 }
+
+/// The file the Rails install generator writes must be one the daemon reads.
+#[test]
+fn the_generated_config_file_parses() {
+    const GENERATED: &str = include_str!(
+        "../../../../lib/generators/active_matrix/install/templates/activematrixd.toml.tt"
+    );
+
+    let file: File = toml::from_str(GENERATED).unwrap();
+    let config = Config::build(file, &env(&[])).unwrap();
+
+    assert_eq!(config.lease_ttl, Duration::from_secs(30));
+    assert_eq!(
+        config.probe_bind,
+        "127.0.0.1:3042".parse::<SocketAddr>().unwrap()
+    );
+}

@@ -14,6 +14,8 @@ module ActiveMatrix
   Loader.ignore("#{__dir__}/activematrix.rb")
   # Loaded by exe/activematrix without Rails, so required, not autoloaded.
   Loader.ignore("#{__dir__}/active_matrix/daemon.rb")
+  # Test support, required by the app's test helper; never eager loaded.
+  Loader.ignore("#{__dir__}/active_matrix/testing.rb")
   Loader.inflector.inflect('mxid' => 'MXID')
   Loader.setup
 

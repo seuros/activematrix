@@ -1,149 +1,71 @@
 # frozen_string_literal: true
 
 module ActiveMatrix
+  # A Matrix identifier: user id, room id, room alias or event id, parsed by
+  # the spec's grammar.
+  #
+  # Room ids from room version 12 and event ids from room version 3 have no
+  # server part: they are hashes. Server names may be DNS names, IPv4, or
+  # bracketed IPv6, each with an optional port.
   class MXID
-    attr_accessor :sigil, :localpart, :domain, :port
+    SIGILS = { '@' => :user_id, '!' => :room_id, '#' => :room_alias, '$' => :event_id }.freeze
+    MAX_LENGTH = 255
 
-    # @param identifier [String] The Matrix ID string in the format of '&<localpart>:<domain>' where '&' is the sigil
+    HOST = /(?:\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?)/
+    SERVER_NAME = /(?<host>#{HOST})(?::(?<port>\d{1,5}))?/
+    WITH_SERVER = /\A(?<sigil>[@!#$])(?<localpart>[^:\s]+):#{SERVER_NAME}\z/
+    # Room v12 room ids and room v3+ event ids: a hash, base64 (v3) or
+    # URL-safe base64 (v4 and later), without padding.
+    HASH_ONLY = %r{\A(?<sigil>[!$])(?<localpart>[A-Za-z0-9+/_-]{43,44})\z}
+
+    attr_reader :sigil, :localpart, :host, :port
+
+    def self.parse(identifier) = new(identifier)
+
+    def self.valid?(identifier)
+      new(identifier)
+      true
+    rescue ArgumentError
+      false
+    end
+
     def initialize(identifier)
-      raise ArgumentError, 'Identifier must be a String' unless identifier.is_a? String
-      raise ArgumentError, 'Identifier is too long' if identifier.size > 255
-      unless %r{^([@!$+#][^:]+:[^:]+(?::\d+)?)|(\$[A-Za-z0-9+/]+)$}.match?(identifier)
-        raise ArgumentError,
-              'Identifier lacks required data'
-      end
+      identifier = identifier.to_s
+      raise ArgumentError, 'Matrix identifier is too long' if identifier.bytesize > MAX_LENGTH
 
-      # TODO: Community-as-a-Room / Profile-as-a-Room, in case they're going for room aliases
-      @sigil = identifier[0]
-      @localpart, @domain, @port = identifier[1..].split(':')
-      @port = @port.to_i if @port
+      match = WITH_SERVER.match(identifier) || HASH_ONLY.match(identifier)
+      raise ArgumentError, "not a Matrix identifier: #{identifier.inspect}" unless match
 
-      raise ArgumentError, 'Identifier is not a valid MXID' unless valid?
+      @sigil = match[:sigil]
+      @localpart = match[:localpart]
+      @host = match.names.include?('host') ? match[:host] : nil
+      @port = match.names.include?('port') && match[:port] ? Integer(match[:port], 10) : nil
+      raise ArgumentError, "port out of range in #{identifier.inspect}" if @port && !@port.between?(1, 65_535)
     end
 
-    # Gets the homeserver part of the ID
-    #
-    # @example A simple MXID
-    #   id = MXID.new('@alice:example.org')
-    #   id.homeserver
-    #   # => 'example.org'
-    #
-    # @example A fully qualified MXID
-    #   id = MXID.new('@user:some.direct.domain:443')
-    #   id.homeserver
-    #   # => 'some.direct.domain:443'
-    #
-    # @return [String]
-    def homeserver
-      port_s = port ? ":#{port}" : ''
-      domain ? domain + port_s : ''
+    def type = SIGILS.fetch(sigil)
+
+    # host[:port], or nil for an identifier without a server part.
+    def server_name
+      return unless host
+
+      port ? "#{host}:#{port}" : host
     end
 
-    # Gets the homserver part of the ID as a suffix (':homeserver')
-    def homeserver_suffix
-      ":#{homeserver}" if domain
-    end
+    def user? = type == :user_id
+    def room_id? = type == :room_id
+    def room_alias? = type == :room_alias
+    def room? = room_id? || room_alias?
+    def event? = type == :event_id
 
-    def to_s
-      "#{sigil}#{localpart}#{homeserver_suffix}"
-    end
-
+    def to_s = server_name ? "#{sigil}#{localpart}:#{server_name}" : "#{sigil}#{localpart}"
     alias to_str to_s
 
-    # Returns the type of the ID
-    #
-    # @return [Symbol] The MXID type, one of (:user_id, :room_id, :event_id, :group_id, or :room_alias)
-    def type
-      {
-        '@' => :user_id,
-        '!' => :room_id,
-        '$' => :event_id,
-        '+' => :group_id,
-        '#' => :room_alias
-      }[sigil]
-    end
+    def ==(other) = other.to_s == to_s
+    alias eql? ==
 
-    # Checks if the ID is valid
-    #
-    # @return [Boolean] If the ID is a valid Matrix ID
-    def valid?
-      !type.nil?
-    end
+    delegate :hash, to: :to_s
 
-    # Check if the ID is of a user
-    # @return [Boolean] if the ID is of the user_id type
-    def user?
-      type == :user_id
-    end
-
-    # Check if the ID is of a group
-    # @return [Boolean] if the ID is of the group_id type
-    def group?
-      type == :group_id
-    end
-
-    # Check if the ID is of a room
-    # @return [Boolean] if the ID is of the room_id or room_alias types
-    def room?
-      %i[room_id room_alias].include?(type)
-    end
-
-    # Check if the ID is of a event
-    # @return [Boolean] if the ID is of the event_id type
-    def event?
-      type == :event_id
-    end
-
-    # Check if the ID is a room_id
-    # @return [Boolean] if the ID is of the room_id type
-    def room_id?
-      type == :room_id
-    end
-
-    # Check if the ID is a room_alias
-    # @return [Boolean] if the ID is of the room_alias type
-    def room_alias?
-      type == :room_alias
-    end
-
-    # Converts the MXID to a matrix: URI according to MSC2312
-    # @param event_id [String,MXID] An event ID to append to the URI (only valid for rooms)
-    # @param action [String,Symbol] The action that should be requested
-    # @param via [Array[String]] The list of servers to use for a join
-    # @see https://github.com/matrix-org/matrix-doc/blob/master/proposals/2312-matrix-uri.md
-    def to_uri(event_id: nil, action: nil, via: nil)
-      uri = ''
-
-      case sigil
-      when '@'
-        raise ArgumentError, "can't provide via for user URIs" if via
-        raise ArgumentError, "can't provide event_id for user URIs" if event_id
-
-        uri += 'u'
-      when '#'
-        uri += 'r'
-      when '!'
-        uri += 'roomid'
-      else
-        raise ArgumentError, "this MXID can't be converted to a URI"
-      end
-
-      uri = "matrix:#{uri}/#{localpart}#{homeserver_suffix}"
-
-      uri += "/e/#{event_id.to_s.delete_prefix('$')}" if event_id
-      query = []
-      query << "action=#{action}" if action
-      [via].flatten.compact.each { |v| query << "via=#{v}" }
-
-      uri += "?#{query.join('&')}" unless query.empty?
-
-      URI(uri)
-    end
-
-    # Check if two MXIDs are equal
-    # @return [Boolean]
-    def ==(other)
-      to_s == other.to_s
-    end
+    def inspect = "#<#{self.class.name} #{self}>"
   end
 end

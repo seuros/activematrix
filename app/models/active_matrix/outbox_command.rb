@@ -31,12 +31,15 @@ module ActiveMatrix
     attr_readonly :attempts, :result, :last_error, :sent_at
 
     validates :kind, inclusion: { in: KINDS }
-    validates :room_id, presence: true, unless: -> { ROOMLESS_KINDS.include?(kind) }
+    validates :room_id, presence: true, unless: :roomless?
     validate :payload_is_an_object
 
     after_create :notify_daemon
 
     def finished? = sent? || failed?
+
+    # Joining by alias names the room in the payload instead.
+    def roomless? = ROOMLESS_KINDS.include?(kind) || (kind == 'join' && payload.is_a?(Hash) && payload['room'].present?)
 
     # Blocks until the daemon has sent or given up on this command, then
     # returns it reloaded. Only outside a transaction: inside one the row is

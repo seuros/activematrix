@@ -8,9 +8,15 @@ module ActiveMatrix
     # can look.
     attr_accessor :inbox_retention, :outbox_retention
 
+    # Verifies the daemon's delivery requests. The same value as the
+    # daemon's ACTIVEMATRIX_DELIVERY_SECRET; defaults to that variable.
+    attr_writer :delivery_secret
+
     def initialize
       @inbox_retention = 30 * 86_400
       @outbox_retention = 7 * 86_400
     end
+
+    def delivery_secret = @delivery_secret || ENV.fetch('ACTIVEMATRIX_DELIVERY_SECRET', nil)
   end
 end

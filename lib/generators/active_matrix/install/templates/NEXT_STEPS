@@ -1,0 +1,21 @@
+
+ActiveMatrix is installed. Next:
+
+  1. bin/rails db:migrate
+
+  2. Secrets, for both the daemon and Rails:
+       export ACTIVEMATRIX_MASTER_KEY=$(bundle exec activematrix keygen)
+       export ACTIVEMATRIX_DELIVERY_SECRET=$(openssl rand -hex 32)
+
+  3. A bot and an agent to run it:
+       bin/rails generate active_matrix:bot greeter
+       bin/rails runner "ActiveMatrix::Agent.create!(name: 'greeter', bot_class: 'GreeterBot',
+                                                      homeserver_url: 'https://matrix.example.org')"
+       bundle exec activematrix login greeter
+
+  4. The daemon, next to your web and job processes:
+       bundle exec activematrix start
+
+  Schedule ActiveMatrix::MemoryReaperJob (e.g. hourly in config/recurring.yml)
+  to prune expired memories and old inbox and outbox rows.
+
