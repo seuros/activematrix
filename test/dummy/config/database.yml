@@ -12,6 +12,8 @@ development:
   <<: *default
   database: activematrix_development
 
+# System tests use their own (ACTIVEMATRIX_TEST_DATABASE=activematrix_system), so
+# rows they commit for the daemon never meet the unit suite.
 test:
   <<: *default
-  database: activematrix_test
+  database: <%= ENV.fetch('ACTIVEMATRIX_TEST_DATABASE', 'activematrix_test') %>

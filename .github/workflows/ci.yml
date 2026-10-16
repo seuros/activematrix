@@ -71,6 +71,34 @@ jobs:
           bundle exec rake active_matrix:schema_snapshot
           git diff --exit-code crates/activematrixd/tests/schema.sql
 
+  # The daemon, the dummy app over HTTP (shuttlebay) and activematrix-fakehs,
+  # end to end. Against Synapse: contract.yml.
+  system:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: activematrix
+          POSTGRES_PASSWORD: activematrix
+          POSTGRES_DB: activematrix_test
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 20
+        ports: ["5432:5432"]
+    env:
+      DATABASE_URL: postgresql://activematrix:activematrix@localhost:5432
+      CARGO_BUILD_WARNINGS: deny
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - uses: Swatinem/rust-cache@v2
+      - run: bundle install --jobs 4
+      # Builds activematrixd and activematrix-fakehs, prepares the database,
+      # runs test/system.
+      - run: bundle exec rake test:system ARGS='-j 4 --junit tmp/system.xml'
+
   rust:
     runs-on: ubuntu-latest
     services:

@@ -12,3 +12,23 @@ services:
       interval: 2s
       timeout: 2s
       retries: 15
+
+  # The contract tier's homeserver: docker compose --profile contract up -d
+  synapse:
+    image: matrixdotorg/synapse:v1.163.0
+    profiles: [contract]
+    ports:
+      - 8008:8008
+    environment:
+      SYNAPSE_CONFIG_PATH: /config/homeserver.yaml
+    volumes:
+      - ./test/system/synapse:/config:ro
+    # State lives in memory: every start is an empty server. Synapse runs as
+    # 991 and writes its signing key there.
+    tmpfs:
+      - /data:uid=991,gid=991,mode=0750
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:8008/health]
+      interval: 2s
+      timeout: 2s
+      retries: 30
