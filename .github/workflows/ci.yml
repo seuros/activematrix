@@ -96,19 +96,22 @@ jobs:
         run: |
           set -euo pipefail
           home="$(mktemp -d)"
+          # Before leaving the checkout: mise resolves Ruby from mise.toml.
+          gemdir="$(ruby -e 'print Gem.dir')"
           gem install --local --ignore-dependencies --no-document --install-dir "$home" \
             pkg/activematrix-*-x86_64-linux-gnu.gem
           cd "$(mktemp -d)"
-          GEM_HOME="$home" GEM_PATH="$home:$(ruby -e 'print Gem.dir')" "$home/bin/activematrix" version
+          GEM_HOME="$home" GEM_PATH="$home:$gemdir" "$home/bin/activematrix" version
       - name: The platformless launcher says how to get a binary
         run: |
           set -euo pipefail
           home="$(mktemp -d)"
+          gemdir="$(ruby -e 'print Gem.dir')"
           version="$(ruby -r ./lib/active_matrix/version -e 'print ActiveMatrix::VERSION')"
           gem install --local --ignore-dependencies --no-document --install-dir "$home" \
             "pkg/activematrix-${version}.gem"
           cd "$(mktemp -d)"
-          if GEM_HOME="$home" GEM_PATH="$home:$(ruby -e 'print Gem.dir')" "$home/bin/activematrix" version 2> err; then
+          if GEM_HOME="$home" GEM_PATH="$home:$gemdir" "$home/bin/activematrix" version 2> err; then
             echo "expected the platformless launcher to fail"; exit 1
           fi
           grep -q ACTIVEMATRIX_INSTALL_DIR err
