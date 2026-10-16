@@ -95,7 +95,8 @@ pub async fn reseal(
 }
 
 /// Claims up to `limit` runnable agents nobody holds (or whose lease
-/// expired). Two daemons claiming at once never get the same agent.
+/// expired). Two daemons claiming at once never get the same agent. Failed
+/// agents wait for `activematrix login`, which resets them.
 pub async fn claim(
     pool: &PgPool,
     node: &str,
@@ -108,7 +109,7 @@ pub async fn claim(
            last_error = NULL, updated_at = now()
          WHERE id IN (
            SELECT id FROM active_matrix_agents
-           WHERE enabled AND access_token_ciphertext IS NOT NULL
+           WHERE enabled AND access_token_ciphertext IS NOT NULL AND state <> 'failed'
              AND (claimed_by IS NULL OR lease_expires_at < now())
            ORDER BY id LIMIT $3 FOR UPDATE SKIP LOCKED)
          RETURNING {COLUMNS}"
@@ -140,15 +141,22 @@ pub async fn renew(
     .await
 }
 
-/// Gives the leases back, leaving the agents offline for the next claimer.
-pub async fn release(pool: &PgPool, node: &str, ids: &[Uuid]) -> Result<(), sqlx::Error> {
+/// Gives the leases back. The agents are left offline for the next claimer,
+/// or failed, which `claim` skips until they log in again.
+pub async fn release(
+    pool: &PgPool,
+    node: &str,
+    ids: &[Uuid],
+    failed: bool,
+) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "UPDATE active_matrix_agents SET claimed_by = NULL, lease_expires_at = NULL, state = 'offline',
-         updated_at = now()
+        "UPDATE active_matrix_agents SET claimed_by = NULL, lease_expires_at = NULL,
+         state = CASE WHEN $3 THEN 'failed' ELSE 'offline' END, updated_at = now()
          WHERE id = ANY ($1) AND claimed_by = $2",
     )
     .bind(ids)
     .bind(node)
+    .bind(failed)
     .execute(pool)
     .await
     .map(drop)

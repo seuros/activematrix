@@ -14,7 +14,7 @@ use rama::http::Method;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-pub use http::{Homeserver, MatrixError};
+pub use http::{Homeserver, MatrixError, install_crypto_provider};
 
 use crate::crypto::AccessToken;
 

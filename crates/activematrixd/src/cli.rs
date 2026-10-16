@@ -1,7 +1,14 @@
 //! Command line. Parsing lives in the library so tests and `main` share it.
 
+// The derived async dispatch is generic over the context with no `Send`
+// bound; clippy::nursery fires on the generated impl, and only a module-level
+// allow reaches it.
+#![allow(clippy::future_not_send)]
+
 mod check;
 mod keygen;
+mod login;
+mod start;
 mod version;
 
 use std::path::PathBuf;
@@ -10,6 +17,8 @@ use usage_rs::{Cli, Subcommands};
 
 pub use check::Check;
 pub use keygen::Keygen;
+pub use login::Login;
+pub use start::Start;
 pub use version::Version;
 
 use crate::config::Config;
@@ -32,12 +41,14 @@ pub struct Activematrixd {
 }
 
 #[derive(Subcommands, Debug)]
-#[usage(run_with)]
+#[usage(run_async_with)]
 pub enum Commands {
+    Start(Start),
+    Login(Login),
     Check(Check),
-    #[usage(no_ctx)]
+    #[usage(no_ctx, run)]
     Keygen(Keygen),
-    #[usage(no_ctx)]
+    #[usage(no_ctx, run)]
     Version(Version),
 }
 

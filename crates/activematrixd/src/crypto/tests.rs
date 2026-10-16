@@ -1,12 +1,16 @@
 use super::*;
 
+fn key() -> MasterKey {
+    MasterKey::from_base64(&MasterKey::generate(), None).unwrap()
+}
+
 fn token() -> AccessToken {
     AccessToken::new("syt_secret_token".to_owned())
 }
 
 #[test]
 fn seals_and_opens() {
-    let key = MasterKey::from_base64(&MasterKey::generate(), None).unwrap();
+    let key = key();
     let agent = Uuid::now_v7();
 
     let opened = key
@@ -19,7 +23,7 @@ fn seals_and_opens() {
 
 #[test]
 fn each_seal_uses_a_fresh_nonce() {
-    let key = MasterKey::from_base64(&MasterKey::generate(), None).unwrap();
+    let key = key();
     let agent = Uuid::now_v7();
 
     assert_ne!(
@@ -30,7 +34,7 @@ fn each_seal_uses_a_fresh_nonce() {
 
 #[test]
 fn a_token_does_not_open_for_another_agent() {
-    let key = MasterKey::from_base64(&MasterKey::generate(), None).unwrap();
+    let key = key();
     let sealed = key.seal(Uuid::now_v7(), &token()).unwrap();
 
     assert_eq!(
@@ -66,7 +70,7 @@ fn rejects_bad_keys_and_tampered_tokens() {
         CryptoError::KeyLength(16)
     );
 
-    let key = MasterKey::from_base64(&MasterKey::generate(), None).unwrap();
+    let key = key();
     let agent = Uuid::now_v7();
     let mut sealed = key.seal(agent, &token()).unwrap();
     *sealed.last_mut().unwrap() ^= 1;
@@ -84,7 +88,7 @@ fn rejects_bad_keys_and_tampered_tokens() {
 
 #[test]
 fn debug_never_shows_secrets() {
-    let key = MasterKey::from_base64(&MasterKey::generate(), None).unwrap();
+    let key = key();
 
     assert_eq!(format!("{:?}", token()), "AccessToken(<16 bytes>)");
     assert!(!format!("{key:?}").contains("cipher"));

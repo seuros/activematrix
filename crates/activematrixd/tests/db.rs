@@ -47,6 +47,13 @@ fn messages(next_batch: &str, room: &str, ids: &[&str]) -> Value {
     json!({ "next_batch": next_batch, "rooms": { "join": { room: { "timeline": { "events": events } } } } })
 }
 
+async fn inbox_count(db: &TestDb) -> i64 {
+    sqlx::query_scalar("SELECT count(*) FROM active_matrix_inbox")
+        .fetch_one(&db.pool)
+        .await
+        .unwrap()
+}
+
 async fn claimed(db: &TestDb, name: &str) -> Uuid {
     let id = db.agent(name, "https://matrix.test", Some(b"sealed")).await;
     let claimed = agents::claim(&db.pool, NODE, TTL, 10).await.unwrap();
@@ -165,7 +172,7 @@ async fn release_leaves_the_agent_offline_and_claimable() {
     let db = db!();
     let id = claimed(&db, "bot").await;
 
-    agents::release(&db.pool, NODE, &[id]).await.unwrap();
+    agents::release(&db.pool, NODE, &[id], false).await.unwrap();
 
     assert_eq!(
         agents::claim(&db.pool, "node-b", TTL, 10)
@@ -257,10 +264,7 @@ async fn applying_a_batch_twice_delivers_nothing_twice() {
         Vec::<String>::new()
     );
 
-    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM active_matrix_inbox")
-        .fetch_one(&db.pool)
-        .await
-        .unwrap();
+    let count = inbox_count(&db).await;
     assert_eq!(count, 2);
     db.drop_schema().await;
 }
@@ -283,10 +287,7 @@ async fn a_lost_lease_writes_nothing() {
     .await;
 
     assert!(matches!(result, Err(ingest::IngestError::LeaseLost)));
-    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM active_matrix_inbox")
-        .fetch_one(&db.pool)
-        .await
-        .unwrap();
+    let count = inbox_count(&db).await;
     assert_eq!(count, 0);
     db.drop_schema().await;
 }

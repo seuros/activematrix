@@ -69,6 +69,8 @@ pub struct Sent {
 pub struct Recorded {
     pub method: String,
     pub path: String,
+    /// Percent-encoded, as sent.
+    pub query: String,
     pub user_id: Option<String>,
     pub body: Value,
 }

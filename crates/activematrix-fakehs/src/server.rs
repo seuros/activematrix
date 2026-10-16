@@ -65,6 +65,7 @@ pub async fn handle(shared: Arc<Shared>, request: Request) -> Result<Response, I
         shared.record(Recorded {
             method: method.clone(),
             path: path.clone(),
+            query: query.clone(),
             user_id: session.as_ref().map(|s| s.user_id.clone()),
             body: body.clone(),
         });

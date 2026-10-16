@@ -208,7 +208,8 @@ fn interpret(status: u16, headers: &HeaderMap, bytes: &[u8]) -> Result<Value, Ma
     })
 }
 
-fn install_crypto_provider() {
+/// Installs the rustls crypto provider once per process, before any TLS.
+pub fn install_crypto_provider() {
     static INSTALL: Once = Once::new();
     INSTALL.call_once(|| {
         use rama::tls::rustls::dep::rustls::crypto::{CryptoProvider, ring};

@@ -23,6 +23,16 @@ fn parses_each_command() {
     assert_matches!(parse(&["version"]).unwrap().command, Commands::Version(_));
     assert_matches!(parse(&["keygen"]).unwrap().command, Commands::Keygen(_));
     assert_matches!(parse(&["check"]).unwrap().command, Commands::Check(_));
+    assert_matches!(parse(&["start"]).unwrap().command, Commands::Start(_));
+    assert_matches!(
+        parse(&["login", "captain", "--token-stdin"])
+            .unwrap()
+            .command,
+        Commands::Login(Login {
+            token_stdin: true,
+            ..
+        })
+    );
 }
 
 #[test]

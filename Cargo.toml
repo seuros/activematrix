@@ -14,21 +14,19 @@ authors = ["Abdelkader Boudih"]
 [workspace.dependencies]
 anyhow = "1.0.104"
 behavior-machines = "0.2.0"
-breaker-machines = { version = "0.20.0", features = ["async"] }
 chrono-machines = "0.9.0"
 base64 = "0.23.1"
 gethostname = "1.1.0"
 hmac = "0.13.0"
 rama = { version = "0.4.0", default-features = false, features = ["std", "http-full", "rustls", "ring"] }
 chacha20poly1305 = "0.11.0"
+rpassword = "7.5.4"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha2 = "0.11.1"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "uuid", "json", "macros"] }
-state-machines = "0.32.1"
 tempfile = "3.27.0"
 thiserror = "2.0.21"
-throttle-machines = "0.3.0"
 tokio = { version = "1.53.3", features = ["io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 toml = "1.1.8"
 tracing = "0.1.44"
@@ -63,6 +61,14 @@ must_use_candidate = "allow"
 # pooled HTTP client is one, so each Homeserver or request builder in scope
 # trips it. Mutex guards are kept short by hand instead.
 significant_drop_tightening = "allow"
+
+# Debug builds of rama and sqlx run to gigabytes with full debug info. Line
+# tables keep file:line in backtraces for our crates; dependencies get none.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
 
 [profile.release]
 lto = true
