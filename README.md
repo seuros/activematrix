@@ -1,317 +1,311 @@
 # ActiveMatrix
 
-A Rails-native Matrix SDK for building multi-agent bot systems and real-time communication features. This gem is a fork of the [matrix-sdk](https://github.com/ananace/ruby-matrix-sdk) gem, extensively enhanced with Rails integration, multi-agent architecture, and persistent state management.
+Matrix bots for Rails. Bots are Ruby classes that run as Active Job jobs;
+`activematrixd`, a daemon written in Rust and shipped inside the gem, holds
+every Matrix connection.
+
+> **Status:** this is the 0.1 design, in development on `master`. The 0.0.x
+> releases on RubyGems are the previous, in-process design and are not
+> compatible with it.
 
 ## Requirements
 
-- **Ruby 3.4+**
-- **Rails 8.0+**
-- **PostgreSQL 18+** (required for UUIDv7 primary keys)
+- **Ruby 4.0** or newer
+- **Rails 8.1** or newer
+- **PostgreSQL 18** or newer
 
-## Features
+Nothing older is supported. Platform gems carry the daemon prebuilt for
+Linux (glibc and musl) and macOS once 0.1 is released; until then, or on
+another platform, build it with Cargo (see [Development](#development)).
 
-- **Multi-Agent Architecture**: Run multiple bots concurrently with async fiber-based lifecycle management
-- **Daemon Binary**: Production-ready `activematrix` daemon with multi-process workers and health probes
-- **Rails Integration**: Deep integration with ActiveRecord, Rails.cache, and Rails.logger
-- **State Machines**: state_machines-powered state management for bot lifecycle
-- **Memory System**: Three-tier memory architecture (agent, conversation, global)
-- **Event Routing**: Intelligent event distribution to appropriate agents
-- **Client Pooling**: Efficient connection management with async semaphores
-- **Generators**: Rails generators for quick bot creation
-- **Inter-Agent Communication**: Built-in messaging between bots
-- **PostgreSQL 18 Features**: UUIDv7 primary keys, JSONB with GIN indexes
+## How it works
+
+```
+Matrix ⇄ activematrixd ─── writes ──▶ PostgreSQL ◀── reads ─── Rails (your bots)
+           syncs agents      rooms, members, state, inbox
+           sends the outbox  ◀── outbox ──────────────────── replies, commands
+           pushes "new events in room X" ─▶ POST /active_matrix/deliveries ─▶ jobs
+```
+
+- The daemon syncs every agent, mirrors room state into tables your app can
+  query, and queues new events in an **inbox**.
+- It tells Rails which rooms have new events. Rails enqueues a job per room;
+  the job runs your bot on each event, oldest first, **exactly once**: the
+  event is marked handled in the same transaction as everything the
+  handler writes.
+- What a bot sends goes to an **outbox** in that transaction. The daemon
+  sends it after the commit and never if the handler fails. The outbox row's
+  id is the Matrix transaction id, so a retried send cannot post twice.
+- Access tokens are sealed with a key only the daemon holds. Rails never sees
+  them.
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
 ```ruby
+# Gemfile
 gem 'activematrix'
 ```
 
-And then execute:
-
-```bash
+```console
 $ bundle install
-$ rails generate active_matrix:install
-$ rails db:migrate
+$ bin/rails generate active_matrix:install
+$ bin/rails db:migrate
 ```
 
-## Multi-Agent System Usage
+The generator copies the migrations, mounts the engine at `/active_matrix`,
+and writes `config/initializers/active_matrix.rb`, `app/bots/application_bot.rb`
+and `config/activematrixd.toml`.
 
-### Creating Your First Bot
+Two secrets, from the environment:
 
-```bash
-$ rails generate active_matrix:bot captain
+```console
+$ export ACTIVEMATRIX_MASTER_KEY=$(bundle exec activematrix keygen)   # the daemon only
+$ export ACTIVEMATRIX_DELIVERY_SECRET=$(openssl rand -hex 32)         # the daemon and Rails
 ```
 
-This creates a bot class in `app/bots/captain_bot.rb`:
+The master key seals access tokens: keep it with your other secrets, since
+losing it means logging every agent in again. The delivery secret signs the
+daemon's requests to Rails; Rails reads it from
+`config.delivery_secret` (credentials or `ACTIVEMATRIX_DELIVERY_SECRET`).
+
+## A bot
+
+```console
+$ bin/rails generate active_matrix:bot captain status deploy
+```
 
 ```ruby
-class CaptainBot < ActiveMatrix::Bot::MultiInstanceBase
-  set :accept_invites, true
-  set :command_prefix, '!'
+# app/bots/captain_bot.rb
+class CaptainBot < ApplicationBot
+  setting :greeting, :string, default: 'Welcome aboard'
 
-  command :status,
-          desc: 'Get system status',
-          args: '[component]' do |component = nil|
-    if component
-      # Check specific component
-      status = memory.get("status_#{component}") || 'unknown'
-      room.send_notice("#{component}: #{status}")
-    else
-      # Overall status
-      room.send_notice("All systems operational!")
-    end
+  # !status
+  command :status, 'Show the status' do
+    reply "All systems nominal. Deploys today: #{memory.fetch(:deploys, 0)}"
   end
 
-  command :deploy,
-          desc: 'Deploy to production',
-          args: 'target' do |target|
-    # Use conversation memory to track deployments
-    deployments = conversation_memory.remember(:deployments) { [] }
-    deployments << { target: target, time: Time.current }
-    conversation_memory[:deployments] = deployments
-
-    # Notify other agents
-    broadcast_to_agents(:lieutenant, {
-      type: 'deployment',
-      target: target,
-      initiated_by: agent_name
-    })
-
-    room.send_notice("Deploying to #{target}...")
+  # !deploy api   !deploy api us --force
+  command :deploy, 'Deploy a target', power: :moderator do |target, region = 'eu', force: false|
+    memory.increment(:deploys)
+    reply "Deploying #{target} to #{region}#{' (forced)' if force}", thread: true
   end
 
-  # Handle inter-agent messages
-  def receive_message(data, from:)
-    case data[:type]
-    when 'status_report'
-      memory.set("status_#{data[:component]}", data[:status])
-      logger.info "Received status update from #{from.agent_name}"
-    end
+  # !say any text, exactly as typed
+  command :say, 'Repeat the text', raw: true do |text|
+    reply text
   end
+
+  on 'm.room.member', if: -> { content['membership'] == 'join' && sender != me } do
+    reply "#{settings.greeting}, #{sender}!", mentions: [sender]
+  end
+
+  on_invite { join }
 end
 ```
 
-### Setting Up Agents
+### Commands
+
+- Positional block parameters take the arguments; keyword parameters take
+  `--flags`. Wrong arguments or an unknown flag answer with a usage line
+  built from the block: `Usage: !deploy TARGET [REGION] [--force]`.
+- Quotes group words: `!say "two words"`. `raw: true` passes the text after
+  the command name as typed instead.
+- `!help` lists the commands with their descriptions.
+- Commands come from `m.text` messages; notices (what bots send each other)
+  and edits are not commands. `prefix '!', '/'` changes the prefixes.
+
+### Guards and callbacks
+
+- `dm: true` (direct rooms only) or `dm: false` (group rooms only).
+- `power: :moderator` (50), `:admin` (100) or a level, read from the room's
+  power levels. Below it, the bot says which level is needed.
+- `if: -> { ... }`, evaluated in the bot.
+- `before_command :method, only: :deploy` runs first; `halt!` stops the command.
+- `rescue_from SomeError, with: :method` (or a block) answers instead of
+  failing.
+
+### What a handler reads
+
+| | |
+|---|---|
+| `event`, `content`, `body`, `sender`, `room_id` | the event |
+| `room`, `direct?` | the mirrored room (`room.power_level(user)`, `room.state(type, key)`, `room.members`) |
+| `me`, `agent` | the bot's own user id and agent record |
+| `settings` | the agent's settings, typed by `setting` declarations |
+| `memory`, `conversation`, `global` | memory for the agent, this user in this room, and every agent |
+
+Memory takes any JSON value: `memory[:key] = value`, `memory.fetch(:key, default)`,
+`memory.write(:key, value, expires_in: 1.hour)`, `memory.increment(:count)`
+(atomic), `memory.delete(:key)`.
+
+### What a handler does
+
+All of these write to the outbox in the handler's transaction:
+
+| | |
+|---|---|
+| `reply(text, html:, notice:, thread:, quote:, mentions:)` | send a message; `thread: true` answers in the event's thread |
+| `react('👍')`, `edit(event_id, text)`, `redact(event_id, reason:)` | relations |
+| `send_event(type, content)`, `set_state(type, content, state_key:)` | anything else |
+| `join`, `leave`, `invite(user)`, `kick(user)`, `ban(user)`, `unban(user)` | membership |
+| `typing`, `typing(on: false)`, `read_receipt` | presence in the room |
+| `deliver_to(:other_agent, 'topic', payload)` | hand work to another agent's `on_agent_message('topic')` |
+
+Messages always carry `m.mentions`, so clients notify exactly the users in
+`mentions:` and not whoever the text happens to name.
+
+Handlers run in your job backend; a handler that raises rolls back what it
+wrote and is retried, then set aside after five failures so the room moves on.
+
+## Agents
+
+An agent is a Matrix account running a bot:
 
 ```ruby
-# Create agent records in Rails console or seeds
-captain = ActiveMatrix::Agent.create!(
-  name: 'captain',
-  homeserver: 'https://matrix.org',
-  username: 'captain_bot',
-  password: 'secure_password',
-  bot_class: 'CaptainBot',
-  settings: {
-    rooms_to_join: ['!warroom:matrix.org'],
-    command_prefix: '!'
-  }
-)
-
-lieutenant = ActiveMatrix::Agent.create!(
-  name: 'lieutenant',
-  homeserver: 'https://matrix.org',
-  username: 'lieutenant_bot',
-  password: 'secure_password',
-  bot_class: 'LieutenantBot'
-)
+ActiveMatrix::Agent.create!(name: 'captain', bot_class: 'CaptainBot',
+                            homeserver_url: 'https://matrix.example.org',
+                            settings: { 'greeting' => 'Ahoy' })
 ```
 
-### Running the Daemon
+Log it in once; the daemon stores the access token sealed:
 
-The `activematrix` binary manages your bots in production, similar to Sidekiq or GoodJob:
-
-```bash
-# Start in foreground
-bundle exec activematrix start
-
-# Start with multiple worker processes
-bundle exec activematrix start --workers 3
-
-# Start specific agents only
-bundle exec activematrix start --agents captain,lieutenant
-
-# Daemonize with PID file
-bundle exec activematrix start --daemon --pidfile tmp/pids/activematrix.pid
-
-# Check status (queries health probe)
-bundle exec activematrix status
-
-# Graceful shutdown
-bundle exec activematrix stop
-
-# Reload agent configuration
-bundle exec activematrix reload
+```console
+$ bundle exec activematrix login captain                    # prompts for the password
+$ bundle exec activematrix login captain --password-stdin
+$ echo "$TOKEN" | bundle exec activematrix login captain --token-stdin
 ```
 
-**Health Probes** (for Kubernetes/Docker):
-- `GET /health` - Returns 200 if healthy
-- `GET /status` - JSON with detailed agent status
-- `GET /metrics` - Prometheus-compatible metrics
+`agent.update!(enabled: false)` stops it within a heartbeat. The daemon owns
+`state` (`offline`, `starting`, `online`, `reconnecting`, `failed`) and
+`last_error`; an agent whose token the homeserver rejects is `failed` until
+it logs in again. Every room the agent knows is mirrored in `agent.rooms`;
+`membership` says whether it is joined, invited or gone.
 
-```bash
-curl http://localhost:3042/health
-curl http://localhost:3042/status
+## Running the daemon
+
+```console
+$ bundle exec activematrix check   # configuration, database and migrations
+$ bundle exec activematrix start
 ```
 
-### Programmatic Agent Management
+Run it next to your web and job processes. It needs the same database as
+Rails, the master key, and the delivery URL and secret. On `SIGTERM` it
+drains: agents stop, their leases are released, and it exits; a second
+signal exits at once.
+
+### Scaling
+
+Agents are leased: each daemon process claims up to `max_agents`, renews
+their leases every heartbeat, and gives them back on shutdown. Run more
+processes or replicas to run more agents; a daemon that dies loses its
+agents to the others when the leases run out.
+
+### Configuration
+
+`config/activematrixd.toml`, each setting overridable by the variable next
+to it. Secrets come from the environment only.
+
+| Setting | Variable | Default |
+|---|---|---|
+| database | `ACTIVEMATRIX_DATABASE_URL`, else `DATABASE_URL` | required |
+| master key | `ACTIVEMATRIX_MASTER_KEY` (and `ACTIVEMATRIX_MASTER_KEY_PREVIOUS` while rotating) | required |
+| `delivery_url` | `ACTIVEMATRIX_DELIVERY_URL` | required |
+| delivery secret | `ACTIVEMATRIX_DELIVERY_SECRET` | required, 32+ characters |
+| `probe_bind` | `ACTIVEMATRIX_PROBE_BIND` | `127.0.0.1:3042` |
+| `max_agents` | `ACTIVEMATRIX_MAX_AGENTS` | `100` |
+| `heartbeat_secs` | `ACTIVEMATRIX_HEARTBEAT_SECS` | `10` |
+| `lease_ttl_secs` | `ACTIVEMATRIX_LEASE_TTL_SECS` | `30` (at least 3 heartbeats) |
+| `shutdown_timeout_secs` | `ACTIVEMATRIX_SHUTDOWN_TIMEOUT_SECS` | `30` |
+| `node_id` | `ACTIVEMATRIX_NODE_ID` | `hostname:pid` |
+
+`ACTIVEMATRIX_CONFIG` (or `--config`) points at another file; `RUST_LOG`
+sets the log level. To rotate the master key, move the current one to
+`ACTIVEMATRIX_MASTER_KEY_PREVIOUS` and set a new one: tokens are resealed as
+agents start.
+
+### Probes
+
+Answered from memory, so a database outage does not restart the daemon:
+
+- `GET /livez`: the daemon's heartbeat is running.
+- `GET /readyz`: live and not draining (503 while draining).
+- `GET /status`: JSON with every agent and its state.
+- `GET /metrics`: Prometheus text.
+
+Bind `probe_bind` to `0.0.0.0:3042` in containers.
+
+### Housekeeping
+
+Schedule `ActiveMatrix::MemoryReaperJob`, for example hourly in
+`config/recurring.yml`. It deletes expired memories, and handled inbox events
+and sent outbox commands older than `config.inbox_retention` (30 days) and
+`config.outbox_retention` (7 days).
+
+## Testing your bots
+
+No daemon or homeserver needed: events go into the inbox the way the daemon
+writes them, the job runs at once, and you assert on the outbox.
 
 ```ruby
-# Start all agents (blocks until shutdown)
-ActiveMatrix::AgentManager.instance.start_all
+require 'test_helper'
+require 'active_matrix/testing'
 
-# Start specific agent
-ActiveMatrix::AgentManager.instance.start_agent(captain)
-
-# Check status
-ActiveMatrix::AgentManager.instance.status
-# => { running: 2, agents: [...], monitor_active: true }
-
-# Stop agent
-ActiveMatrix::AgentManager.instance.stop_agent(captain)
-
-# Restart agent
-ActiveMatrix::AgentManager.instance.restart_agent(captain)
-```
-
-## Memory System
-
-### Agent Memory (Private)
-```ruby
-# In your bot
-memory.set('last_deployment', Time.current)
-memory.get('last_deployment')
-memory.increment('deployment_count')
-memory.remember('config') { load_config_from_api }
-```
-
-### Conversation Memory (Per User/Room)
-```ruby
-# Automatically available in commands
-conversation_memory[:last_command] = 'deploy'
-context = conversation_context # Hash of conversation data
-
-# Track message history
-conversation_memory.add_message(event)
-recent = conversation_memory.recent_messages(5)
-```
-
-### Global Memory (Shared)
-```ruby
-# Set global data
-global_memory.set('system_status', 'operational',
-  category: 'monitoring',
-  expires_in: 5.minutes,
-  public_read: true
-)
-
-# Broadcast to all agents
-global_memory.broadcast('alert', {
-  level: 'warning',
-  message: 'High CPU usage detected'
-})
-
-# Share between specific agents
-global_memory.share('secret_key', 'value', ['captain', 'lieutenant'])
-```
-
-## Event Routing
-
-```ruby
-class MonitorBot < ActiveMatrix::Bot::MultiInstanceBase
-  # Route specific events to this bot
-  route event_type: 'm.room.message', priority: 100 do |bot, event|
-    # Custom processing
-  end
-
-  route room_id: '!monitoring:matrix.org' do |bot, event|
-    # Handle all events from monitoring room
-  end
-end
-```
-
-## Basic Client Usage
-
-For simple, single-bot applications:
-
-```ruby
-# Traditional client usage still works
-client = ActiveMatrix::Client.new 'https://matrix.org'
-client.login 'username', 'password'
-
-room = client.find_room '#matrix:matrix.org'
-room.send_text "Hello from ActiveMatrix!"
-```
-
-## Configuration
-
-```ruby
-# config/initializers/active_matrix.rb
-ActiveMatrix.configure do |config|
-  # Agent settings
-  config.agent_startup_delay = 2.seconds
-  config.max_agents_per_process = 10
-  config.agent_health_check_interval = 30.seconds
-
-  # Memory settings
-  config.conversation_history_limit = 20
-  config.conversation_stale_after = 1.day
-  config.memory_cleanup_interval = 1.hour
-
-  # Daemon settings
-  config.daemon_workers = 2
-  config.probe_port = 3042
-  config.probe_host = '0.0.0.0'
-  config.shutdown_timeout = 30
-end
-```
-
-## Testing
-
-```ruby
-# test/bots/captain_bot_test.rb
 class CaptainBotTest < ActiveSupport::TestCase
-  def setup
-    @agent = ActiveMatrix::Agent.create!(
-      name: 'test_captain',
-      homeserver: 'https://matrix.org',
-      username: 'test_bot',
-      bot_class: 'CaptainBot'
-    )
+  include ActiveMatrix::Testing
+
+  setup do
+    @agent = ActiveMatrix::Agent.create!(name: 'captain', bot_class: 'CaptainBot',
+                                         homeserver_url: 'https://matrix.test')
   end
 
-  test 'responds to status command' do
-    # Your test logic here
+  test 'say repeats the text' do
+    deliver_message(@agent, '!say hello there')
+
+    assert_replied @agent, 'hello there'
   end
 end
 ```
 
-## Architecture
+`deliver_message`, `deliver_event` and `deliver_invite` put events in;
+`replies`, `assert_replied`, `assert_no_replies` and `assert_outbox` read
+what the bot queued.
 
-ActiveMatrix implements a sophisticated multi-agent architecture:
+## Upgrading from 0.0.x
 
-- **AgentManager**: Manages lifecycle of all bots using async fibers (start/stop/restart)
-- **AgentRegistry**: Fiber-safe registry of running bot instances
-- **EventRouter**: Routes Matrix events to appropriate bots via async queues
-- **ClientPool**: Manages shared client connections with async semaphores
-- **Memory System**: Hierarchical storage with caching
-- **State Machines**: Track agent states (offline/connecting/online/busy/error)
+The migrations upgrade the 0.0.x tables in place: agents keep their name,
+bot class and settings, and agent stores, the knowledge base and chat context
+move into memories. Access tokens do not carry over (0.0.x sealed them with
+Active Record encryption, which the daemon cannot read), so run
+`activematrix login` for each agent. The bot API is new: port bots to
+`ActiveMatrix::Bot::Base`.
 
-### Models
+## Not yet
 
-All models are namespaced under `ActiveMatrix::`:
+- **End-to-end encryption.** Agents cannot read or send in encrypted rooms.
+- Application service (bridge) mode.
 
-- `ActiveMatrix::Agent` - Bot agent records with state machine
-- `ActiveMatrix::AgentStore` - Per-agent key-value storage
-- `ActiveMatrix::ChatSession` - Conversation context per user/room
-- `ActiveMatrix::KnowledgeBase` - Global shared storage
+## Development
 
-## Contributing
+```console
+$ docker compose up -d           # PostgreSQL 18 on port 5440
+$ bundle install
+$ (cd test/dummy && RAILS_ENV=test bin/rails db:prepare)
+$ bundle exec rake test           # the Ruby suite, under padded_cell
+$ cargo test --workspace          # the daemon, against the same PostgreSQL
+```
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/seuros/activematrix
+- The daemon's tests load `crates/activematrixd/tests/schema.sql`, a
+  snapshot of the engine's tables. After changing a migration, run
+  `bundle exec rake active_matrix:schema_snapshot`; CI fails when it is stale.
+- `crates/activematrix-fakehs` is a fake homeserver used by the daemon's
+  tests; its binary has an admin API under `/_fake/` for tests in other
+  languages.
+- `bundle exec rake 'package[arm64-darwin]'` builds a platform gem with the
+  daemon inside; `ACTIVEMATRIX_INSTALL_DIR` points the launcher at a local
+  build instead.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+MIT. ActiveMatrix began as a fork of
+[matrix-sdk](https://github.com/ananace/ruby-matrix-sdk) by Alexander
+Olofsson.
