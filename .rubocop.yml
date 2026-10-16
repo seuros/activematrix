@@ -37,3 +37,21 @@ Rails/RakeEnvironment:
 Metrics/BlockLength:
   Exclude:
     - '*.gemspec'
+
+# Migrations are linear DDL scripts; method size says nothing about them.
+Metrics/AbcSize:
+  Exclude:
+    - 'db/migrate/*.rb'
+
+Metrics/MethodLength:
+  Exclude:
+    - 'db/migrate/*.rb'
+
+# Tests assert one scenario end to end.
+Minitest/MultipleAssertions:
+  Max: 8
+
+# Tests write daemon-owned rows the way the daemon does: insert!, update_all.
+Rails/SkipsModelValidations:
+  Exclude:
+    - 'test/**/*'

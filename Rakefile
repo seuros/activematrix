@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'bundler/gem_tasks'
+require 'English'
 require 'shellwords'
 
 # padded_cell: test classes in parallel workers, every test in its own forked
@@ -12,6 +13,32 @@ task :test do
 end
 
 task default: :test
+
+# The daemon's tests load the engine's tables from a SQL snapshot, so the
+# Rust suite needs no Ruby. The snapshot is dumped from a database loaded
+# from schema.rb (db:test:prepare), never a migrated one, so it is the same
+# wherever it is taken; CI fails when it is stale.
+#
+# pg_dump must be at least the server's major version. The default runs the
+# compose container's own; CI points PG_DUMP at the service container.
+SCHEMA_SNAPSHOT = 'crates/activematrixd/tests/schema.sql'
+
+namespace :active_matrix do
+  desc "Dump the engine's tables into #{SCHEMA_SNAPSHOT}"
+  task :schema_snapshot do
+    Dir.chdir('test/dummy') { sh({ 'RAILS_ENV' => 'test' }, 'bin/rails', 'db:test:prepare') }
+    pg_dump = Shellwords.split(ENV.fetch('PG_DUMP', 'docker compose exec -T postgres pg_dump'))
+    sql = IO.popen([*pg_dump, '--username=activematrix', '--schema-only', '--no-owner', '--no-privileges',
+                    '--table=active_matrix_*', 'activematrix_test'], &:read)
+    abort 'pg_dump failed' unless $CHILD_STATUS.success?
+
+    # Drop what changes between runs: the random \\restrict key and the
+    # server and client versions.
+    sql = sql.lines.grep_v(/\A(\\(un)?restrict |-- Dumped (from|by) )/).join
+    File.write(SCHEMA_SNAPSHOT, sql)
+    puts "wrote #{SCHEMA_SNAPSHOT}"
+  end
+end
 
 # ---------------------------------------------------------------------------
 # Packaging: one gem per platform with the activematrixd binary in libexec/,
