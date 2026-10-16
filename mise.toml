@@ -1,0 +1,6 @@
+[tools]
+# Latest stable, no MSRV hedging; rust-version in Cargo.toml tracks this pin.
+# clippy and rustfmt are declared here because CI runs both.
+rust = { version = "1.99", components = "clippy,rustfmt" }
+# The gemspec requires >= 4.0; CI installs this same Ruby.
+ruby = "4.0"
