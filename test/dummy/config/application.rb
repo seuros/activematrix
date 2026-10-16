@@ -2,17 +2,21 @@
 
 require_relative 'boot'
 
-require 'rails/all'
+require 'rails'
+require 'active_record/railtie'
+require 'active_job/railtie'
 
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module TheSource
+module Dummy
   class Application < Rails::Application
     config.load_defaults Rails::VERSION::STRING.to_f
-
-    # Dummy app is nested inside engine - add engine migrations directly
-    config.paths['db/migrate'] << File.expand_path('../../../../db/migrate', __FILE__)
+    config.root = File.expand_path('..', __dir__)
+    config.eager_load = false
+    config.logger = ActiveSupport::Logger.new(File::NULL)
+    config.secret_key_base = 'dummy'
+    config.cache_store = :memory_store
+    config.active_job.queue_adapter = :test
+    config.paths['db/migrate'] << File.expand_path('../../../db/migrate', __dir__)
   end
 end

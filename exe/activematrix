@@ -1,7 +1,13 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'bundler/setup'
-require 'active_matrix/cli'
+# Launcher for the precompiled daemon: RubyGems installs this as the
+# `activematrix` command, and it execs activematrixd from libexec/.
+require_relative '../lib/active_matrix/daemon'
 
-ActiveMatrix::CLI.start(ARGV)
+begin
+  ActiveMatrix::Daemon.exec!(*ARGV)
+rescue ActiveMatrix::Daemon::NotFound => e
+  warn e.message
+  exit 1
+end

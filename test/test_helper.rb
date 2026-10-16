@@ -1,132 +1,17 @@
 # frozen_string_literal: true
 
-require 'simplecov'
-SimpleCov.start do
-  add_filter '/test/'
-  add_filter '/vendor/'
-end
-
-# Configure Rails environment for testing
 ENV['RAILS_ENV'] = 'test'
+
+if defined?(PaddedCell.coverage)
+  PaddedCell.coverage(:rails) do
+    skip 'lib/generators/active_matrix/install/templates/'
+    formats :markdown, :lcov
+  end
+end
+
 require_relative 'dummy/config/environment'
-
-$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
-require 'active_matrix'
-
-require 'maxitest/autorun'
-require 'active_support'
-require 'active_support/test_case'
-require 'active_support/core_ext/time/zones'
+require 'rails/test_help'
 require 'mocha/minitest'
-require 'vcr'
 require 'webmock/minitest'
-require 'uri'
-require_relative 'support/vcr_helper'
-require_relative 'support/active_matrix_test_base'
 
-# Configure VCR
-VCR.configure do |config|
-  config.cassette_library_dir = 'test/fixtures/vcr_cassettes'
-  config.hook_into :webmock
-  config.default_cassette_options = {
-    record: ENV.fetch('VCR_MODE', :once).to_sym,
-    match_requests_on: %i[method uri body]
-  }
-
-  # Filter sensitive data - server and domain
-  config.filter_sensitive_data('<MATRIX_SERVER>') { ENV.fetch('MATRIX_TEST_SERVER', 'https://matrix.test.local:8443') }
-  config.filter_sensitive_data('<TEST_USER>') { ENV.fetch('MATRIX_TEST_USER', 'testbot2') }
-  config.filter_sensitive_data('<MATRIX_DOMAIN>') { ENV.fetch('MATRIX_TEST_DOMAIN', 'matrix.test.local') }
-
-  # Filter Authorization header (access tokens)
-  config.filter_sensitive_data('Bearer <ACCESS_TOKEN>') do |interaction|
-    auth = interaction.request.headers['Authorization']&.first
-    auth if auth&.start_with?('Bearer ')
-  end
-
-  # Filter password in request body
-  config.filter_sensitive_data('<PASSWORD>') do |interaction|
-    if interaction.request.body&.include?('password')
-      begin
-        JSON.parse(interaction.request.body)['password']
-      rescue StandardError
-        nil
-      end
-    end
-  end
-
-  # Filter access_token in response body
-  config.filter_sensitive_data('<ACCESS_TOKEN>') do |interaction|
-    if interaction.response.body&.include?('access_token')
-      begin
-        JSON.parse(interaction.response.body)['access_token']
-      rescue StandardError
-        nil
-      end
-    end
-  end
-
-  # Allow connections to localhost for non-VCR tests
-  config.allow_http_connections_when_no_cassette = true
-end
-
-# Disable WebMock by default, enable it only for VCR tests
-WebMock.allow_net_connect!
-
-# Set up a test cache for Rails.cache
-require 'active_support/cache'
-require 'fileutils'
-
-module Rails
-  class << self
-    def cache
-      @cache ||= (
-        cache_dir = File.expand_path('../tmp/cache/test', __dir__)
-        FileUtils.mkdir_p(cache_dir)
-        ActiveSupport::Cache::FileStore.new(cache_dir, expires_in: 1.hour)
-      )
-    end
-  end
-end
-
-# VCR helper methods for backwards compatibility
-def with_vcr_cassette(name = nil, options = {}, &)
-  name ||= "#{self.class.name.gsub('::', '/')}/#{method_name}"
-  VCR.use_cassette(name, options, &)
-end
-
-def vcr_mode
-  ENV.fetch('VCR_MODE', 'once').to_sym
-end
-
-def use_real_matrix_server?
-  ENV['USE_REAL_SERVER'] == 'true' || vcr_mode == :record
-end
-
-def matrix_test_server
-  ENV.fetch('MATRIX_TEST_SERVER', 'https://matrix.test.local:8443')
-end
-
-def matrix_test_domain
-  ENV.fetch('MATRIX_TEST_DOMAIN', 'matrix.test.local')
-end
-
-def matrix_test_credentials
-  {
-    server: matrix_test_server,
-    username: ENV.fetch('MATRIX_TEST_USER', 'testbot2'),
-    password: ENV.fetch('MATRIX_TEST_PASSWORD', 'TestBot12345')
-  }
-end
-
-def matrix_test_user_id
-  "@#{matrix_test_credentials[:username]}:#{matrix_test_domain}"
-end
-
-# Temporarily disable VCR for a block
-def without_vcr(&)
-  WebMock.allow_net_connect!
-  VCR.turned_off(&)
-ensure
-  WebMock.disable_net_connect! if VCR.current_cassette
-end
+WebMock.disable_net_connect!(allow_localhost: true)

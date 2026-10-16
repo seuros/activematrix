@@ -1,112 +1,39 @@
+inherit_from: .rubocop_todo.yml
+
+# Exclude lists here add to the todo's instead of replacing them.
+inherit_mode:
+  merge:
+    - Exclude
+
 plugins:
   - rubocop-rails
   - rubocop-performance
   - rubocop-minitest
 
 AllCops:
-  TargetRubyVersion: 3.4
-  Exclude:
-    - '*.spec'
-    - 'Rakefile'
-    - 'lib/generators/**/*.rb' # ERB templates parsed as Ruby
+  TargetRubyVersion: 4.0
+  TargetRailsVersion: 8.1
   NewCops: enable
   SuggestExtensions: false
+  Exclude:
+    # ERB templates that only look like Ruby.
+    - 'lib/generators/**/templates/**/*'
+    - 'test/dummy/db/schema.rb'
+    - 'target/**/*'
+    - 'tmp/**/*'
+    - 'vendor/**/*'
 
-# Broken in CI
-Lint/Void:
-  Enabled: false
-
-Style/ClassAndModuleChildren:
-  Enabled: false
-
-# Don't enforce documentation
 Style/Documentation:
   Enabled: false
 
-Style/DocumentDynamicEvalDefinition:
-  Enabled: false
+Layout/LineLength:
+  Max: 120
 
-Metrics/ClassLength:
-  Enabled: false
+# The gem's own Rakefile has no Rails :environment task to depend on.
+Rails/RakeEnvironment:
+  Exclude:
+    - 'Rakefile'
 
 Metrics/BlockLength:
-  Max: 50
-
-# Matrix has a lot of methods in the CS API
-Metrics/ModuleLength:
-  Max: 500
-
-Layout/LineLength:
-  Max: 190
-
-Style/RescueModifier:
-  Enabled: false
-
-Style/RegexpLiteral:
-  Enabled: false
-
-Style/MultilineBlockChain:
-  Enabled: false
-
-Metrics/AbcSize:
-  Enabled: false
-
-Metrics/CyclomaticComplexity:
-  Enabled: false
-
-Metrics/PerceivedComplexity:
-  Enabled: false
-
-Style/FormatStringToken:
-  Enabled: false
-
-Naming/AccessorMethodName:
-  Enabled: false
-
-# Methods with ! are valid and don't need to end with ?
-Naming/PredicateMethod:
-  Enabled: false
-
-# Our rubocop directive comments are valid
-Lint/CopDirectiveSyntax:
-  Enabled: false
-
-# Private constants are fine
-Lint/UselessConstantScoping:
-  Enabled: false
-
-# Using object_id for hash keys is sometimes necessary
-Lint/HashCompareByIdentity:
-  Enabled: false
-
-# Duplicate branches might be intentional
-Lint/DuplicateBranch:
-  Enabled: false
-
-# Safe navigation chains of 3 are fine
-Style/SafeNavigationChainLength:
-  Max: 3
-
-# Sometimes we need 6 parameters
-Metrics/ParameterLists:
-  Max: 6
-
-Layout/RescueEnsureAlignment:
-  Enabled: false
-
-# Development dependencies are fine in gemspec for gems
-Gemspec/DevelopmentDependencies:
-  Enabled: false
-
-# Tests may have multiple assertions
-Minitest/MultipleAssertions:
-  Enabled: false
-
-# Method length is fine for complex operations
-Metrics/MethodLength:
-  Enabled: false
-
-# Variable names with numbers are fine in tests
-Naming/VariableNumber:
   Exclude:
-    - 'test/**/*'
+    - '*.gemspec'

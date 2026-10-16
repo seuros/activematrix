@@ -31,7 +31,8 @@ class MXIDTest < ActiveSupport::TestCase
   end
 
   def test_to_s
-    input = %w[@user:example.com !opaque:example.com $opaque:example.com $0paqu3+strin6+w1th+special/chars +group:example.com #alias:example.com]
+    input = %w[@user:example.com !opaque:example.com $opaque:example.com $0paqu3+strin6+w1th+special/chars
+               +group:example.com #alias:example.com]
     input.each do |mxid|
       parsed = ActiveMatrix::MXID.new mxid
 

@@ -8,7 +8,10 @@ module ActiveMatrix
     def initialize(identifier)
       raise ArgumentError, 'Identifier must be a String' unless identifier.is_a? String
       raise ArgumentError, 'Identifier is too long' if identifier.size > 255
-      raise ArgumentError, 'Identifier lacks required data' unless %r{^([@!$+#][^:]+:[^:]+(?::\d+)?)|(\$[A-Za-z0-9+/]+)$}.match?(identifier)
+      unless %r{^([@!$+#][^:]+:[^:]+(?::\d+)?)|(\$[A-Za-z0-9+/]+)$}.match?(identifier)
+        raise ArgumentError,
+              'Identifier lacks required data'
+      end
 
       # TODO: Community-as-a-Room / Profile-as-a-Room, in case they're going for room aliases
       @sigil = identifier[0]

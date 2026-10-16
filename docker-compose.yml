@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:18
+    ports:
+      - 5440:5432
+    environment:
+      POSTGRES_USER: activematrix
+      POSTGRES_PASSWORD: activematrix
+      POSTGRES_DB: activematrix_test
+    healthcheck:
+      test: [CMD, pg_isready, -U, activematrix]
+      interval: 2s
+      timeout: 2s
+      retries: 15
