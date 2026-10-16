@@ -1,0 +1,141 @@
+name: release
+
+# release-please owns the version: conventional commits on master open a
+# release PR, and merging it tags the release, which is what builds the gems.
+# Every binary is built on its own runner (a Mac cannot produce a musl build),
+# packaged into one platform gem each, and attached to the GitHub Release.
+# Nothing is pushed to rubygems.org from here; that is a workstation step.
+#
+# Run it by hand (workflow_dispatch) to build and verify every gem without
+# releasing anything.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  binaries:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { gem: x86_64-linux-gnu, target: x86_64-unknown-linux-gnu, os: ubuntu-latest }
+          # musl is not optional: most container images are Alpine, where a
+          # gnu binary fails at exec with a linker error.
+          - { gem: x86_64-linux-musl, target: x86_64-unknown-linux-musl, os: ubuntu-latest, musl: true }
+          - { gem: aarch64-linux-gnu, target: aarch64-unknown-linux-gnu, os: ubuntu-24.04-arm }
+          - { gem: aarch64-linux-musl, target: aarch64-unknown-linux-musl, os: ubuntu-24.04-arm, musl: true }
+          - { gem: arm64-darwin, target: aarch64-apple-darwin, os: macos-latest }
+          # Cross-built on Apple silicon, so it cannot run its own smoke test.
+          - { gem: x86_64-darwin, target: x86_64-apple-darwin, os: macos-latest, cross: true }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name || github.sha }}
+      # mise.toml decides the Rust, so a release is built with the toolchain
+      # the tests ran on.
+      - uses: jdx/mise-action@v4
+      - run: rustup target add ${{ matrix.target }}
+      # Before the build: rama-dns runs bindgen on Linux, which needs libclang;
+      # ring's C code needs musl-gcc for the musl targets.
+      - name: Install libclang and musl-gcc
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev ${{ matrix.musl && 'musl-tools' || '' }}
+      - run: cargo build --release --locked -p activematrixd --target ${{ matrix.target }}
+      - name: Smoke test
+        if: '!matrix.cross'
+        run: ./target/${{ matrix.target }}/release/activematrixd version
+      - name: The musl binary is static
+        if: matrix.musl
+        run: file target/${{ matrix.target }}/release/activematrixd | tee /dev/stderr | grep -Eq 'static(ally|-pie) linked'
+      # The platform travels in the file name: download-artifact flattens
+      # directories, so a name taken from one does not survive.
+      - run: cp target/${{ matrix.target }}/release/activematrixd activematrixd-${{ matrix.gem }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: activematrixd-${{ matrix.gem }}
+          path: activematrixd-${{ matrix.gem }}
+          if-no-files-found: error
+
+  gems:
+    needs: [release-please, binaries]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name || github.sha }}
+      - uses: jdx/mise-action@v4
+      - run: bundle install --jobs 4
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: activematrixd-*
+          merge-multiple: true
+      - name: Package every platform, then the platformless gem
+        run: |
+          set -euo pipefail
+          for bin in artifacts/activematrixd-*; do
+            bundle exec rake "package_prebuilt[${bin#artifacts/activematrixd-},$bin]"
+          done
+          bundle exec rake package_generic
+          ls -la pkg
+      # A platform gem without its binary installs cleanly and then cannot
+      # start the daemon; a file packaged 0600 cannot be read by a non-root
+      # container user (that shipped once, in 0.0.13).
+      - name: Verify the gems
+        run: |
+          set -euo pipefail
+          gems=(pkg/*.gem)
+          [ "${#gems[@]}" = 7 ] || { echo "expected 7 gems (6 platforms + platformless), got ${#gems[@]}"; exit 1; }
+          fail=0
+          for gem in "${gems[@]}"; do
+            listing=$(tar -xOf "$gem" data.tar.gz | tar -tvz)
+            echo "$listing" | grep -q ' exe/activematrix$' || { echo "$gem: no exe/activematrix"; fail=1; }
+            case "$gem" in
+              *-darwin.gem|*-linux-*.gem)
+                echo "$listing" | grep -Eq '^-rwxr-xr-x .* libexec/activematrixd$' \
+                  || { echo "$gem: no 0755 libexec/activematrixd"; fail=1; } ;;
+              *)
+                if echo "$listing" | grep -q 'libexec/'; then echo "$gem: platformless gem ships a binary"; fail=1; fi ;;
+            esac
+            echo "$listing" | awk -v gem="$gem" 'substr($1, 8, 1) != "r" { print gem ": not world-readable: " $0; bad = 1 } END { exit bad }' || fail=1
+          done
+          exit $fail
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gems
+          path: pkg/*.gem
+          if-no-files-found: error
+
+  attach:
+    needs: [release-please, gems]
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { name: gems, path: gems }
+      # rubygems.org gets these from a workstation, with MFA: download the
+      # release's gems and `gem push` each.
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: gems/*.gem
+          tag_name: ${{ needs.release-please.outputs.tag_name }}

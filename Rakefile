@@ -14,6 +14,30 @@ end
 
 task default: :test
 
+# System tests run the real daemon against the dummy app, served over HTTP,
+# and a homeserver; padded_cell leaves test/system out of `rake test`.
+namespace :test do
+  desc 'System tests: activematrixd, the app over HTTP, activematrix-fakehs (ARGS as for test)'
+  task :system do
+    sh 'cargo', 'build', '--locked', '-p', 'activematrixd', '-p', 'activematrix-fakehs'
+    # The workers' databases (activematrix_system_0...) are copied from it.
+    Dir.chdir('test/dummy') do
+      sh({ 'RAILS_ENV' => 'test', 'ACTIVEMATRIX_TEST_DATABASE' => 'activematrix_system' }, 'bin/rails', 'db:prepare')
+    end
+    args = Shellwords.split(ENV.fetch('ARGS', ''))
+    args << 'test/system' unless args.any? { it.start_with?('test/') }
+    sh({ 'ACTIVEMATRIX_INSTALL_DIR' => File.join(cargo_target_root, 'debug') },
+       'bundle', 'exec', 'padded_cell', '--isolation', 'test', '--timeout', '120', *args)
+  end
+
+  desc 'The system tests against Synapse: docker compose --profile contract up -d first'
+  task :contract do
+    ENV['ACTIVEMATRIX_SYNAPSE_URL'] ||= 'http://127.0.0.1:8008'
+    ENV['ACTIVEMATRIX_SYNAPSE_SECRET'] ||= 'contract-registration-secret'
+    Rake::Task['test:system'].invoke
+  end
+end
+
 # The daemon's tests load the engine's tables from a SQL snapshot, so the
 # Rust suite needs no Ruby. The snapshot is dumped from a database loaded
 # from schema.rb (db:test:prepare), never a migrated one, so it is the same
@@ -81,22 +105,40 @@ def build_gem(platform = nil)
   end
 end
 
+# 0755 whatever the source's mode: a binary packaged 0700 runs for root only.
+def stage_binary(source)
+  FileUtils.mkdir_p(LIBEXEC)
+  binary = File.join(LIBEXEC, 'activematrixd')
+  FileUtils.cp(source, binary)
+  FileUtils.chmod(0o755, binary)
+end
+
 desc 'Build the daemon binary for one rubygems platform into libexec/'
 task :build_binary, [:platform] do |_t, args|
   platform = args[:platform] or abort 'usage: rake build_binary[arm64-darwin]'
   target = PLATFORMS.fetch(platform) { abort "unknown platform #{platform}" }
 
   sh 'cargo', 'build', '--release', '--locked', '-p', 'activematrixd', '--target', target
-  FileUtils.mkdir_p(LIBEXEC)
-  binary = File.join(LIBEXEC, 'activematrixd')
-  FileUtils.cp(File.join(cargo_target_root, target, 'release', 'activematrixd'), binary)
-  FileUtils.chmod(0o755, binary)
+  stage_binary(File.join(cargo_target_root, target, 'release', 'activematrixd'))
 end
 
 desc 'Package the gem for one platform, binary included'
 task :package, [:platform] do |_t, args|
   platform = args[:platform] or abort 'usage: rake package[arm64-darwin]'
   Rake::Task['build_binary'].invoke(platform)
+  build_gem(platform)
+end
+
+# The release workflow builds each binary on its own runner, then packages
+# them all in one job.
+desc 'Package the gem for one platform from an already built binary'
+task :package_prebuilt, [:platform, :binary] do |_t, args|
+  platform, binary = args.values_at(:platform, :binary)
+  abort 'usage: rake package_prebuilt[x86_64-linux-gnu,path/to/activematrixd]' unless platform && binary
+  abort "unknown platform #{platform}" unless PLATFORMS.key?(platform)
+  abort "#{binary} is not a file" unless File.file?(binary)
+
+  stage_binary(binary)
   build_gem(platform)
 end
 

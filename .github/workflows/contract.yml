@@ -1,0 +1,31 @@
+name: contract
+
+# The system tests against a real Synapse, from docker-compose.yml's
+# contract profile: what fakehs only imitates (sync tokens, invites, logout,
+# transaction ids) checked against the reference homeserver. Nightly and on
+# demand, so pull requests do not wait on Docker Hub.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synapse:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_WARNINGS: deny
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
+      - uses: Swatinem/rust-cache@v2
+      # PostgreSQL on 5440 and Synapse on 8008, the same as on a workstation.
+      - run: docker compose --profile contract up -d --wait
+      - run: bundle install --jobs 4
+      - run: bundle exec rake test:contract ARGS='-j 4 --junit tmp/contract.xml'
+      - name: Synapse's log
+        if: failure()
+        run: docker compose logs synapse | tail -200

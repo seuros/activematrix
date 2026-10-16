@@ -293,13 +293,21 @@ $ bundle install
 $ (cd test/dummy && RAILS_ENV=test bin/rails db:prepare)
 $ bundle exec rake test           # the Ruby suite, under padded_cell
 $ cargo test --workspace          # the daemon, against the same PostgreSQL
+$ bundle exec rake test:system    # everything together, against a fake homeserver
 $ dictator lint .                 # line and file length, layout, whitespace
 $ cargo fmt --all && cargo clippy --all-targets
 ```
 
 - Style is checked by [dictator](https://github.com/seuros/dictator)
   (`.dictate.toml`), rustfmt (`rustfmt.toml`) and clippy; there is no RuboCop.
-
+- `test/system` runs the real daemon against the dummy app, served over HTTP
+  by [shuttlebay](https://github.com/seuros/shuttlebay), and
+  `activematrix-fakehs`. `rake test:system` builds both binaries first;
+  `ACTIVEMATRIX_SYSTEM_LOG=1` prints the app's log, and a failing test prints
+  the daemon's log and the agent, inbox and outbox rows.
+- The same tests run against Synapse:
+  `docker compose --profile contract up -d && bundle exec rake test:contract`.
+  CI does it nightly (`contract.yml`); fault injection tests skip there.
 - The daemon's tests load `crates/activematrixd/tests/schema.sql`, a
   snapshot of the engine's tables. After changing a migration, run
   `bundle exec rake active_matrix:schema_snapshot`; CI fails when it is stale.
@@ -309,6 +317,11 @@ $ cargo fmt --all && cargo clippy --all-targets
 - `bundle exec rake 'package[arm64-darwin]'` builds a platform gem with the
   daemon inside; `ACTIVEMATRIX_INSTALL_DIR` points the launcher at a local
   build instead.
+- Releases: release-please opens the release PR; merging it tags the
+  version, and `release.yml` builds the six platform gems (Linux gnu and
+  musl, macOS, each on x86_64 and arm64) plus the platformless one, and
+  attaches them to the GitHub Release. Running `release.yml` by hand builds
+  and checks them without releasing.
 
 ## License
 
