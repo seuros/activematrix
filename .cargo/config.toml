@@ -1,0 +1,4 @@
+[env]
+# The daemon's database tests: Postgres 18 from docker-compose.yml. They skip
+# when it is unreachable, except in CI. Each test gets its own schema.
+ACTIVEMATRIX_TEST_DATABASE_URL = "postgres://activematrix:activematrix@127.0.0.1:5440/activematrixd_test"

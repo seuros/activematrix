@@ -72,15 +72,31 @@ jobs:
 
   rust:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: activematrix
+          POSTGRES_PASSWORD: activematrix
+          POSTGRES_DB: activematrixd_test
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 20
+        ports: ["5432:5432"]
     env:
       # Cargo's own warning gate rather than RUSTFLAGS=-Dwarnings, which would
       # rebuild every dependency and split the cache from local builds.
       CARGO_BUILD_WARNINGS: deny
+      # Overrides .cargo/config.toml; with CI set, an unreachable database
+      # fails the database tests instead of skipping them.
+      ACTIVEMATRIX_TEST_DATABASE_URL: postgres://activematrix:activematrix@localhost:5432/activematrixd_test
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       # First: it needs no compile, so a formatting slip fails in seconds.
       - run: cargo fmt --all --check
+      # rama-dns runs bindgen on Linux, which needs libclang.
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - name: Set up mbx
         uses: jdx/mr-boxington-action@v1
         with:
@@ -96,6 +112,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - run: bundle install --jobs 4
+      - run: sudo apt-get update && sudo apt-get install -y libclang-dev
       - name: Build the x86_64-linux-gnu gem and the platformless gem
         run: |
           bundle exec rake 'package[x86_64-linux-gnu]'
