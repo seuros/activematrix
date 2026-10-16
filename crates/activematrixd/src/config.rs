@@ -124,7 +124,13 @@ impl Config {
             node_id: env("ACTIVEMATRIX_NODE_ID")
                 .or(file.node_id)
                 .unwrap_or_else(default_node_id),
-            max_agents: file.max_agents.unwrap_or(100),
+            max_agents: match env("ACTIVEMATRIX_MAX_AGENTS") {
+                Some(raw) => raw.parse().map_err(|_| ConfigError::Invalid {
+                    name: "ACTIVEMATRIX_MAX_AGENTS",
+                    reason: format!("{raw:?}"),
+                })?,
+                None => file.max_agents.unwrap_or(100),
+            },
             lease_ttl: seconds("ACTIVEMATRIX_LEASE_TTL_SECS", file.lease_ttl_secs, 30)?,
             heartbeat: seconds("ACTIVEMATRIX_HEARTBEAT_SECS", file.heartbeat_secs, 10)?,
             shutdown_timeout: seconds(

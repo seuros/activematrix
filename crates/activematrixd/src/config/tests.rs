@@ -35,7 +35,14 @@ fn the_environment_overrides_the_file() {
         "probe_bind = \"0.0.0.0:9000\"\nlease_ttl_secs = 60\nnode_id = \"from-file\"",
     )
     .unwrap();
-    let config = Config::build(file, &env(&[("ACTIVEMATRIX_NODE_ID", "from-env")])).unwrap();
+    let config = Config::build(
+        file,
+        &env(&[
+            ("ACTIVEMATRIX_NODE_ID", "from-env"),
+            ("ACTIVEMATRIX_MAX_AGENTS", "7"),
+        ]),
+    )
+    .unwrap();
 
     assert_eq!(
         config.probe_bind,
@@ -43,6 +50,7 @@ fn the_environment_overrides_the_file() {
     );
     assert_eq!(config.lease_ttl, Duration::from_secs(60));
     assert_eq!(config.node_id, "from-env");
+    assert_eq!(config.max_agents, 7);
 }
 
 #[test]
@@ -99,6 +107,7 @@ fn rejects_bad_values() {
         ("ACTIVEMATRIX_LEASE_TTL_SECS", "soon"),
         ("ACTIVEMATRIX_LEASE_TTL_SECS", "15"),
         ("ACTIVEMATRIX_HEARTBEAT_SECS", "0"),
+        ("ACTIVEMATRIX_MAX_AGENTS", "many"),
     ];
     for (name, value) in invalid {
         assert!(
