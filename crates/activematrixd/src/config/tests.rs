@@ -19,7 +19,10 @@ fn secret() -> String {
 fn defaults_need_nothing_set() {
     let config = Config::build(File::default(), &env(&[])).unwrap();
 
-    assert_eq!(config.probe_bind, "127.0.0.1:3042".parse().unwrap());
+    assert_eq!(
+        config.probe_bind,
+        "127.0.0.1:3042".parse::<SocketAddr>().unwrap()
+    );
     assert_eq!(config.lease_ttl, Duration::from_secs(30));
     assert_eq!(config.heartbeat, Duration::from_secs(10));
     assert_eq!(config.max_agents, 100);
@@ -34,7 +37,10 @@ fn the_environment_overrides_the_file() {
     .unwrap();
     let config = Config::build(file, &env(&[("ACTIVEMATRIX_NODE_ID", "from-env")])).unwrap();
 
-    assert_eq!(config.probe_bind, "0.0.0.0:9000".parse().unwrap());
+    assert_eq!(
+        config.probe_bind,
+        "0.0.0.0:9000".parse::<SocketAddr>().unwrap()
+    );
     assert_eq!(config.lease_ttl, Duration::from_secs(60));
     assert_eq!(config.node_id, "from-env");
 }

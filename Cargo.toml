@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/activematrixd"]
+members = ["crates/activematrixd", "crates/activematrix-fakehs"]
 
 [workspace.package]
 # No version here: each crate carries a literal one, because release-please's
@@ -13,19 +13,29 @@ authors = ["Abdelkader Boudih"]
 
 [workspace.dependencies]
 anyhow = "1.0.104"
+behavior-machines = "0.2.0"
+breaker-machines = { version = "0.20.0", features = ["async"] }
+chrono-machines = "0.9.0"
 base64 = "0.23.1"
 gethostname = "1.1.0"
 hmac = "0.13.0"
+rama = { version = "0.4.0", default-features = false, features = ["std", "http-full", "rustls", "ring"] }
 chacha20poly1305 = "0.11.0"
 serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
 sha2 = "0.11.1"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-webpki", "postgres", "uuid", "json", "macros"] }
+state-machines = "0.32.1"
 tempfile = "3.27.0"
 thiserror = "2.0.21"
-tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread", "signal", "sync", "time"] }
+throttle-machines = "0.3.0"
+tokio = { version = "1.53.3", features = ["io-std", "io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 toml = "1.1.8"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 usage-rs = "7.0.1"
 usage-parser = { package = "usage-lib", version = "7.0.1" }
-uuid = { version = "1.28.0", features = ["v7"] }
+uuid = { version = "1.28.0", features = ["v7", "serde"] }
 
 [workspace.lints.rust]
 unsafe_code = "deny"
@@ -49,6 +59,10 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 # Getters and constructors are not results a caller would silently drop.
 must_use_candidate = "allow"
+# Nursery: flags every binding of a type marked significant-drop, and rama's
+# pooled HTTP client is one, so each Homeserver or request builder in scope
+# trips it. Mutex guards are kept short by hand instead.
+significant_drop_tightening = "allow"
 
 [profile.release]
 lto = true

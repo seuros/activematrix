@@ -6,3 +6,4 @@ pub mod cli;
 pub mod config;
 pub mod crypto;
 pub mod delivery;
+pub mod matrix;
