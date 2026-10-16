@@ -51,6 +51,24 @@ jobs:
       - name: Coverage summary
         if: always()
         run: test -f coverage/coverage.md && cat coverage/coverage.md >> "$GITHUB_STEP_SUMMARY" || true
+      # Fresh installs load schema.rb; upgrades run the migrations. Both must
+      # land on the same schema.
+      - name: schema.rb matches the migrations
+        working-directory: test/dummy
+        env:
+          RAILS_ENV: development
+        run: |
+          rm db/schema.rb
+          bin/rails db:create db:migrate
+          git diff --exit-code db/schema.rb
+      # The daemon's tests load this snapshot instead of running Rails.
+      # pg_dump runs inside the service container, so it matches the server.
+      - name: The daemon's schema snapshot matches schema.rb
+        env:
+          PG_DUMP: docker exec -i ${{ job.services.postgres.id }} pg_dump
+        run: |
+          bundle exec rake active_matrix:schema_snapshot
+          git diff --exit-code crates/activematrixd/tests/schema.sql
 
   rust:
     runs-on: ubuntu-latest

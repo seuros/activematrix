@@ -33,10 +33,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activejob', '>= 8.1', '< 9'
   spec.add_dependency 'activerecord', '>= 8.1', '< 9'
-  spec.add_dependency 'bcrypt', '~> 3.1'
   spec.add_dependency 'pg', '~> 1.6'
   spec.add_dependency 'railties', '>= 8.1', '< 9'
-  spec.add_dependency 'state_machines-activerecord', '>= 0.100.0'
   spec.add_dependency 'zeitwerk', '~> 2.7'
 
   spec.metadata = {
