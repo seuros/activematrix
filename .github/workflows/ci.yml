@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
       # Structure only (line length, file length, visibility order, whitespace);
       # rustfmt and clippy run in the rust job, which has the build cache.
-      - uses: seuros/dictator-setup@v1
+      - uses: seuros/setup-dictator@master
       - run: dictator lint .
 
   ruby:
