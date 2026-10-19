@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "activematrix-fakehs"
-version = "0.0.15"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "rama",
@@ -15,7 +15,7 @@ dependencies = [
 
 [[package]]
 name = "activematrixd"
-version = "0.0.15"
+version = "0.1.0"
 dependencies = [
  "activematrix-fakehs",
  "anyhow",
