@@ -20,7 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
-use behavior_machines::{Leaf, Limit, Node, Status, Time, Tree};
+use behavior_machines::{Halt, HeapTree, Leaf, Limit, Node, Refusal, Status};
 use sqlx::PgPool;
 use tokio::sync::{Notify, mpsc, oneshot, watch};
 use tokio::task::JoinHandle;
@@ -127,7 +127,7 @@ enum Failure {
 }
 
 impl Leaf<Context> for Step {
-    fn tick(&self, ctx: &mut Context, _now: Time) -> Status {
+    fn tick(&self, ctx: &mut Context, _now: Duration) -> Status {
         match self {
             Self::LeaseHeld => pass(ctx.control.borrow().lease_held && !ctx.lease_lost),
             Self::Enabled => {
@@ -291,7 +291,7 @@ pub async fn run(
     report: SharedReport,
 ) -> Ending {
     let wake = Arc::new(Notify::new());
-    let mut tree = match Tree::new(tree()) {
+    let mut tree = match HeapTree::new(tree()) {
         Ok(tree) => tree,
         Err(error) => {
             tracing::error!(%error, "invalid agent tree");
@@ -318,12 +318,14 @@ pub async fn run(
     };
     let origin = Instant::now();
     loop {
-        let status = tree.tick(&mut ctx, Time::from_duration(origin.elapsed()));
+        let status = tree.tick(&mut ctx, origin.elapsed());
         ctx.flush().await;
-        if status != Status::Running {
-            break;
+        match status {
+            // A clock read behind the last tick ran no leaf; the next one will.
+            Ok(Status::Running) | Err(Refusal::TimeRegression) => {}
+            Ok(_) | Err(_) => break,
         }
-        let deadline = tree.next_deadline().map(|at| origin + Duration::from_nanos(at.as_nanos()));
+        let deadline = tree.next_deadline().map(|at| origin + at);
         let wake_at = [deadline, ctx.backoff_until].into_iter().flatten().min();
         tokio::select! {
             () = wake.notified() => {}
@@ -334,8 +336,8 @@ pub async fn run(
             },
         }
     }
-    if tree.is_running() {
-        tree.halt(&mut ctx);
+    match tree.halt(&mut ctx) {
+        Halt::Halted | Halt::AlreadyIdle => {}
     }
     finish(&ctx).await
 }
