@@ -22,6 +22,7 @@ chrono-machines.workspace = true
 gethostname.workspace = true
 hmac.workspace = true
 rama.workspace = true
+rand.workspace = true
 rpassword.workspace = true
 serde.workspace = true
 serde_json.workspace = true

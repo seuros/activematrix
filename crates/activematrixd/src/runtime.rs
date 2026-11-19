@@ -7,11 +7,12 @@ mod probe;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::num::NonZeroU8;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
-use chrono_machines::{BackoffStrategy, ExponentialBackoff};
+use chrono_machines::Exponential;
 use sqlx::PgPool;
 use sqlx::postgres::PgListener;
 use tokio::sync::{Notify, mpsc, watch};
@@ -29,16 +30,15 @@ use agent::{Control, Ending, Env, Report, SharedReport};
 const DELIVERY_SWEEP: Duration = Duration::from_secs(15);
 
 /// Exponential backoff with full jitter: about 1s, 2s, 4s ... up to a minute.
+const BACKOFF: Exponential =
+    match Exponential::new(Duration::from_secs(1), 2.0, Duration::from_mins(1), 1.0) {
+        Some(shape) => shape,
+        None => panic!("backoff shape is valid"),
+    };
+
 pub fn backoff(attempt: u8) -> Duration {
-    let policy = ExponentialBackoff::new()
-        .base_delay_ms(1_000)
-        .multiplier(2.0)
-        .max_delay_ms(60_000)
-        .jitter_factor(1.0)
-        .max_attempts(u8::MAX);
-    policy
-        .delay(attempt, &mut chrono_machines::rand::rng())
-        .map_or(Duration::from_mins(1), Duration::from_millis)
+    // Attempt 0 costs what the first failure does.
+    BACKOFF.delay(NonZeroU8::new(attempt).unwrap_or(NonZeroU8::MIN), rand::random())
 }
 
 #[derive(Debug, thiserror::Error)]
