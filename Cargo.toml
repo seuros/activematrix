@@ -13,7 +13,7 @@ authors = ["Abdelkader Boudih"]
 
 [workspace.dependencies]
 anyhow = "1.0.104"
-behavior-machines = { version = "0.5.0", features = ["alloc"] }
+behavior-machines = { version = ">=0.5", features = ["alloc"] }
 chrono-machines = ">=0.13"
 base64 = "0.23.1"
 gethostname = "1.1.0"
