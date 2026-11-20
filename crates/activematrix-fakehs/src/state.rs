@@ -3,6 +3,12 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
+use rama::extensions::Extension;
+use rama_x_ruma::{MatrixAuth, TokenIdentity};
+use ruma::api::client::sync::sync_events::v3::{
+    GlobalAccountData, Response as SyncResponse, Rooms,
+};
+use ruma::{OwnedDeviceId, OwnedUserId};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::Notify;
@@ -65,41 +71,69 @@ pub struct Recorded {
     pub body: Value,
 }
 
+/// A queued sync batch: the parts of a `/sync` response tests script. The
+/// server adds `next_batch`; any other field is a fixture mistake.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Batch {
+    #[serde(default)]
+    rooms: Rooms,
+    #[serde(default)]
+    account_data: GlobalAccountData,
+}
+
+impl Batch {
+    pub fn parse(batch: Value) -> serde_json::Result<Self> {
+        serde_json::from_value(batch)
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct Session {
-    pub user_id: String,
-    pub device_id: String,
+struct Session {
+    user_id: String,
+    device_id: String,
 }
 
 /// An event a client asked the server to accept.
-pub struct NewEvent<'a> {
-    pub room_id: &'a str,
-    pub event_type: &'a str,
-    pub state_key: Option<&'a str>,
-    pub txn_id: Option<&'a str>,
+pub struct NewEvent {
+    pub user_id: String,
+    /// Transactions are scoped to the sending device.
+    pub device_id: String,
+    pub room_id: String,
+    pub event_type: String,
+    pub state_key: Option<String>,
+    pub txn_id: Option<String>,
     pub content: Value,
 }
 
-pub enum AuthError {
-    Missing,
-    Unknown,
-}
-
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Shared {
     pub sync_wake: Notify,
     inner: Mutex<Inner>,
 }
 
-#[derive(Default)]
+impl Extension for Shared {}
+
+impl MatrixAuth for Shared {
+    fn resolve_token(&self, token: &str) -> impl Future<Output = TokenIdentity> + Send {
+        let identity = self.session(token).and_then(|Session { user_id, device_id }| {
+            let user_id = OwnedUserId::try_from(user_id).ok()?;
+            Some(TokenIdentity::User { user_id, device_id: OwnedDeviceId::from(device_id) })
+        });
+        std::future::ready(identity.unwrap_or(TokenIdentity::Invalid { soft_logout: false }))
+    }
+}
+
+#[derive(Debug, Default)]
 struct Inner {
     sessions: HashMap<String, Session>,
     revoked: HashSet<String>,
     passwords: HashMap<String, String>,
-    syncs: HashMap<String, VecDeque<Value>>,
+    syncs: HashMap<String, VecDeque<Batch>>,
     last_since: HashMap<String, String>,
     sent: Vec<Sent>,
-    txns: HashMap<(String, String), String>,
+    /// (user_id, device_id, txn_id) -> event_id
+    txns: HashMap<(String, String, String), String>,
     requests: Vec<Recorded>,
     faults: Vec<(Option<String>, String, Fault)>,
     counter: u64,
@@ -124,12 +158,6 @@ impl Inner {
 }
 
 impl Shared {
-    fn lock(&self) -> MutexGuard<'_, Inner> {
-        // A test that panicked while holding the lock already failed; keep
-        // serving so the rest of its assertions report something useful.
-        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
-    }
-
     pub fn add_user(&self, localpart: &str, password: Option<&str>) -> String {
         let user_id = format!("@{localpart}:{SERVER_NAME}");
         let mut inner = self.lock();
@@ -152,38 +180,33 @@ impl Shared {
         Some((user_id, token, device_id))
     }
 
-    pub fn session(&self, token: Option<&str>) -> Result<Session, AuthError> {
-        let token = token.ok_or(AuthError::Missing)?;
-        let inner = self.lock();
-        if inner.revoked.contains(token) {
-            return Err(AuthError::Unknown);
-        }
-        inner.sessions.get(token).cloned().ok_or(AuthError::Unknown)
+    /// The user id a live token belongs to.
+    pub fn token_user(&self, token: &str) -> Option<String> {
+        self.session(token).map(|session| session.user_id)
     }
 
     pub fn revoke(&self, token: &str) {
         self.lock().revoked.insert(token.to_owned());
     }
 
-    pub fn push_sync(&self, user_id: &str, batch: Value) {
+    pub fn push_sync(&self, user_id: &str, batch: Batch) {
         self.lock().syncs.entry(user_id.to_owned()).or_default().push_back(batch);
         self.sync_wake.notify_waiters();
     }
 
     /// The next queued batch for `user_id`, with `next_batch` filled in.
-    pub fn take_sync(&self, user_id: &str) -> Option<Value> {
+    pub fn take_sync(&self, user_id: &str) -> Option<SyncResponse> {
         let mut inner = self.lock();
-        let mut batch = inner.syncs.get_mut(user_id)?.pop_front()?;
-        let next_batch = format!("s{}", inner.next());
+        let batch = inner.syncs.get_mut(user_id)?.pop_front()?;
+        let mut response = SyncResponse::new(format!("s{}", inner.next()));
         drop(inner);
-        if let Value::Object(fields) = &mut batch {
-            fields.insert("next_batch".into(), Value::String(next_batch));
-        }
-        Some(batch)
+        response.rooms = batch.rooms;
+        response.account_data = batch.account_data;
+        Some(response)
     }
 
-    pub fn empty_sync(&self) -> Value {
-        serde_json::json!({ "next_batch": format!("s{}", self.lock().next()) })
+    pub fn empty_sync(&self) -> SyncResponse {
+        SyncResponse::new(format!("s{}", self.lock().next()))
     }
 
     pub fn note_since(&self, user_id: &str, since: Option<&str>) {
@@ -198,9 +221,10 @@ impl Shared {
 
     /// Records a sent event; a repeated transaction id returns the first
     /// event id and records nothing.
-    pub fn send(&self, token: &str, session: &Session, event: NewEvent<'_>) -> String {
+    pub fn send(&self, event: NewEvent) -> String {
         let mut inner = self.lock();
-        let txn_key = event.txn_id.map(|txn| (token.to_owned(), txn.to_owned()));
+        let txn_key =
+            event.txn_id.clone().map(|txn| (event.user_id.clone(), event.device_id.clone(), txn));
         if let Some(key) = &txn_key
             && let Some(event_id) = inner.txns.get(key)
         {
@@ -211,11 +235,11 @@ impl Shared {
             inner.txns.insert(key, event_id.clone());
         }
         inner.sent.push(Sent {
-            user_id: session.user_id.clone(),
-            room_id: event.room_id.to_owned(),
-            event_type: event.event_type.to_owned(),
-            state_key: event.state_key.map(str::to_owned),
-            txn_id: event.txn_id.map(str::to_owned),
+            user_id: event.user_id,
+            room_id: event.room_id,
+            event_type: event.event_type,
+            state_key: event.state_key,
+            txn_id: event.txn_id,
             event_id: event_id.clone(),
             content: event.content,
         });
@@ -223,8 +247,9 @@ impl Shared {
         event_id
     }
 
-    pub fn new_id(&self, prefix: &str) -> String {
-        format!("{prefix}{}:{SERVER_NAME}", self.lock().next())
+    /// A fresh `{prefix}{n}`, unique for this server.
+    pub fn new_local(&self, prefix: &str) -> String {
+        format!("{prefix}{}", self.lock().next())
     }
 
     pub fn record(&self, request: Recorded) {
@@ -251,5 +276,19 @@ impl Shared {
 
     pub fn requests(&self) -> Vec<Recorded> {
         self.lock().requests.clone()
+    }
+
+    fn lock(&self) -> MutexGuard<'_, Inner> {
+        // A test that panicked while holding the lock already failed; keep
+        // serving so the rest of its assertions report something useful.
+        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn session(&self, token: &str) -> Option<Session> {
+        let inner = self.lock();
+        if inner.revoked.contains(token) {
+            return None;
+        }
+        inner.sessions.get(token).cloned()
     }
 }

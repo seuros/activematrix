@@ -312,8 +312,9 @@ $ cargo fmt --all && cargo clippy --all-targets
   snapshot of the engine's tables. After changing a migration, run
   `bundle exec rake active_matrix:schema_snapshot`; CI fails when it is stale.
 - `crates/activematrix-fakehs` is a fake homeserver used by the daemon's
-  tests; its binary has an admin API under `/_fake/` for tests in other
-  languages.
+  tests. It parses every request against the spec (ruma), so a malformed
+  daemon request fails the tests; its binary has an admin API under
+  `/_fake/` for tests in other languages.
 - `bundle exec rake 'package[arm64-darwin]'` builds a platform gem with the
   daemon inside; `ACTIVEMATRIX_INSTALL_DIR` points the launcher at a local
   build instead.

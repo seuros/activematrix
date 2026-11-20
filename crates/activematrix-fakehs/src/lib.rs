@@ -3,10 +3,14 @@
 //! It serves the client-server endpoints activematrixd uses, over real HTTP
 //! on 127.0.0.1, with:
 //!
+//! - **spec parsing**: each endpoint is a typed ruma handler (rama-x-ruma),
+//!   so a request the spec does not allow is rejected with the Matrix error
+//!   a real homeserver would answer;
 //! - **scripted sync**: tests queue sync batches per user; `/sync` long-polls
 //!   until one arrives or the client's timeout passes;
-//! - **transaction-id dedup**: a repeated `PUT .../send/{type}/{txn}` returns
-//!   the first event id and records nothing new, as Synapse does;
+//! - **transaction-id dedup**: a repeated `PUT .../send/{type}/{txn}` from
+//!   the same device returns the first event id and records nothing new, as
+//!   Synapse does;
 //! - **fault injection**: the next matching request answers with a chosen
 //!   status (429 with `Retry-After`, 500, 401 `M_UNKNOWN_TOKEN`, ...);
 //! - **a request log** for assertions.
@@ -25,14 +29,13 @@ use std::time::Duration;
 use rama::graceful::Shutdown;
 use rama::http::server::HttpServer;
 use rama::rt::Executor;
-use rama::service::service_fn;
 use rama::tcp::server::TcpListener;
 use serde_json::Value;
 use tokio::sync::oneshot;
 
 pub use state::{Fault, Recorded, Sent};
 
-use state::Shared;
+use state::{Batch, Shared};
 
 pub const SERVER_NAME: &str = "matrix.test";
 
@@ -62,8 +65,8 @@ impl FakeHomeserver {
             .map_err(|e| anyhow::anyhow!(e))?;
         let addr = listener.local_addr()?;
 
-        let app_state = Arc::clone(&shared);
-        let app = service_fn(move |request| server::handle(Arc::clone(&app_state), request));
+        // the server clones its service per connection; share one instead
+        let app = Arc::new(server::app(Arc::clone(&shared)));
         tokio::spawn(async move {
             listener.serve(HttpServer::auto(executor).service(app)).await;
         });
@@ -89,8 +92,10 @@ impl FakeHomeserver {
     }
 
     /// Queues one sync response body for `user_id` (the server adds
-    /// `next_batch`). Wakes a waiting long-poll.
+    /// `next_batch`). Wakes a waiting long-poll. Panics on a batch that is
+    /// not the `rooms`/`account_data` of a spec `/sync` response.
     pub fn push_sync(&self, user_id: &str, batch: Value) {
+        let batch = Batch::parse(batch).unwrap_or_else(|e| panic!("invalid sync batch: {e}"));
         self.shared.push_sync(user_id, batch);
     }
 
