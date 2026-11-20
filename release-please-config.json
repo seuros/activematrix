@@ -4,7 +4,6 @@
     ".": {
       "release-type": "ruby",
       "package-name": "activematrix",
-      "release-as": "0.1.0",
       "version-file": "lib/active_matrix/version.rb",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
