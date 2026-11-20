@@ -136,3 +136,28 @@ async fn room_operations_reach_the_homeserver() {
     );
     assert_eq!(server.sent()[0].event_type, "m.room.topic");
 }
+
+/// The fake parses each request against the spec, so every call the outbox
+/// can make must pass.
+#[tokio::test]
+async fn the_remaining_outbox_requests_are_spec_conformant() {
+    let server = FakeHomeserver::start().await.unwrap();
+    let (client, _) = client(&server);
+    let carol = Some("@carol:matrix.test");
+
+    client.redact(ROOM, "$1", "txn-r1", None).await.unwrap();
+    client.redact(ROOM, "$2", "txn-r2", Some("spam")).await.unwrap();
+    client.put_state(ROOM, "m.room.member", BOT, &json!({ "membership": "join" })).await.unwrap();
+    for action in ["kick", "ban", "unban"] {
+        client.membership(ROOM, action, carol, Some("because")).await.unwrap();
+    }
+    client.membership(ROOM, "leave", None, None).await.unwrap();
+    client.typing(ROOM, false, Duration::ZERO).await.unwrap();
+    client.receipt(ROOM, "$1", "m.read.private").await.unwrap();
+    client.set_profile("displayname", "Bot").await.unwrap();
+    client.set_profile("avatar_url", "mxc://matrix.test/avatar").await.unwrap();
+    assert_eq!(client.join("#ops:matrix.test").await.unwrap().chars().next(), Some('!'));
+
+    let redactions: Vec<_> = server.sent().into_iter().map(|sent| sent.content).take(2).collect();
+    assert_eq!(redactions[1], json!({ "redacts": "$2", "reason": "spam" }));
+}
