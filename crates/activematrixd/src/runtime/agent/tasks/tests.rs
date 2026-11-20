@@ -28,7 +28,30 @@ fn rate_limits_use_server_hints_or_the_daemons_one_second_default() {
         let response = response.body(bytes.as_slice()).unwrap().try_into_hyperium_http().unwrap();
         let status = response.status();
         let error = ruma::api::error::Error::from_http_response(response);
-        let error = ClientError::Response { status, error: FromHttpResponseError::Server(error) };
+        let error = ClientError::Response {
+            status,
+            error: FromHttpResponseError::Server(error),
+            retry_after_header: None,
+        };
         assert_eq!(rate_limit_delay(&error), expected.map(Duration::from_millis), "{errcode}");
     }
+}
+
+#[test]
+fn a_proxy_429_with_retry_after_and_no_matrix_body_waits_as_told() {
+    let response = rama::http::Response::builder()
+        .status(429)
+        .header("content-type", "text/html")
+        .body(b"<html>slow down</html>".as_slice())
+        .unwrap()
+        .try_into_hyperium_http()
+        .unwrap();
+    let status = response.status();
+    let error = ruma::api::error::Error::from_http_response(response);
+    let error = ClientError::Response {
+        status,
+        error: FromHttpResponseError::Server(error),
+        retry_after_header: Some(ruma::api::error::RetryAfter::Delay(Duration::from_secs(60))),
+    };
+    assert_eq!(rate_limit_delay(&error), Some(Duration::from_secs(60)));
 }

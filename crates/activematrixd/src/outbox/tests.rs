@@ -51,5 +51,6 @@ fn rejected(status: u16, errcode: &str) -> CommandError {
     CommandError::Matrix(matrix::Error::Request(ClientError::Response {
         status,
         error: FromHttpResponseError::Server(body.into_error(status)),
+        retry_after_header: None,
     }))
 }
