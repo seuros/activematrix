@@ -28,8 +28,10 @@ dependencies = [
  "gethostname",
  "hmac",
  "rama",
+ "rama-x-ruma",
  "rand",
  "rpassword",
+ "ruma",
  "serde",
  "serde_json",
  "sha2",
@@ -2885,15 +2887,16 @@ dependencies = [
 
 [[package]]
 name = "rama-x-ruma"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "590aef292ef1f66aa39a2742fb3b52c12cf2744f7143a95bc16b3d0f617cf58b"
+checksum = "7b4a99e30141b1f8ecf4d17870475bfe051a532a270539f7d962db3fe48c3745"
 dependencies = [
  "http",
  "rama",
  "ruma",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

@@ -42,7 +42,7 @@ where
     type Error = Infallible;
 
     async fn serve(&self, request: Request) -> Result<Response, Infallible> {
-        let (mut parts, body) = request.into_parts();
+        let (parts, body) = request.into_parts();
         let bytes = match body.collect().await {
             Ok(collected) => collected.to_bytes(),
             Err(e) => return Ok(MatrixRejection::body_read_error(e.to_string()).into_response()),
@@ -66,11 +66,6 @@ where
             if let Some(fault) = self.shared.take_fault(&method, &path) {
                 return Ok(fault_response(&fault));
             }
-        }
-        // The spec allows `.../state/{type}/` for an empty state key, but
-        // rama drops a route's trailing slash, so that spelling never routes.
-        if path.contains("/state/") && path.ends_with('/') {
-            parts.uri.path_mut().trim_trailing_slash();
         }
         self.inner.serve(Request::from_parts(parts, Body::from(bytes))).await
     }
