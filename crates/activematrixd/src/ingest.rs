@@ -12,7 +12,10 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::matrix::sync::{Events, SyncResponse};
+use ruma::api::client::sync::sync_events::v3::State;
+use ruma::serde::Raw;
+
+use crate::matrix::sync::Response;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Batch {
@@ -79,22 +82,25 @@ pub struct InboxRow {
 /// `me` is the agent's user id: its own events are not delivered back to it.
 /// `deliver_timeline` is false for the first sync, so history is mirrored
 /// but never replayed into the bots; invites are delivered regardless.
-pub fn plan(response: SyncResponse, me: &str, deliver_timeline: bool) -> Batch {
+pub fn plan(response: Response, me: &str, deliver_timeline: bool) -> serde_json::Result<Batch> {
     let mut planner = Planner::default();
 
     for (room_id, joined) in response.rooms.join {
+        let room_id = room_id.to_string();
         let mut room = RoomRow {
             room_id: room_id.clone(),
             membership: "join".into(),
-            joined_member_count: joined.summary.joined_member_count,
-            invited_member_count: joined.summary.invited_member_count,
+            joined_member_count: joined.summary.joined_member_count.map(u64::from),
+            invited_member_count: joined.summary.invited_member_count.map(u64::from),
             ..RoomRow::default()
         };
-        for event in joined.state.events.iter().chain(&joined.timeline.events) {
+        let state = state_values(&joined.state)?;
+        let timeline = values(&joined.timeline.events)?;
+        for event in state.iter().chain(&timeline) {
             planner.state(&mut room, event, me);
         }
         if deliver_timeline {
-            for event in &joined.timeline.events {
+            for event in &timeline {
                 planner.timeline(&room_id, event, me);
             }
         }
@@ -104,20 +110,25 @@ pub fn plan(response: SyncResponse, me: &str, deliver_timeline: bool) -> Batch {
     }
 
     for (room_id, invited) in response.rooms.invite {
+        let room_id = room_id.to_string();
         let mut room =
             RoomRow { room_id: room_id.clone(), membership: "invite".into(), ..RoomRow::default() };
-        for event in &invited.invite_state.events {
+        let invite_state = values(&invited.invite_state.events)?;
+        for event in &invite_state {
             planner.state(&mut room, event, me);
         }
-        planner.invite(&room_id, &invited.invite_state, me);
+        planner.invite(&room_id, &invite_state, me);
         room.membership = "invite".into();
         planner.rooms.insert(room_id, room);
     }
 
     for (room_id, left) in response.rooms.leave {
+        let room_id = room_id.to_string();
         let mut room =
             RoomRow { room_id: room_id.clone(), membership: "leave".into(), ..RoomRow::default() };
-        for event in left.state.events.iter().chain(&left.timeline.events) {
+        let state = state_values(&left.state)?;
+        let timeline = values(&left.timeline.events)?;
+        for event in state.iter().chain(&timeline) {
             planner.state(&mut room, event, me);
         }
         if room.membership == "join" || room.membership == "invite" {
@@ -126,21 +137,20 @@ pub fn plan(response: SyncResponse, me: &str, deliver_timeline: bool) -> Batch {
         planner.rooms.insert(room_id, room);
     }
 
-    let direct_rooms = response
-        .account_data
-        .events
+    let account_data = values(&response.account_data.events)?;
+    let direct_rooms = account_data
         .iter()
         .find(|event| str_at(event, "type") == Some("m.direct"))
         .map(|event| direct_room_ids(&event["content"]));
 
-    Batch {
+    Ok(Batch {
         next_batch: response.next_batch,
         rooms: planner.rooms.into_values().collect(),
         state: planner.state.into_values().collect(),
         members: planner.members.into_values().collect(),
         inbox: planner.inbox,
         direct_rooms,
-    }
+    })
 }
 
 #[derive(Default)]
@@ -149,6 +159,17 @@ struct Planner {
     state: BTreeMap<(String, String, String), StateRow>,
     members: BTreeMap<(String, String), MemberRow>,
     inbox: Vec<InboxRow>,
+}
+
+fn values<T>(events: &[Raw<T>]) -> serde_json::Result<Vec<Value>> {
+    events.iter().map(Raw::deserialize_as).collect()
+}
+
+fn state_values(state: &State) -> serde_json::Result<Vec<Value>> {
+    match state {
+        State::Before(state) => values(&state.events),
+        _ => Ok(Vec::new()),
+    }
 }
 
 impl Planner {
@@ -228,13 +249,13 @@ impl Planner {
     /// events have no id, so one is derived from the invite state: the same
     /// invite synced twice is ingested once, and a later re-invite (different
     /// state) is a new event.
-    fn invite(&mut self, room_id: &str, invite_state: &Events, me: &str) {
-        let Some(member) = invite_state.events.iter().find(|event| {
+    fn invite(&mut self, room_id: &str, invite_state: &[Value], me: &str) {
+        let Some(member) = invite_state.iter().find(|event| {
             str_at(event, "type") == Some("m.room.member") && str_at(event, "state_key") == Some(me)
         }) else {
             return;
         };
-        let raw = json!({ "invite_state": invite_state.events });
+        let raw = json!({ "invite_state": invite_state });
         let digest = Sha256::digest(raw.to_string().as_bytes());
         let mut event_id = format!("invite:{room_id}:");
         for byte in &digest[..8] {

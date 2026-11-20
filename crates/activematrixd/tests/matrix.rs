@@ -7,7 +7,8 @@ use std::time::Duration;
 
 use activematrix_fakehs::{FakeHomeserver, Fault, batch};
 use activematrixd::crypto::AccessToken;
-use activematrixd::matrix::{self, Client, Homeserver, MatrixError, sync};
+use activematrixd::matrix::{self, Client, Error, sync};
+use ruma::api::error::ErrorCode;
 use serde_json::json;
 
 const BOT: &str = "@bot:matrix.test";
@@ -15,8 +16,7 @@ const ROOM: &str = "!room:matrix.test";
 
 fn client(server: &FakeHomeserver) -> (Client, String) {
     let token = server.add_user("bot", Some("hunter2"));
-    let client =
-        Client::new(Homeserver::new(&server.url()), AccessToken::new(token.clone()), BOT.into());
+    let client = Client::new(&server.url(), &AccessToken::new(token.clone()), BOT.into());
     (client, token)
 }
 
@@ -24,20 +24,20 @@ fn client(server: &FakeHomeserver) -> (Client, String) {
 async fn logs_in_and_knows_who_it_is() {
     let server = FakeHomeserver::start().await.unwrap();
     server.add_user("bot", Some("hunter2"));
-    let homeserver = Homeserver::new(&server.url());
+    let homeserver = server.url();
 
     let login = matrix::login(&homeserver, "bot", "hunter2", "activematrixd").await.unwrap();
-    let whoami = Client::new(homeserver.clone(), login.access_token, login.user_id.clone())
+    let whoami = Client::new(&homeserver, &login.access_token, login.user_id.clone())
         .whoami()
         .await
         .unwrap();
 
     assert_eq!(login.user_id, BOT);
-    assert_eq!(whoami.device_id.as_deref(), Some(login.device_id.as_str()));
-    assert!(matches!(
-        matrix::login(&homeserver, "bot", "wrong", "x").await,
-        Err(MatrixError::Rejected { status: 403, .. })
-    ));
+    assert_eq!(whoami.device_id.as_deref().map(AsRef::as_ref), Some(login.device_id.as_str()));
+    let error = matrix::login(&homeserver, "bot", "wrong", "x").await.unwrap_err();
+    assert_eq!(error.status().map(|status| status.as_u16()), Some(403));
+    assert_eq!(error.errcode(), Some(ErrorCode::Forbidden));
+    assert!(!error.is_retryable());
 }
 
 #[tokio::test]
@@ -57,7 +57,10 @@ async fn sync_long_polls_until_a_batch_arrives() {
     let response = pending.await.unwrap().unwrap();
     let events = &response.rooms.join[ROOM].timeline.events;
 
-    assert_eq!(events[0]["content"]["body"], "!ping");
+    assert_eq!(
+        events[0].deserialize_as::<serde_json::Value>().unwrap()["content"]["body"],
+        "!ping"
+    );
     assert_eq!(server.last_since(BOT), Some(first.next_batch));
 }
 
@@ -82,9 +85,14 @@ async fn rate_limits_carry_retry_after() {
     let (client, _) = client(&server);
     server.inject(Some("PUT"), "/_matrix/client/v3/rooms/", Fault::rate_limited(2));
 
-    let error = client.send_event(ROOM, "m.room.message", "t", &json!({})).await.unwrap_err();
+    let Error::Request(error) =
+        client.send_event(ROOM, "m.room.message", "t", &json!({})).await.unwrap_err()
+    else {
+        panic!("expected a Matrix error");
+    };
 
-    assert_eq!(error, MatrixError::RateLimited(Duration::from_secs(2)));
+    assert_eq!(error.retry_after(), Some(Duration::from_secs(2)));
+    assert!(error.is_retryable());
     assert!(
         client.send_event(ROOM, "m.room.message", "t", &json!({})).await.is_ok(),
         "fault is one-shot"
@@ -97,16 +105,14 @@ async fn a_revoked_token_is_unknown() {
     let (client, token) = client(&server);
     server.revoke(&token);
 
-    assert_eq!(client.whoami().await.unwrap_err(), MatrixError::UnknownToken);
+    let error = client.whoami().await.unwrap_err();
+    assert_eq!(error.errcode(), Some(ErrorCode::UnknownToken));
+    assert!(!error.is_retryable());
 }
 
 #[tokio::test]
 async fn an_unreachable_homeserver_is_a_retryable_transport_error() {
-    let client = Client::new(
-        Homeserver::new("http://127.0.0.1:9"),
-        AccessToken::new("t".into()),
-        BOT.into(),
-    );
+    let client = Client::new("http://127.0.0.1:9", &AccessToken::new("t".into()), BOT.into());
 
     let error = client.whoami().await.unwrap_err();
 
@@ -131,7 +137,7 @@ async fn room_operations_reach_the_homeserver() {
     let paths: Vec<String> =
         server.requests().into_iter().map(|r| format!("{} {}", r.method, r.path)).collect();
     assert!(
-        paths.contains(&"POST /_matrix/client/v3/rooms/%21room%3Amatrix.test/invite".to_owned()),
+        paths.contains(&"POST /_matrix/client/v3/rooms/!room:matrix.test/invite".to_owned()),
         "{paths:#?}"
     );
     assert_eq!(server.sent()[0].event_type, "m.room.topic");
@@ -152,6 +158,7 @@ async fn the_remaining_outbox_requests_are_spec_conformant() {
         client.membership(ROOM, action, carol, Some("because")).await.unwrap();
     }
     client.membership(ROOM, "leave", None, None).await.unwrap();
+    client.membership(ROOM, "forget", None, None).await.unwrap();
     client.typing(ROOM, false, Duration::ZERO).await.unwrap();
     client.receipt(ROOM, "$1", "m.read.private").await.unwrap();
     client.set_profile("displayname", "Bot").await.unwrap();

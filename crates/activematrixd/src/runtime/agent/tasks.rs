@@ -3,6 +3,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+use rama_x_ruma::client::ClientError;
+use ruma::api::error::ErrorCode;
 use tokio::sync::Notify;
 use uuid::Uuid;
 
@@ -11,7 +13,7 @@ use crate::crypto::CryptoError;
 use crate::db::agents::{self, Agent, State};
 use crate::db::ingest::{self as db_ingest, IngestError};
 use crate::matrix::sync::{FILTER, FIRST_SYNC_FILTER};
-use crate::matrix::{Client, Homeserver, MatrixError};
+use crate::matrix::{self, Client};
 use crate::runtime::{backoff, metrics};
 use crate::{ingest, outbox};
 
@@ -41,27 +43,26 @@ pub(super) async fn connect(agent: &Agent, env: &Env) -> Result<Client, Failure>
         }
     }
 
-    let homeserver = Homeserver::new(&agent.homeserver_url);
     let provisional = Client::new(
-        homeserver.clone(),
-        opened.token.clone(),
+        &agent.homeserver_url,
+        &opened.token,
         agent.user_id.clone().unwrap_or_default(),
     );
-    let whoami = provisional.whoami().await.map_err(|error| match error {
-        MatrixError::UnknownToken => Failure::Fatal(
+    let whoami = provisional.whoami().await.map_err(|error| match error.errcode() {
+        Some(ErrorCode::UnknownToken) => Failure::Fatal(
             "the homeserver rejected the access token; run `activematrix login`".into(),
         ),
-        other => Failure::Transient(other.to_string()),
+        _ => Failure::Transient(error.to_string()),
     })?;
     if let Some(expected) = &agent.user_id
-        && expected != &whoami.user_id
+        && expected != whoami.user_id.as_str()
     {
         return Err(Failure::Fatal(format!(
             "the access token belongs to {}, not {expected}",
             whoami.user_id
         )));
     }
-    Ok(Client::new(homeserver, opened.token, whoami.user_id))
+    Ok(provisional.with_user_id(whoami.user_id.to_string()))
 }
 
 /// Syncs until something goes wrong, committing every batch with its token.
@@ -82,18 +83,24 @@ pub(super) async fn sync_loop(
         let timeout = if online { SYNC_TIMEOUT } else { Duration::ZERO };
         let response = match client.sync(since.as_deref(), timeout, filter).await {
             Ok(response) => response,
-            Err(MatrixError::UnknownToken) => {
-                return Failure::Fatal(
-                    "the homeserver rejected the access token; run `activematrix login`".into(),
-                );
-            }
-            Err(MatrixError::RateLimited(after)) => {
-                tokio::time::sleep(after).await;
-                continue;
+            Err(matrix::Error::Request(error)) => {
+                if error.errcode() == Some(ErrorCode::UnknownToken) {
+                    return Failure::Fatal(
+                        "the homeserver rejected the access token; run `activematrix login`".into(),
+                    );
+                }
+                if let Some(after) = rate_limit_delay(&error) {
+                    tokio::time::sleep(after).await;
+                    continue;
+                }
+                return Failure::Transient(error.to_string());
             }
             Err(error) => return Failure::Transient(error.to_string()),
         };
-        let batch = ingest::plan(response, client.user_id(), !first);
+        let batch = match ingest::plan(response, client.user_id(), !first) {
+            Ok(batch) => batch,
+            Err(error) => return Failure::Transient(error.to_string()),
+        };
         let queued = batch.inbox.len() as u64;
         match db_ingest::apply(&env.db, &env.node, agent.id, &batch).await {
             Ok(touched) => {
@@ -148,8 +155,10 @@ pub(super) async fn outbox_worker(client: Client, env: &Env, agent_id: Uuid, wak
         for (index, command) in commands.iter().enumerate() {
             let result = outbox::execute(&client, command).await;
             let retry_after = result.as_ref().err().and_then(|error| match error {
-                outbox::CommandError::Matrix(error) => error.retry_after(),
-                outbox::CommandError::Invalid { .. } => None,
+                outbox::CommandError::Matrix(matrix::Error::Request(error)) => {
+                    rate_limit_delay(error)
+                }
+                _ => None,
             });
             let outcome = outbox::outcome(command, result);
             match &outcome {
@@ -178,3 +187,14 @@ pub(super) async fn outbox_worker(client: Client, env: &Env, agent_id: Uuid, wak
         }
     }
 }
+
+fn rate_limit_delay(error: &ClientError) -> Option<Duration> {
+    error.retry_after().or_else(|| {
+        (error.errcode() == Some(ErrorCode::LimitExceeded)
+            || error.status().is_some_and(|status| status.as_u16() == 429))
+        .then_some(Duration::from_secs(1))
+    })
+}
+
+#[cfg(test)]
+mod tests;

@@ -22,8 +22,10 @@ chrono-machines.workspace = true
 gethostname.workspace = true
 hmac.workspace = true
 rama.workspace = true
+rama-x-ruma = { workspace = true, features = ["client"] }
 rand.workspace = true
 rpassword.workspace = true
+ruma = { workspace = true, features = ["client-api-c"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

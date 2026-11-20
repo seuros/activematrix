@@ -10,8 +10,10 @@ use std::time::Duration;
 
 use activematrixd::db::{Db, SchemaError, agents, ingest};
 use activematrixd::ingest::plan;
-use activematrixd::matrix::sync::SyncResponse;
+use activematrixd::matrix::sync::Response;
 use common::TestDb;
+use rama::http::convert::hyperium::TryIntoHyperiumHttp;
+use ruma::api::IncomingResponseExt;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -28,8 +30,10 @@ macro_rules! db {
     };
 }
 
-fn batch(value: Value, deliver: bool) -> activematrixd::ingest::Batch {
-    plan(serde_json::from_value::<SyncResponse>(value).unwrap(), ME, deliver)
+fn batch(value: &Value, deliver: bool) -> activematrixd::ingest::Batch {
+    let bytes = value.to_string().into_bytes();
+    let response = rama::http::Response::new(bytes.as_slice()).try_into_hyperium_http().unwrap();
+    plan(Response::try_from_http_response(response).unwrap(), ME, deliver).unwrap()
 }
 
 fn messages(next_batch: &str, room: &str, ids: &[&str]) -> Value {
@@ -154,7 +158,7 @@ async fn ingest_mirrors_the_room_and_queues_events_in_order() {
     let db = db!();
     let id = claimed(&db, "bot").await;
     let batch = batch(
-        json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
+        &json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "summary": { "m.joined_member_count": 2 },
             "state": { "events": [
                 { "type": "m.room.name", "state_key": "", "event_id": "$n",
@@ -215,7 +219,7 @@ async fn ingest_mirrors_the_room_and_queues_events_in_order() {
 async fn applying_a_batch_twice_delivers_nothing_twice() {
     let db = db!();
     let id = claimed(&db, "bot").await;
-    let batch = batch(messages("s1", "!r:matrix.test", &["$1", "$2"]), true);
+    let batch = batch(&messages("s1", "!r:matrix.test", &["$1", "$2"]), true);
 
     assert_eq!(ingest::apply(&db.pool, NODE, id, &batch).await.unwrap().len(), 1);
     assert_eq!(ingest::apply(&db.pool, NODE, id, &batch).await.unwrap(), Vec::<String>::new());
@@ -235,7 +239,7 @@ async fn a_lost_lease_writes_nothing() {
         .unwrap();
 
     let result =
-        ingest::apply(&db.pool, NODE, id, &batch(messages("s9", "!r:matrix.test", &["$1"]), true))
+        ingest::apply(&db.pool, NODE, id, &batch(&messages("s9", "!r:matrix.test", &["$1"]), true))
             .await;
 
     assert!(matches!(result, Err(ingest::IngestError::LeaseLost)));
@@ -249,14 +253,14 @@ async fn later_batches_keep_fields_they_do_not_mention() {
     let db = db!();
     let id = claimed(&db, "bot").await;
     let named = batch(
-        json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": { "state": { "events": [
+        &json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": { "state": { "events": [
             { "type": "m.room.name", "state_key": "", "event_id": "$n", "sender": "@a:m",
               "content": { "name": "Ops" } },
         ] } } } } }),
         true,
     );
     ingest::apply(&db.pool, NODE, id, &named).await.unwrap();
-    ingest::apply(&db.pool, NODE, id, &batch(messages("s2", "!r:matrix.test", &["$1"]), true))
+    ingest::apply(&db.pool, NODE, id, &batch(&messages("s2", "!r:matrix.test", &["$1"]), true))
         .await
         .unwrap();
 
@@ -274,15 +278,15 @@ async fn later_batches_keep_fields_they_do_not_mention() {
 async fn m_direct_marks_direct_rooms() {
     let db = db!();
     let id = claimed(&db, "bot").await;
-    ingest::apply(&db.pool, NODE, id, &batch(messages("s1", "!dm:matrix.test", &["$1"]), true))
+    ingest::apply(&db.pool, NODE, id, &batch(&messages("s1", "!dm:matrix.test", &["$1"]), true))
         .await
         .unwrap();
-    ingest::apply(&db.pool, NODE, id, &batch(messages("s2", "!group:matrix.test", &["$2"]), true))
+    ingest::apply(&db.pool, NODE, id, &batch(&messages("s2", "!group:matrix.test", &["$2"]), true))
         .await
         .unwrap();
 
     let direct = batch(
-        json!({ "next_batch": "s3", "account_data": { "events": [
+        &json!({ "next_batch": "s3", "account_data": { "events": [
             { "type": "m.direct", "content": { "@alice:matrix.test": ["!dm:matrix.test"] } },
         ] } }),
         true,

@@ -1,30 +1,41 @@
-//! A Matrix client-server API client with only what the daemon needs.
-//!
-//! Endpoints are `v3` (every homeserver since Matrix 1.1); event content
-//! passes through as raw JSON, so the daemon never has to understand the
-//! events bots send. Errors say whether a retry can help.
+//! The daemon's Matrix operations, sent as typed ruma requests.
 
-mod http;
+mod membership;
 pub mod sync;
 
-use std::fmt::Write as _;
+use std::sync::Once;
 use std::time::Duration;
 
-use rama::http::Method;
-use serde::Deserialize;
-use serde_json::{Value, json};
-
-pub use http::{Homeserver, MatrixError, install_crypto_provider};
+use rama::http::client::DefaultHttpWebClient;
+use rama_x_ruma::MatrixClient;
+use rama_x_ruma::client::ClientError;
+use ruma::api::client::{
+    account::whoami::v3 as whoami, media::create_content::v3 as upload,
+    message::send_message_event::v3 as send, profile, receipt::create_receipt::v3 as receipt,
+    redact::redact_event::v3 as redact, room::create_room::v3 as create_room,
+    session::login::v3 as login, state::send_state_event::v3 as state,
+    typing::create_typing_event::v3 as typing, uiaa::MatrixUserIdentifier,
+};
+use ruma::profile::ProfileFieldValue;
+use ruma::serde::Raw;
+use serde_json::Value;
 
 use crate::crypto::AccessToken;
 
 /// Requests other than `/sync` give up after this long.
 pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
-#[derive(Debug, Deserialize)]
-pub struct WhoAmI {
-    pub user_id: String,
-    pub device_id: Option<String>,
+/// Local command validation or a failed Matrix exchange.
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Request(#[from] ClientError),
+    #[error("invalid Matrix identifier: {0}")]
+    Identifier(#[from] ruma::IdParseError),
+    #[error("invalid Matrix request: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("invalid Matrix operation: {0}")]
+    Invalid(String),
 }
 
 #[derive(Debug)]
@@ -36,29 +47,19 @@ pub struct Login {
 
 /// `user` is a localpart or a full user id.
 pub async fn login(
-    homeserver: &Homeserver,
+    homeserver: &str,
     user: &str,
     password: &str,
     device_name: &str,
-) -> Result<Login, MatrixError> {
-    #[derive(Deserialize)]
-    struct Response {
-        user_id: String,
-        device_id: String,
-        access_token: String,
-    }
-    let body = json!({
-        "type": "m.login.password",
-        "identifier": { "type": "m.id.user", "user": user },
-        "password": password,
-        "initial_device_display_name": device_name,
-    });
-    let response: Response = homeserver
-        .json(Method::POST, "/_matrix/client/v3/login", &[], None, Some(&body), REQUEST_TIMEOUT)
-        .await?;
+) -> Result<Login, ClientError> {
+    let password =
+        login::Password::new(MatrixUserIdentifier::new(user.into()).into(), password.into());
+    let mut request = login::Request::new(login::LoginInfo::Password(password));
+    request.initial_device_display_name = Some(device_name.into());
+    let response = transport(homeserver).send(request).await?;
     Ok(Login {
-        user_id: response.user_id,
-        device_id: response.device_id,
+        user_id: response.user_id.to_string(),
+        device_id: response.device_id.to_string(),
         access_token: AccessToken::new(response.access_token),
     })
 }
@@ -66,79 +67,58 @@ pub async fn login(
 /// An authenticated session on a homeserver.
 #[derive(Clone)]
 pub struct Client {
-    homeserver: Homeserver,
-    token: AccessToken,
+    matrix: MatrixClient<DefaultHttpWebClient>,
     user_id: String,
 }
 
 impl Client {
-    pub const fn new(homeserver: Homeserver, token: AccessToken, user_id: String) -> Self {
-        Self { homeserver, token, user_id }
+    pub fn new(homeserver: &str, token: &AccessToken, user_id: String) -> Self {
+        Self { matrix: transport(homeserver).with_access_token(token.expose()), user_id }
     }
 
     pub fn user_id(&self) -> &str {
         &self.user_id
     }
 
-    pub const fn homeserver(&self) -> &Homeserver {
-        &self.homeserver
+    #[must_use]
+    pub fn with_user_id(mut self, user_id: String) -> Self {
+        self.user_id = user_id;
+        self
     }
 
-    async fn call<T: serde::de::DeserializeOwned>(
-        &self,
-        method: Method,
-        path: &str,
-        query: &[(&str, &str)],
-        body: Option<&Value>,
-    ) -> Result<T, MatrixError> {
-        self.homeserver.json(method, path, query, Some(&self.token), body, REQUEST_TIMEOUT).await
+    pub async fn whoami(&self) -> Result<whoami::Response, ClientError> {
+        self.matrix.send(whoami::Request::new()).await
     }
 
-    pub async fn whoami(&self) -> Result<WhoAmI, MatrixError> {
-        self.call(Method::GET, "/_matrix/client/v3/account/whoami", &[], None).await
-    }
-
-    /// Long-polls `/sync` for up to `timeout`.
+    /// Long-polls `/sync`, allowing the server's timeout plus transport slack.
     pub async fn sync(
         &self,
         since: Option<&str>,
         timeout: Duration,
         filter: &str,
-    ) -> Result<sync::SyncResponse, MatrixError> {
-        let timeout_ms = timeout.as_millis().to_string();
-        let mut query = vec![("timeout", timeout_ms.as_str()), ("filter", filter)];
-        if let Some(since) = since {
-            query.push(("since", since));
-        }
-        // The server holds the request for `timeout`; allow for it.
-        self.homeserver
-            .json(
-                Method::GET,
-                "/_matrix/client/v3/sync",
-                &query,
-                Some(&self.token),
-                None,
-                timeout + REQUEST_TIMEOUT,
-            )
-            .await
+    ) -> Result<sync::Response, Error> {
+        let mut request = sync::Request::new();
+        request.since = since.map(str::to_owned);
+        request.timeout = Some(timeout);
+        request.filter = Some(sync::Filter::FilterDefinition(serde_json::from_str(filter)?));
+        Ok(self.matrix.send_with_timeout(request, timeout + REQUEST_TIMEOUT).await?)
     }
 
-    /// Sends a message-like event. Repeating a `txn_id` is safe: the
-    /// homeserver returns the first event id instead of posting again.
+    /// Repeating a transaction id returns the original event id.
     pub async fn send_event(
         &self,
         room_id: &str,
         event_type: &str,
         txn_id: &str,
         content: &Value,
-    ) -> Result<String, MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/rooms/{}/send/{}/{}",
-            seg(room_id),
-            seg(event_type),
-            seg(txn_id)
+    ) -> Result<String, Error> {
+        let request = send::Request::new_raw(
+            room_id.try_into()?,
+            txn_id.into(),
+            event_type.into(),
+            Raw::from_json(serde_json::value::to_raw_value(content)?),
         );
-        event_id(&self.call(Method::PUT, &path, &[], Some(content)).await?)
+        Ok(self.matrix.send(request).await?.event_id.to_string())
     }
 
     pub async fn put_state(
@@ -147,71 +127,33 @@ impl Client {
         event_type: &str,
         state_key: &str,
         content: &Value,
-    ) -> Result<String, MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/rooms/{}/state/{}/{}",
-            seg(room_id),
-            seg(event_type),
-            seg(state_key)
+    ) -> Result<String, Error> {
+        let request = state::Request::new_raw(
+            room_id.try_into()?,
+            event_type.into(),
+            state_key.into(),
+            Raw::from_json(serde_json::value::to_raw_value(content)?),
         );
-        event_id(&self.call(Method::PUT, &path, &[], Some(content)).await?)
+        Ok(self.matrix.send(request).await?.event_id.to_string())
     }
 
     pub async fn redact(
         &self,
         room_id: &str,
-        event_id_to_redact: &str,
+        event_id: &str,
         txn_id: &str,
         reason: Option<&str>,
-    ) -> Result<String, MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/rooms/{}/redact/{}/{}",
-            seg(room_id),
-            seg(event_id_to_redact),
-            seg(txn_id)
-        );
-        let body = reason.map_or_else(|| json!({}), |reason| json!({ "reason": reason }));
-        event_id(&self.call(Method::PUT, &path, &[], Some(&body)).await?)
+    ) -> Result<String, Error> {
+        let mut request =
+            redact::Request::new(room_id.try_into()?, event_id.try_into()?, txn_id.into());
+        request.reason = reason.map(str::to_owned);
+        Ok(self.matrix.send(request).await?.event_id.to_string())
     }
 
-    /// Joins a room by id or alias; returns the room id.
-    pub async fn join(&self, room: &str) -> Result<String, MatrixError> {
-        let response: Value = self
-            .call(
-                Method::POST,
-                &format!("/_matrix/client/v3/join/{}", seg(room)),
-                &[],
-                Some(&json!({})),
-            )
-            .await?;
-        string_field(&response, "room_id")
-    }
-
-    /// `leave`, `forget`, `invite`, `kick`, `ban` or `unban`. Membership
-    /// changes towards another user take `user_id`.
-    pub async fn membership(
-        &self,
-        room_id: &str,
-        action: &str,
-        user_id: Option<&str>,
-        reason: Option<&str>,
-    ) -> Result<(), MatrixError> {
-        let mut body = json!({});
-        if let Some(user_id) = user_id {
-            body["user_id"] = json!(user_id);
-        }
-        if let Some(reason) = reason {
-            body["reason"] = json!(reason);
-        }
-        let path = format!("/_matrix/client/v3/rooms/{}/{}", seg(room_id), seg(action));
-        self.call::<Value>(Method::POST, &path, &[], Some(&body)).await.map(drop)
-    }
-
-    /// `body` is a `/createRoom` request as the spec defines it.
-    pub async fn create_room(&self, body: &Value) -> Result<String, MatrixError> {
-        let response: Value =
-            self.call(Method::POST, "/_matrix/client/v3/createRoom", &[], Some(body)).await?;
-        string_field(&response, "room_id")
+    /// `body` follows the `/createRoom` schema.
+    pub async fn create_room(&self, body: &Value) -> Result<String, Error> {
+        let request = create_room_request(body)?;
+        Ok(self.matrix.send(request).await?.room_id.to_string())
     }
 
     pub async fn typing(
@@ -219,16 +161,16 @@ impl Client {
         room_id: &str,
         typing: bool,
         timeout: Duration,
-    ) -> Result<(), MatrixError> {
-        let path =
-            format!("/_matrix/client/v3/rooms/{}/typing/{}", seg(room_id), seg(&self.user_id));
-        let body = if typing {
-            let timeout = u64::try_from(timeout.as_millis()).unwrap_or(u64::MAX);
-            json!({ "typing": true, "timeout": timeout })
+    ) -> Result<(), Error> {
+        let state = if typing {
+            typing::Typing::Yes(typing::TypingInfo::new(timeout))
         } else {
-            json!({ "typing": false })
+            typing::Typing::No
         };
-        self.call::<Value>(Method::PUT, &path, &[], Some(&body)).await.map(drop)
+        let request =
+            typing::Request::new(self.user_id.as_str().try_into()?, room_id.try_into()?, state);
+        self.matrix.send(request).await?;
+        Ok(())
     }
 
     pub async fn receipt(
@@ -236,70 +178,88 @@ impl Client {
         room_id: &str,
         event_id: &str,
         receipt_type: &str,
-    ) -> Result<(), MatrixError> {
-        let path = format!(
-            "/_matrix/client/v3/rooms/{}/receipt/{}/{}",
-            seg(room_id),
-            seg(receipt_type),
-            seg(event_id)
-        );
-        self.call::<Value>(Method::POST, &path, &[], Some(&json!({}))).await.map(drop)
+    ) -> Result<(), Error> {
+        let request =
+            receipt::Request::new(room_id.try_into()?, receipt_type.into(), event_id.try_into()?);
+        self.matrix.send(request).await?;
+        Ok(())
     }
 
     /// `field` is `displayname` or `avatar_url`.
-    pub async fn set_profile(&self, field: &str, value: &str) -> Result<(), MatrixError> {
-        let path = format!("/_matrix/client/v3/profile/{}/{}", seg(&self.user_id), seg(field));
-        self.call::<Value>(Method::PUT, &path, &[], Some(&json!({ field: value }))).await.map(drop)
+    pub async fn set_profile(&self, field: &str, value: &str) -> Result<(), Error> {
+        let value = match field {
+            "displayname" => ProfileFieldValue::DisplayName(value.into()),
+            "avatar_url" => ProfileFieldValue::AvatarUrl(value.into()),
+            _ => return Err(Error::Invalid(format!("profile field {field}"))),
+        };
+        let request =
+            profile::set_profile_field::v3::Request::new(self.user_id.as_str().try_into()?, value);
+        self.matrix.send(request).await?;
+        Ok(())
     }
 
-    /// Uploads media; returns its `mxc://` URI.
+    /// Uploads media through `/media/v3/upload`, returning its MXC URI.
     pub async fn upload(
         &self,
         content_type: &str,
         filename: Option<&str>,
         bytes: Vec<u8>,
-    ) -> Result<String, MatrixError> {
-        let query: Vec<(&str, &str)> =
-            filename.map(|name| vec![("filename", name)]).unwrap_or_default();
-        let response: Value = self
-            .homeserver
-            .upload(
-                "/_matrix/media/v3/upload",
-                &query,
-                &self.token,
-                content_type,
-                bytes,
-                REQUEST_TIMEOUT,
-            )
-            .await?;
-        string_field(&response, "content_uri")
+    ) -> Result<String, Error> {
+        let mut request = upload::Request::new(bytes);
+        request.content_type = Some(content_type.into());
+        request.filename = filename.map(str::to_owned);
+        Ok(self.matrix.send(request).await?.content_uri.to_string())
     }
 }
 
-fn event_id(response: &Value) -> Result<String, MatrixError> {
-    string_field(response, "event_id")
-}
-
-fn string_field(response: &Value, field: &str) -> Result<String, MatrixError> {
-    response
-        .get(field)
-        .and_then(Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| MatrixError::Decode(format!("response has no {field}")))
-}
-
-/// Percent-encodes one path segment: everything but RFC 3986 unreserved
-/// characters, so `!room:server`, `$event` and `@user:server` survive.
-pub fn seg(segment: &str) -> String {
-    let mut encoded = String::with_capacity(segment.len());
-    for byte in segment.bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
-            encoded.push(char::from(byte));
-        } else {
-            let _ = write!(encoded, "%{byte:02X}"); // writing to a String cannot fail
+/// Installs the rustls crypto provider once per process, before any TLS.
+pub fn install_crypto_provider() {
+    static INSTALL: Once = Once::new();
+    INSTALL.call_once(|| {
+        use rama::tls::rustls::dep::rustls::crypto::{CryptoProvider, ring};
+        if CryptoProvider::get_default().is_none() {
+            // Another installer may win the race.
+            let _ = ring::default_provider().install_default();
         }
+    });
+}
+
+fn transport(homeserver: &str) -> MatrixClient<DefaultHttpWebClient> {
+    install_crypto_provider();
+    MatrixClient::new(DefaultHttpWebClient::default(), homeserver)
+        .with_timeout(REQUEST_TIMEOUT)
+        // Preserve the daemon's unbounded sync batches.
+        .with_max_response_body(usize::MAX)
+}
+
+fn field<T: serde::de::DeserializeOwned>(
+    body: &Value,
+    name: &str,
+) -> serde_json::Result<Option<T>> {
+    body.get(name)
+        .filter(|value| !value.is_null())
+        .map(|value| serde_json::from_value(value.clone()))
+        .transpose()
+}
+
+fn create_room_request(body: &Value) -> Result<create_room::Request, Error> {
+    if !body.is_object() {
+        return Err(Error::Invalid("createRoom body must be an object".into()));
     }
-    encoded
+    let mut request = create_room::Request::new();
+    request.creation_content = field(body, "creation_content")?;
+    request.initial_state = field(body, "initial_state")?.unwrap_or_default();
+    request.invite = field(body, "invite")?.unwrap_or_default();
+    request.invite_3pid = field(body, "invite_3pid")?.unwrap_or_default();
+    request.is_direct = field(body, "is_direct")?.unwrap_or_default();
+    request.name = field(body, "name")?;
+    request.power_level_content_override = field(body, "power_level_content_override")?;
+    request.preset = field(body, "preset")?;
+    request.room_alias_name = field(body, "room_alias_name")?;
+    request.room_version = field(body, "room_version")?;
+    request.topic = field(body, "topic")?;
+    request.visibility = field(body, "visibility")?.unwrap_or_default();
+    Ok(request)
 }
 
 #[cfg(test)]

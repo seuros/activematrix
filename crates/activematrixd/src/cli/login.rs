@@ -5,7 +5,7 @@ use usage_rs::{Args, RunAsyncWith};
 use super::Context;
 use crate::crypto::AccessToken;
 use crate::db::{Db, agents};
-use crate::matrix::{self, Client, Homeserver};
+use crate::matrix::{self, Client};
 
 /// Log an agent in and store its sealed access token
 ///
@@ -44,15 +44,15 @@ impl RunAsyncWith<&Context> for Login {
         let agent = agents::find_by_name(db.pool(), &self.agent).await?.with_context(|| {
             format!("no agent named {:?}; create it in Rails first", self.agent)
         })?;
-        let homeserver = Homeserver::new(&agent.homeserver_url);
+        let homeserver = &agent.homeserver_url;
 
         let (user_id, device_id, token) = if self.token_stdin {
             let token = AccessToken::new(read_stdin().await?);
-            let whoami = Client::new(homeserver, token.clone(), String::new()).whoami().await?;
+            let whoami = Client::new(homeserver, &token, String::new()).whoami().await?;
             let device_id = whoami
                 .device_id
                 .context("the homeserver did not say which device this token is")?;
-            (whoami.user_id, device_id, token)
+            (whoami.user_id.to_string(), device_id.to_string(), token)
         } else {
             let user = self
                 .user
@@ -65,7 +65,7 @@ impl RunAsyncWith<&Context> for Login {
                 let prompt = format!("Password for {user}: ");
                 tokio::task::spawn_blocking(move || rpassword::prompt_password(prompt)).await??
             };
-            let login = matrix::login(&homeserver, &user, &password, &self.device_name).await?;
+            let login = matrix::login(homeserver, &user, &password, &self.device_name).await?;
             (login.user_id, login.device_id, login.access_token)
         };
 

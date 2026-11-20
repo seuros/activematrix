@@ -21,7 +21,7 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::matrix::{Client, MatrixError};
+use crate::matrix::{self, Client};
 
 /// A failure the daemon gives up on after this many attempts.
 pub const MAX_ATTEMPTS: i32 = 8;
@@ -36,19 +36,22 @@ pub struct Command {
     pub attempts: i32,
 }
 
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, thiserror::Error)]
 pub enum CommandError {
     #[error("invalid {kind} command: {reason}")]
     Invalid { kind: String, reason: String },
     #[error(transparent)]
-    Matrix(#[from] MatrixError),
+    Matrix(#[from] matrix::Error),
 }
 
 impl CommandError {
-    pub const fn is_retryable(&self) -> bool {
+    pub fn is_retryable(&self) -> bool {
         match self {
-            Self::Invalid { .. } => false,
-            Self::Matrix(error) => error.is_retryable(),
+            Self::Matrix(matrix::Error::Request(error)) => {
+                error.errcode() != Some(ruma::api::error::ErrorCode::UnknownToken)
+                    && error.is_retryable()
+            }
+            _ => false,
         }
     }
 }

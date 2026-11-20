@@ -1,11 +1,15 @@
+use rama::http::convert::hyperium::TryIntoHyperiumHttp;
+use ruma::api::IncomingResponseExt;
 use serde_json::json;
 
 use super::*;
 
 const ME: &str = "@bot:matrix.test";
 
-fn response(value: Value) -> SyncResponse {
-    serde_json::from_value(value).unwrap()
+fn response(value: &Value) -> Response {
+    let bytes = value.to_string().into_bytes();
+    let response = rama::http::Response::new(bytes.as_slice()).try_into_hyperium_http().unwrap();
+    Response::try_from_http_response(response).unwrap()
 }
 
 fn message(event_id: &str, sender: &str, body: &str) -> Value {
@@ -21,7 +25,7 @@ fn state(event_type: &str, state_key: &str, content: &Value) -> Value {
 #[test]
 fn joined_room_state_fills_the_room_row() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "summary": { "m.joined_member_count": 3 },
             "state": { "events": [
                 state("m.room.name", "", &json!({ "name": "Ops" })),
@@ -32,7 +36,8 @@ fn joined_room_state_fills_the_room_row() {
         } } } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     assert_eq!(batch.next_batch, "s1");
     let room = &batch.rooms[0];
@@ -48,13 +53,14 @@ fn joined_room_state_fills_the_room_row() {
 #[test]
 fn the_last_state_event_for_a_key_wins() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "state": { "events": [state("m.room.name", "", &json!({ "name": "Old" }))] },
             "timeline": { "events": [state("m.room.name", "", &json!({ "name": "New" }))] },
         } } } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     assert_eq!(batch.state.len(), 1);
     assert_eq!(batch.state[0].content["name"], "New");
@@ -64,7 +70,7 @@ fn the_last_state_event_for_a_key_wins() {
 #[test]
 fn timeline_events_are_delivered_except_the_agents_own() {
     let batch = plan(
-        response(json!({ "next_batch": "s2", "rooms": { "join": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s2", "rooms": { "join": { "!r:matrix.test": {
             "timeline": { "events": [
                 message("$1", "@alice:matrix.test", "!ping"),
                 message("$2", ME, "pong"),
@@ -73,7 +79,8 @@ fn timeline_events_are_delivered_except_the_agents_own() {
         } } } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     let delivered: Vec<(&str, usize)> =
         batch.inbox.iter().map(|row| (row.event_id.as_str(), row.seq)).collect();
@@ -85,13 +92,14 @@ fn timeline_events_are_delivered_except_the_agents_own() {
 #[test]
 fn the_first_sync_mirrors_state_but_replays_nothing() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "state": { "events": [state("m.room.name", "", &json!({ "name": "Ops" }))] },
             "timeline": { "events": [message("$1", "@alice:matrix.test", "old history")] },
         } } } })),
         ME,
         false,
-    );
+    )
+    .unwrap();
 
     assert_eq!(batch.inbox, []);
     assert_eq!(batch.rooms[0].name.as_deref(), Some("Ops"));
@@ -100,7 +108,7 @@ fn the_first_sync_mirrors_state_but_replays_nothing() {
 #[test]
 fn members_are_mirrored_and_the_agents_own_membership_sets_the_room() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "rooms": { "leave": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s1", "rooms": { "leave": { "!r:matrix.test": {
             "timeline": { "events": [
                 state(
                     "m.room.member",
@@ -112,7 +120,8 @@ fn members_are_mirrored_and_the_agents_own_membership_sets_the_room() {
         } } } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     assert_eq!(batch.rooms[0].membership, "ban");
     let alice = batch.members.iter().find(|m| m.user_id == "@alice:matrix.test").unwrap();
@@ -131,13 +140,13 @@ fn invites_are_delivered_even_on_the_first_sync_with_a_stable_id() {
     let room = json!({ "invite_state": { "events": events } });
     let invite = json!({ "next_batch": "s1", "rooms": { "invite": { "!r:matrix.test": room } } });
 
-    let first = plan(response(invite.clone()), ME, false);
-    let again = plan(response(invite), ME, true);
+    let first = plan(response(&invite), ME, false).unwrap();
+    let again = plan(response(&invite), ME, true).unwrap();
 
     let row = &first.inbox[0];
     assert_eq!(row.kind, "invite");
     assert_eq!(row.sender, "@alice:matrix.test");
-    assert!(row.event_id.starts_with("invite:!r:matrix.test:"), "{}", row.event_id);
+    assert_eq!(row.event_id, "invite:!r:matrix.test:45f8bce4c830f0f3");
     assert_eq!(row.event_id, again.inbox[0].event_id, "the same invite gets the same id");
     assert_eq!(first.rooms[0].membership, "invite");
     assert_eq!(first.rooms[0].name.as_deref(), Some("Ops"));
@@ -146,14 +155,15 @@ fn invites_are_delivered_even_on_the_first_sync_with_a_stable_id() {
 #[test]
 fn m_direct_lists_the_direct_rooms() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "account_data": { "events": [{
+        response(&json!({ "next_batch": "s1", "account_data": { "events": [{
                 "type": "m.direct", "content": {
             "@alice:matrix.test": ["!dm1:matrix.test", "!dm2:matrix.test"],
             "@bob:matrix.test": ["!dm1:matrix.test"],
         } }] } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     assert_eq!(
         batch.direct_rooms,
@@ -164,14 +174,15 @@ fn m_direct_lists_the_direct_rooms() {
 #[test]
 fn malformed_events_are_skipped() {
     let batch = plan(
-        response(json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
+        response(&json!({ "next_batch": "s1", "rooms": { "join": { "!r:matrix.test": {
             "timeline": { "events": [
                 { "type": "m.room.message" }, "not an object", message("$1", "@a:m", "ok"),
             ] },
         } } } })),
         ME,
         true,
-    );
+    )
+    .unwrap();
 
     assert_eq!(batch.inbox.len(), 1);
 }
